@@ -1237,22 +1237,6 @@ pub fn check_tlsle<E: Arch>(
 //
 // Note that we assume that the first relocation entry for an FDE
 // always points to the function that the FDE is associated to.
-#[derive(Clone, Copy, Debug)]
-pub(crate) enum RelocationSpan {
-    Input(&'static [u8]),
-    SideTable(u32),
-}
-
-impl RelocationSpan {
-    #[inline]
-    fn rels<E: Arch>(self, file: &ObjectFile<E>) -> &[E::Rel] {
-        match self {
-            RelocationSpan::Input(data) => rels_from_bytes::<E>(data),
-            RelocationSpan::SideTable(relsec_idx) => file.relocations(Some(relsec_idx)),
-        }
-    }
-}
-
 #[derive(Debug)]
 pub struct CieRecord {
     /// The `.eh_frame` input section containing the record.
@@ -1263,8 +1247,10 @@ pub struct CieRecord {
     pub output_offset: u32,
     /// Index of the first relocation applying to the record.
     pub rel_idx: u32,
-    /// The relocation table shared by this CIE and its FDEs.
-    pub(crate) relocations: RelocationSpan,
+    /// The relocation section shared by this CIE and its FDEs. It is read
+    /// through the file on each use because relocation records are
+    /// rewritten in place while fragments are attached.
+    pub(crate) relsec_idx: Option<u32>,
     // For deduplication
     pub icf_idx: u32,
     // The size of the initial_location and address_range fields of FDEs
@@ -1289,7 +1275,7 @@ impl CieRecord {
     #[inline]
     pub fn rels<'a, E: Arch>(&self, file: &'a ObjectFile<E>) -> &'a [E::Rel] {
         rels_in::<E>(
-            self.relocations.rels(file),
+            file.relocations(self.relsec_idx),
             self.rel_idx,
             self.input_offset as usize + self.size::<E>(),
         )
@@ -1373,7 +1359,7 @@ impl FdeRecord {
     pub fn rels<'a, E: Arch>(&self, file: &'a ObjectFile<E>) -> &'a [E::Rel] {
         let cie = self.cie(file);
         let end = self.input_offset as usize + record_size::<E>(cie.contents, self.input_offset);
-        rels_in::<E>(cie.relocations.rels(file), self.rel_idx, end)
+        rels_in::<E>(file.relocations(cie.relsec_idx), self.rel_idx, end)
     }
 }
 
