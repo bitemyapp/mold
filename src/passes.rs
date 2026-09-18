@@ -1445,13 +1445,6 @@ pub fn add_synthetic_symbols<E: Arch>(ctx: &mut Context<E>) {
     if E::IS_PPC64 {
         ctx.syms.toc = Some(s(ctx, ".TOC."));
     }
-    if E::FAMILY == Family::Ppc64V2 {
-        for &(label, _) in crate::arch::ppc64v2::SAVE_RESTORE_INSNS {
-            if !label.is_empty() {
-                s(ctx, label);
-            }
-        }
-    }
     if E::FAMILY == Family::Ppc32 {
         s(ctx, "_SDA_BASE_");
     }
@@ -1475,6 +1468,14 @@ pub fn add_synthetic_symbols<E: Arch>(ctx: &mut Context<E>) {
             if ctx.args.physical_image_base.is_some() {
                 add_start_stop(ctx, [b"__phys_start_", name].concat());
                 add_start_stop(ctx, [b"__phys_stop_", name].concat());
+            }
+        }
+    }
+
+    if E::FAMILY == Family::Ppc64V2 {
+        for &(label, _) in crate::arch::ppc64v2::SAVE_RESTORE_INSNS {
+            if !label.is_empty() {
+                s(ctx, label);
             }
         }
     }
