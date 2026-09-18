@@ -434,7 +434,7 @@ impl<E: Layout> InputFile<E> {
     /// Reads the ELF and section headers.
     fn parse(mf: &'static MappedFile, display: &dyn fmt::Display) -> InputFile<E> {
         let data = mf.data();
-        if data.len() < std::mem::size_of::<ElfEhdr<E>>() {
+        if data.len() < ElfEhdr::<E>::size() {
             fatal!("{display}: file too small");
         }
         if !data.starts_with(b"\x7fELF") {
@@ -443,7 +443,7 @@ impl<E: Layout> InputFile<E> {
 
         let ehdr = record_from_bytes::<ElfEhdr<E>>(data);
         let shoff = ehdr.e_shoff.get() as usize;
-        let shdr_size = std::mem::size_of::<ElfShdr<E>>();
+        let shdr_size = ElfShdr::<E>::size();
 
         // e_shnum contains the total number of sections in an object file.
         // Since it is a 16-bit integer field, it's not large enough to
@@ -1378,7 +1378,7 @@ impl<E: Arch> ObjectFile<E> {
             // sh_info has an index of the first global symbol.
             self.base.first_global = shdr.sh_info.get() as usize;
             let contents = self.base.section_contents(idx);
-            if !contents.len().is_multiple_of(std::mem::size_of::<ElfSym<E>>()) {
+            if !contents.len().is_multiple_of(ElfSym::<E>::size()) {
                 fatal!("{self}: corrupted section");
             }
             self.base.elf_syms = Cow::Borrowed(records_from_bytes::<ElfSym<E>>(contents));
@@ -2762,7 +2762,7 @@ impl<'a> SymtabEntries<'a> {
     }
 
     fn push<E: Arch>(&mut self, esym: ElfSym<E>, xindex: u32) {
-        let size = std::mem::size_of::<ElfSym<E>>();
+        let size = ElfSym::<E>::size();
         esym.write(&mut self.syms[self.len * size..(self.len + 1) * size]);
         if let Some(entries) = &mut self.xindex {
             E::Endian::write_u32(&mut entries[self.len * 4..], xindex);
@@ -2783,7 +2783,7 @@ impl<'a> SymtabBlock<'a> {
 
     /// Zeroes reserved space that was not used by emitted symbols.
     pub fn zero_unused<E: Arch>(&mut self) {
-        let size = std::mem::size_of::<ElfSym<E>>();
+        let size = ElfSym::<E>::size();
         self.locals.syms[self.locals.len * size..].fill(0);
         self.globals.syms[self.globals.len * size..].fill(0);
         self.strtab[self.strtab_len..].fill(0);

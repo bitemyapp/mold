@@ -86,7 +86,7 @@ impl Arch for M68k {
         buf[..14].copy_from_slice(&INSN);
         write_ub32(
             &mut buf[2..],
-            sym.plt_idx(&ctx.symbols).unwrap() * std::mem::size_of::<ElfRel<Self>>() as u32,
+            sym.plt_idx(&ctx.symbols).unwrap() * ElfRel::<Self>::size() as u32,
         );
         write_ub32(
             &mut buf[10..],

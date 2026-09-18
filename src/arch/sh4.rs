@@ -227,7 +227,7 @@ where
         }
         End::write_u32(
             &mut buf[16..],
-            sym.plt_idx(&ctx.symbols).unwrap() * std::mem::size_of::<ElfRel<Self>>() as u32,
+            sym.plt_idx(&ctx.symbols).unwrap() * ElfRel::<Self>::size() as u32,
         );
     }
 

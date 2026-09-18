@@ -91,7 +91,7 @@ fn for_each_entry<E: Arch>(ctx: &Context<E>, mut define: impl FnMut(u32, u64)) {
         } else {
             define(rel, ctx.reldyn.hdr.shdr.sh_addr.get());
             define(relsz, ctx.reldyn.hdr.shdr.sh_size.get());
-            define(relent, std::mem::size_of::<ElfRel<E>>() as u64);
+            define(relent, ElfRel::<E>::size() as u64);
         }
     }
 
@@ -129,7 +129,7 @@ fn for_each_entry<E: Arch>(ctx: &Context<E>, mut define: impl FnMut(u32, u64)) {
 
     if ctx.dynsym.hdr.shdr.sh_size.get() != 0 {
         define(DT_SYMTAB, ctx.dynsym.hdr.shdr.sh_addr.get());
-        define(DT_SYMENT, std::mem::size_of::<ElfSym<E>>() as u64);
+        define(DT_SYMENT, ElfSym::<E>::size() as u64);
     }
     if ctx.dynstr.hdr.shdr.sh_size.get() != 0 {
         define(DT_STRTAB, ctx.dynstr.hdr.shdr.sh_addr.get());
@@ -275,7 +275,8 @@ pub fn copy_buf<E: Arch>(ctx: &Context<E>, buf: &mut [u8]) {
     debug_assert_eq!(ctx.dynamic.as_ref().unwrap().shdr.sh_size.get() as usize, buf.len());
     let mut slots = buf.chunks_exact_mut(ElfDyn::<E>::size());
     for_each_entry(ctx, |d_tag, d_val| {
-        let entry = ElfDyn::<E> { d_tag: E::Word::new(d_tag as u64), d_val: E::Word::new(d_val) };
+        let entry =
+            ElfDyn::<E> { d_tag: E::Word::new(u64::from(d_tag)), d_val: E::Word::new(d_val) };
         entry.write(slots.next().unwrap());
     });
     debug_assert!(slots.next().is_none());
