@@ -2099,6 +2099,9 @@ impl<E: Arch> ObjectFile<E> {
                 }
                 let begin_offset = pos;
                 let end_offset = pos + size + 4;
+                if size < 4 || end_offset > contents.len() {
+                    fatal!("{}: corrupted .eh_frame section", isec.display(self));
+                }
                 let id = E::Endian::read_u32(&contents[pos + 4..]);
                 pos = end_offset;
 
@@ -2131,7 +2134,7 @@ impl<E: Arch> ObjectFile<E> {
                         // `ld -r` tend to generate such dead FDEs.
                         continue;
                     }
-                    if rels[rel_begin].r_offset() as usize - begin_offset != 8 {
+                    if rels[rel_begin].r_offset() != begin_offset as u64 + 8 {
                         fatal!(
                             "{}: FDE's first relocation should have offset 8",
                             isec.display(self)
@@ -2247,11 +2250,15 @@ impl<E: Arch> ObjectFile<E> {
             let hdr_len = SFrameHeader::<E>::size() + hdr.auxhdr_len as usize;
             let fde_off = hdr_len + hdr.fdeoff.get() as usize;
             let fre_off = hdr_len + hdr.freoff.get() as usize;
+            let num_fdes = hdr.num_fdes.get() as usize;
+            if fde_off + num_fdes * SFrameFdeIdx::<E>::size() > data.len() {
+                fatal!("{}: corrupted .sframe section", isec.display(self));
+            }
             let rels = isec.rels(self);
             let mut rel_idx = 0;
             let mut new_fdes = Vec::new();
 
-            for i in 0..hdr.num_fdes.get() as usize {
+            for i in 0..num_fdes {
                 let idx_off = fde_off + i * SFrameFdeIdx::<E>::size();
                 let ent = SFrameFdeIdx::<E>::parse(&data[idx_off..]);
 
@@ -2270,7 +2277,11 @@ impl<E: Arch> ObjectFile<E> {
                 let Some(func) = self.symbol_section(rel.r_sym() as usize) else {
                     continue;
                 };
-                let fre = &data[off..off + sframe_fre_block_size::<E>(data, off)];
+                let Some(fre) = sframe_fre_block_size::<E>(data, off)
+                    .and_then(|size| data.get(off..off + size))
+                else {
+                    fatal!("{}: corrupted .sframe section", isec.display(self));
+                };
                 new_fdes.push(SFrameFde {
                     section: func.shndx,
                     sym: self.base.symbols[rel.r_sym() as usize],
