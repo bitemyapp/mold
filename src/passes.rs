@@ -17,7 +17,7 @@ use crate::chunks::eh_frame_hdr::EhFrameHdrSection;
 use crate::chunks::gnu_debuglink::{self, GnuDebuglinkSection};
 use crate::chunks::gnu_hash::{self, GnuHashSection};
 use crate::chunks::note_property::NotePropertySection;
-use crate::chunks::output_section::OutputSection;
+use crate::chunks::output_section::{AbsRel, OutputSection};
 use crate::chunks::verdef::VerdefSection;
 use crate::chunks::{
     self, ChunkHeader, ChunkId, OutputPhdr, OutputSectionId, compressed, copyrel, dynsym, reloc,
@@ -2435,15 +2435,24 @@ pub fn scan_relocations<E: Arch>(ctx: &mut Context<E>) {
 
     // Word-size absolute relocations (e.g. R_X86_64_64) are handled
     // separately because they can be promoted to dynamic relocations.
-    let results: Vec<(OutputSectionId, Vec<crate::chunks::output_section::AbsRel>, Vec<u64>)> = {
+    // Promotion changes how relocations against the same symbols in other
+    // sections are classified, so it completes before classification.
+    let results: Vec<(OutputSectionId, Vec<AbsRel>, Vec<u64>)> = {
+        use crate::chunks::output_section as osec;
         let ctx_ref: &Context<E> = ctx;
-        (0..ctx_ref.output_sections.len())
+        let collected: Vec<(OutputSectionId, Vec<AbsRel>)> = (0..ctx_ref.output_sections.len())
             .into_par_iter()
             .map(|i| OutputSectionId::new(i as u32))
             .filter(|&id| ctx_ref.output_sections[id.index()].hdr.is_alloc())
-            .map(|id| {
-                let (abs_rels, offsets) =
-                    crate::chunks::output_section::scan_abs_relocations(ctx_ref, id);
+            .map(|id| (id, osec::collect_abs_relocations(ctx_ref, id)))
+            .collect();
+        collected
+            .par_iter()
+            .for_each(|(id, abs_rels)| osec::promote_abs_relocations(ctx_ref, *id, abs_rels));
+        collected
+            .into_par_iter()
+            .map(|(id, abs_rels)| {
+                let (abs_rels, offsets) = osec::classify_abs_relocations(ctx_ref, abs_rels);
                 (id, abs_rels, offsets)
             })
             .collect()
