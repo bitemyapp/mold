@@ -33,7 +33,6 @@ macro_rules! endian_io {
 endian_io!(u16, read_ub16, read_ul16, write_ub16, write_ul16);
 endian_io!(u32, read_ub32, read_ul32, write_ub32, write_ul32);
 endian_io!(u64, read_ub64, read_ul64, write_ub64, write_ul64);
-endian_io!(i16, read_ib16, read_il16, write_ib16, write_il16);
 endian_io!(i32, read_ib32, read_il32, write_ib32, write_il32);
 endian_io!(i64, read_ib64, read_il64, write_ib64, write_il64);
 

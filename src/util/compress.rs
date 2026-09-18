@@ -45,7 +45,7 @@ impl std::fmt::Debug for Compressor {
 }
 
 fn adler32(data: &[u8]) -> u32 {
-    let len = data.len().try_into().unwrap();
+    let len = data.len().try_into().expect("a shard fits zlib's length type");
     // SAFETY: data is readable for len bytes. Each caller passes one shard,
     // whose size fits zlib's uInt length argument.
     unsafe { libz_sys::adler32(1, data.as_ptr(), len) as u32 }
@@ -54,7 +54,7 @@ fn adler32(data: &[u8]) -> u32 {
 /// Combines two Adler-32 checksums, where `len2` is the length of the
 /// second input.
 fn adler32_combine(adler1: u32, adler2: u32, len2: u64) -> u32 {
-    let len2 = len2.try_into().unwrap();
+    let len2 = len2.try_into().expect("a shard fits zlib's length type");
     // SAFETY: the checksums are 32-bit values and len2 is nonnegative and
     // representable in z_off_t. All callers combine one shard at a time.
     unsafe { libz_sys::adler32_combine(adler1.into(), adler2.into(), len2) as u32 }
@@ -166,7 +166,7 @@ impl Compressor {
     }
 
     pub fn compressed_size(&self) -> usize {
-        // Comput the total size
+        // Compute the total size
         match self {
             // the header and the trailer
             Compressor::Zlib { shards, .. } => 8 + shards.iter().map(Vec::len).sum::<usize>(),
