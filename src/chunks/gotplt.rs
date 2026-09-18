@@ -4,7 +4,6 @@ use crate::arch::{Arch, Family};
 use crate::chunks::ChunkHeader;
 use crate::context::Context;
 use crate::elf::*;
-use crate::util::endian::Endian;
 
 // .got.plt is similar to .got in the sense that it is a table containing
 // pointers. The contents in .got.plt are function pointers used by .plt.
@@ -40,13 +39,7 @@ pub fn copy_buf<E: Arch>(ctx: &Context<E>, buf: &mut [u8]) {
         return;
     }
     let w = E::WORD_SIZE;
-    let write = |buf: &mut [u8], idx: usize, val: u64| {
-        if E::IS_64 {
-            E::Endian::write_u64(&mut buf[idx * w..], val);
-        } else {
-            E::Endian::write_u32(&mut buf[idx * w..], val as u32);
-        }
-    };
+    let write = |buf: &mut [u8], idx: usize, val: u64| E::Word::new(val).write(&mut buf[idx * w..]);
     // The first slot of .got.plt points to _DYNAMIC, as requested by
     // the psABI. The second and the third slots are reserved by the psABI.
     write(buf, 0, ctx.dynamic.as_ref().map_or(0, |d| d.shdr.sh_addr.get()));

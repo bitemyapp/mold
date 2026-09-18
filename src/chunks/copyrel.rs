@@ -70,6 +70,7 @@ pub fn add_symbol<E: Arch>(ctx: &mut Context<E>, relro: bool, id: SymbolId) {
     sec.hdr.shdr.sh_addralign.set(align);
 
     for &alias in aliases {
+        // Allocate the auxiliary data that a dynamic symbol needs.
         ctx.symbols.aux_mut(alias);
         let s = &mut ctx.symbols[alias];
         s.set_imported(true);

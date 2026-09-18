@@ -4,7 +4,6 @@ use crate::arch::Arch;
 use crate::chunks::ChunkHeader;
 use crate::context::Context;
 use crate::elf::*;
-use crate::util::endian::Endian;
 
 // .relr.dyn is a relatively new section to contain base relocation
 // information.
@@ -48,20 +47,15 @@ pub fn new_header<E: Arch>(args: &crate::cmdline::Args) -> ChunkHeader<E> {
 }
 
 pub fn copy_buf<E: Arch>(ctx: &Context<E>, buf: &mut [u8]) {
-    let w = E::WORD_SIZE;
-    let mut i = 0;
+    let mut slots = buf.chunks_exact_mut(E::WORD_SIZE);
     for &id in &ctx.chunks {
         let hdr = ctx.chunk_header(id);
         for &val in &hdr.relr {
             let v = if val & 1 != 0 { val } else { hdr.shdr.sh_addr.get() + val };
-            if E::IS_64 {
-                E::Endian::write_u64(&mut buf[i * w..], v);
-            } else {
-                E::Endian::write_u32(&mut buf[i * w..], v as u32);
-            }
-            i += 1;
+            E::Word::new(v).write(slots.next().expect("a slot for every RELR entry"));
         }
     }
+    debug_assert!(slots.next().is_none());
 }
 
 // .relr.dyn contains base relocations encoded in a space-efficient form.

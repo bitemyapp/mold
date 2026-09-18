@@ -63,6 +63,8 @@ pub fn copy_buf<E: Arch>(ctx: &Context<E>, buf: &mut [u8], eh_frame_buf: Option<
                 0
             }
         })
+        // A live record's relocations refer to live sections; a discarded
+        // target would have discarded the record with it.
         .expect("relocation refers to a section without output");
         rel.set_r_sym(r_sym);
         if E::IS_RELA {

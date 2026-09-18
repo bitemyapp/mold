@@ -234,10 +234,8 @@ pub fn write_to<E: Arch>(ctx: &Context<E>, id: OutputSectionId, buf: &mut [u8]) 
                     } else {
                         E::TRAP
                     };
-                    let mut pos = 0;
-                    while pos + filler.len() <= padding.len() {
-                        padding[pos..pos + filler.len()].copy_from_slice(filler);
-                        pos += filler.len();
+                    for slot in padding.chunks_exact_mut(filler.len()) {
+                        slot.copy_from_slice(filler);
                     }
                 } else {
                     padding.fill(0);
@@ -344,13 +342,11 @@ pub fn relr_offsets<E: Arch>(ctx: &mut Context<E>, id: OutputSectionId) -> Vec<u
         })
         .collect();
 
-    let mut offsets = Vec::new();
-    for (i, shard) in shards.into_iter().enumerate() {
+    for (i, shard) in shards.iter().enumerate() {
         relr_offsets[i + 1] = relr_offsets[i] + shard.len() as u64;
-        offsets.extend(shard);
     }
     osec.relr_offsets = relr_offsets;
-    offsets
+    shards.concat()
 }
 
 pub fn write_dynrels<E: Arch>(ctx: &Context<E>, id: OutputSectionId, out: &mut [E::Rel]) {
@@ -597,8 +593,8 @@ pub fn populate_symtab<E: Arch>(
 
     for thunk in &osec.thunks {
         let suffix = format!("${}", thunk.name);
-        for (i, &sym) in thunk.symbols.iter().enumerate() {
-            let addr = osec.hdr.shdr.sh_addr.get() + thunk.offset + thunk.offsets[i];
+        for (&sym, &offset) in thunk.symbols.iter().zip(&thunk.offsets) {
+            let addr = osec.hdr.shdr.sh_addr.get() + thunk.offset + offset;
             let name = ctx.symbols[sym].name();
             block.push_synthetic::<E>(name, suffix.as_bytes(), func(addr));
             if E::FAMILY == Family::Arm32 {
@@ -611,6 +607,6 @@ pub fn populate_symtab<E: Arch>(
     }
 
     // Thunks can be removed after their symbol-table space is reserved.
-    // Zero the unused entries and names, as C++ mold does.
+    // Zero the unused entries and names.
     block.zero_unused::<E>();
 }
