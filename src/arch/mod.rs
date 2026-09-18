@@ -234,7 +234,7 @@ pub trait Arch: Layout {
 }
 
 /// Maps an `-m` emulation name to a target name.
-pub fn emulation_to_target(emulation: &str) -> Option<&'static str> {
+pub(crate) fn emulation_to_target(emulation: &str) -> Option<&'static str> {
     Some(match emulation {
         "elf_x86_64" => "x86_64",
         "elf_i386" => "i386",

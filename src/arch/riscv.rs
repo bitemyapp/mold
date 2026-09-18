@@ -34,6 +34,10 @@ use crate::input_sections::{
 use crate::shrink_sections::compute_distance;
 use crate::symbol::{NEEDS_GOT, NEEDS_GOTTP, NEEDS_PLT, NEEDS_TLSGD, Symbol};
 use crate::util::endian::{BigEndian, Endian, LittleEndian, Ub32, Ub64, Ul32, Ul64};
+// Instructions are always little-endian.
+use crate::util::endian::{
+    read_ul16 as insn16, read_ul32 as insn32, write_ul16 as write16, write_ul32 as write32,
+};
 use crate::util::{align_to, bit, bits, encode_uleb, is_int, overwrite_uleb, read_uleb};
 use crate::{error, fatal};
 
@@ -80,24 +84,6 @@ impl Layout for RiscvTarget<BigEndian, false> {
     type Phdr = Elf32Phdr<BigEndian>;
     type Chdr = Elf32Chdr<BigEndian>;
     type Rel = Elf32RelaBe;
-}
-
-// Instructions are always little-endian.
-
-fn insn32(loc: &[u8]) -> u32 {
-    u32::from_le_bytes([loc[0], loc[1], loc[2], loc[3]])
-}
-
-fn insn16(loc: &[u8]) -> u16 {
-    u16::from_le_bytes([loc[0], loc[1]])
-}
-
-fn write32(loc: &mut [u8], v: u32) {
-    loc[..4].copy_from_slice(&v.to_le_bytes());
-}
-
-fn write16(loc: &mut [u8], v: u16) {
-    loc[..2].copy_from_slice(&v.to_le_bytes());
 }
 
 fn b(val: u64, hi: u32, lo: u32) -> u32 {
@@ -290,10 +276,7 @@ where
     const PLT_HDR_SIZE: u64 = 32;
     const PLT_SIZE: u64 = 16;
     const PLTGOT_SIZE: u64 = 16;
-    // The C++ RV64LE and RV32LE target structs each record this instruction:
-    // c.ebreak
-    // c.ebreak
-    const TRAP: &'static [u8] = &[0x02, 0x90];
+    const TRAP: &'static [u8] = &[0x02, 0x90]; // c.ebreak
 
     const R_COPY: u32 = R_RISCV_COPY;
     const R_GLOB_DAT: u32 = if IS_64 { R_RISCV_64 } else { R_RISCV_32 };
@@ -1254,7 +1237,7 @@ fn arch_string(extensions: &[Extension<'_>]) -> String {
 }
 
 // Build the output .riscv.attributes contents.
-pub fn attributes_contents<E: Arch>(ctx: &Context<E>) -> Vec<u8> {
+pub(crate) fn attributes_contents<E: Arch>(ctx: &Context<E>) -> Vec<u8> {
     let mut stack: Option<u64> = None;
     let mut arch: Vec<Extension<'_>> = Vec::new();
     let mut unaligned = false;

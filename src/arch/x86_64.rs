@@ -32,7 +32,9 @@ use crate::elf::*;
 use crate::input_sections::NonAllocReloc;
 use crate::input_sections::{InputSection, check_tlsle, scan_absrel, scan_pcrel, scan_tlsdesc};
 use crate::symbol::{NEEDS_GOT, NEEDS_GOTTP, NEEDS_PLT, NEEDS_TLSGD, Symbol};
-use crate::util::endian::{LittleEndian, Ul64};
+use crate::util::endian::{
+    LittleEndian, Ul64, write_ul16 as write_u16, write_ul32 as write_u32, write_ul64 as write_u64,
+};
 use crate::util::is_int;
 use crate::{error, fatal};
 
@@ -473,7 +475,7 @@ impl Arch for X86_64 {
                     if sym.has_tlsdesc(&ctx.symbols) {
                         write32s(buf, sym.tlsdesc_addr(ctx).wrapping_add(a).wrapping_sub(p));
                     } else if sym.has_gottp(&ctx.symbols) {
-                        let insn = relax_tlsdesc_to_ie(&buf[..off], &rel);
+                        let insn = relax_tlsdesc_to_ie(&buf[..off]);
                         if insn == 0 {
                             fatal!(
                                 "{}: illegal instruction sequence for {}",
@@ -598,18 +600,6 @@ impl Arch for X86_64 {
     }
 }
 
-fn write_u16(buf: &mut [u8], v: u16) {
-    buf[..2].copy_from_slice(&v.to_le_bytes());
-}
-
-fn write_u32(buf: &mut [u8], v: u32) {
-    buf[..4].copy_from_slice(&v.to_le_bytes());
-}
-
-fn write_u64(buf: &mut [u8], v: u64) {
-    buf[..8].copy_from_slice(&v.to_le_bytes());
-}
-
 /// The bytes of a section preceding a relocated location.
 fn loc_before<'a>(isec: &'a InputSection<X86_64>, rel: &ElfRel<X86_64>) -> &'a [u8] {
     &isec.contents()[..rel.r_offset() as usize]
@@ -712,11 +702,10 @@ fn relax_gottpoff(loc: &[u8], rel: &ElfRel<X86_64>) -> u32 {
     }
 }
 
-fn relax_tlsdesc_to_ie(loc: &[u8], rel: &ElfRel<X86_64>) -> u32 {
+fn relax_tlsdesc_to_ie(loc: &[u8]) -> u32 {
     if loc.len() < 3 {
         return 0;
     }
-    let _ = rel;
     match last3(loc) {
         // lea 0(%rip), %r16 -> mov 0(%rip), %r16
         0x488d05 => 0x488b05, // lea 0(%rip), %rax -> mov 0(%rip), %rax

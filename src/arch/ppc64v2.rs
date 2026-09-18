@@ -173,7 +173,7 @@ fn local_entry_offset(ctx: &Context<Ppc64V2>, sym: &Symbol) -> u64 {
 // and epilogue if -Os is specified. For some reason, these functions are
 // not in libgcc.a and expected to be synthesized by the linker. There are
 // variants for general-purpose, floating-point and vector registers.
-pub const SAVE_RESTORE_INSNS: &[(&str, u32)] = &[
+pub(crate) const SAVE_RESTORE_INSNS: &[(&str, u32)] = &[
     ("_savegpr0_14", 0xf9c1ff70), // std r14,-144(r1)
     ("_savegpr0_15", 0xf9e1ff78), // std r15,-136(r1)
     ("_savegpr0_16", 0xfa01ff80), // std r16,-128(r1)
@@ -357,7 +357,7 @@ pub const SAVE_RESTORE_INSNS: &[(&str, u32)] = &[
 ];
 
 /// The contents of the `.save_restore_regs` section.
-pub fn save_restore_contents() -> Vec<u8> {
+pub(crate) fn save_restore_contents() -> Vec<u8> {
     SAVE_RESTORE_INSNS.iter().flat_map(|&(_, insn)| insn.to_le_bytes()).collect()
 }
 

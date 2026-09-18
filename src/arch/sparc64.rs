@@ -103,7 +103,7 @@ fn lox10(val: i64) -> u64 {
 
 // Returns the byte offset within .plt of the data pointer for a large SPARC
 // PLT entry. See write_plt_entry below for the block layout this assumes.
-pub fn plt_ptr_offset(num_plt_symbols: usize, plt_idx: u64) -> u64 {
+pub(crate) fn plt_ptr_offset(num_plt_symbols: usize, plt_idx: u64) -> u64 {
     let i = plt_idx - SPARC_NUM_SMALL_PLT;
     let block = i / 160;
     let num_large = num_plt_symbols as u64 - SPARC_NUM_SMALL_PLT;
@@ -135,7 +135,7 @@ impl Arch for Sparc64 {
     const R_FUNCALL: &'static [u32] = &[R_SPARC_WPLT30, R_SPARC_WDISP30];
 
     fn rel_to_string(r_type: u32) -> std::borrow::Cow<'static, str> {
-        sparc64_rel_to_string(r_type & 0xff)
+        sparc64_rel_to_string(r_type)
     }
 
     // SPARC's PLT section is writable despite containing executable code.
