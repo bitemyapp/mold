@@ -46,9 +46,12 @@ zstd = "0.13"
 cc = "1"
 
 [profile.release]
+# Line tables for profiles and backtraces.
 debug = 1
-codegen-units = 16
+# Aborting on panic keeps the lock-free structures from being observed
+# half-updated by an unwinding thread.
 panic = "abort"
 
 [profile.dev]
+# The shell tests link real programs.
 opt-level = 1
