@@ -87,6 +87,8 @@ use crate::arch::Arch;
 use crate::cmdline::ReportOutput;
 use crate::context::Context;
 use crate::elf::*;
+use std::collections::HashMap;
+
 use crate::fatal;
 use crate::input_files::{ObjId, ObjectFile};
 use crate::input_sections::{InputSection, SectionRef};
@@ -103,9 +105,8 @@ struct Digest {
 impl Digest {
     #[inline]
     fn update(self, hasher: &mut SipHash13_128) {
-        // Match hashing the native Digest representation, as C++ does.
-        hasher.update_u64(u64::from_le(self.hi));
-        hasher.update_u64(u64::from_le(self.lo));
+        hasher.update_u64(self.hi);
+        hasher.update_u64(self.lo);
     }
 
     fn from_ne_bytes(bytes: [u8; 16]) -> Digest {
@@ -171,7 +172,7 @@ impl DigestMap {
         DigestMap {
             round: 1,
             mask: len - 1,
-            slots: (0..len).map(|_| DigestSlot::default()).collect(),
+            slots: std::iter::repeat_with(DigestSlot::default).take(len).collect(),
         }
     }
 
@@ -573,7 +574,7 @@ fn count_num_classes<E: Arch>(
 
 fn print_icf_sections<E: Arch>(ctx: &Context<E>, sections: &[SectionRef], output: &ReportOutput) {
     let mut leaders: Vec<(SectionRef, Vec<SectionRef>)> = Vec::new();
-    let mut map: std::collections::HashMap<SectionRef, usize> = std::collections::HashMap::new();
+    let mut map: HashMap<SectionRef, usize> = HashMap::new();
     for &r in sections {
         let leader = ctx.section(r).icf_leader_in_round();
         if leader != r {
