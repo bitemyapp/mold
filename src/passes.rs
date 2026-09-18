@@ -390,8 +390,8 @@ pub fn gather_symbols<E: Arch>(ctx: &mut Context<E>) {
     let _t = ctx.timer("gather_symbols");
     let bins = ctx.take_symbol_bins();
     // Reserve local symbols and a cheap CREL-header bound before constructing
-    // globals. Unlike C++ arena storage, the central Rust vector would copy all
-    // existing symbols if fragment dummies forced it to grow later.
+    // globals, so that the symbol vector need not copy every existing symbol
+    // when fragment dummies are appended later.
     let additional_capacity = ctx
         .objs
         .par_iter()
@@ -1829,9 +1829,8 @@ pub fn check_shlib_undefined<E: Arch>(ctx: &mut Context<E>) {
     }
 
     // Beyond this point, DSOs that are not referenced directly by any
-    // object file are not needed. They were kept by
-    // SharedFile<E>::mark_live_objects just for this pass. Therefore,
-    // remove unneeded DSOs from the list now.
+    // object file are not needed. They were kept by mark_live_objects just
+    // for this pass. Therefore, remove unneeded DSOs from the list now.
     for file in &ctx.dsos {
         file.base.set_reachable(!file.base.as_needed);
     }
@@ -2254,7 +2253,7 @@ pub fn compute_section_sizes<E: Arch>(ctx: &mut Context<E>) {
     }
 
     // Every merged section now owns all the mutable state needed for its
-    // layout, just as each C++ Chunk does in the parallel chunk loop.
+    // layout.
     ctx.merged_sections
         .par_iter_mut()
         .filter(|section| section.is_alloc())
@@ -4023,9 +4022,10 @@ pub fn write_build_id<E: Arch>(ctx: &mut Context<E>, buf: &mut [u8], is_mmapped:
                     // so that subsequent close(2) call will become quicker.
                     if i > 0 && is_mmapped {
                         #[cfg(not(windows))]
-                        // SAFETY: the shard is part of the output mapping; the
-                        // advice only drops the process's mapping of pages
-                        // that are backed by the file.
+                        // SAFETY: the shard is part of the output mapping,
+                        // which is shared with the file, so the advice only
+                        // drops the process's page table entries and loses no
+                        // written bytes.
                         unsafe {
                             libc::madvise(
                                 shard.as_mut_ptr() as *mut libc::c_void,
