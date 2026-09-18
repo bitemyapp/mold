@@ -1393,6 +1393,9 @@ impl<E: Arch> ObjectFile<E> {
                 fatal!("{self}: corrupted section");
             }
             self.base.elf_syms = Cow::Borrowed(records_from_bytes::<ElfSym<E>>(contents));
+            if self.base.first_global > self.base.elf_syms.len() {
+                fatal!("{self}: invalid symbol table");
+            }
             self.base.symbol_strtab = self.base.section_contents(shdr.sh_link.get() as usize);
 
             if let Some(idx) = self.base.find_section(SHT_SYMTAB_SHNDX) {
@@ -1865,7 +1868,13 @@ impl<E: Arch> ObjectFile<E> {
                     CrelReader::<E>::new(self, contents).len() != 0
                 }
             } else {
-                shdr.sh_size.get() != 0
+                // The table is later read in place, so its range and record
+                // size are checked once here.
+                let contents = self.base.section_contents_from_shdr(shdr);
+                if !contents.len().is_multiple_of(ElfRel::<E>::size()) {
+                    fatal!("{self}: invalid relocation section");
+                }
+                !contents.is_empty()
             };
 
             let isec = self.section_mut(target).unwrap();
@@ -3099,7 +3108,11 @@ impl<E: Arch> SharedFile<E> {
         self.version_strings = self.read_version_strings();
 
         // Read a symbol table.
-        let esyms = records_from_bytes::<ElfSym<E>>(self.base.section_contents(symtab_idx));
+        let contents = self.base.section_contents(symtab_idx);
+        if !contents.len().is_multiple_of(ElfSym::<E>::size()) {
+            fatal!("{self}: corrupted section");
+        }
+        let esyms = records_from_bytes::<ElfSym<E>>(contents);
         let first = symtab_shdr.sh_info.get() as usize;
         if esyms.len() < first {
             fatal!("{self}: invalid symbol table");
@@ -3356,9 +3369,12 @@ impl<E: Arch> SharedFile<E> {
         let ehdr = record_from_bytes::<ElfEhdr<E>>(data);
         let val = self.base.elf_syms[sym.sym_idx() as usize].st_value().get();
         let phoff = ehdr.e_phoff.get() as usize;
-        let size = std::mem::size_of::<ElfPhdr<E>>();
+        let size = ElfPhdr::<E>::size();
         let phnum = ehdr.e_phnum.get() as usize;
-        let phdrs = records_from_bytes::<ElfPhdr<E>>(&data[phoff..phoff + phnum * size]);
+        let Some(table) = data.get(phoff..phoff.saturating_add(phnum * size)) else {
+            fatal!("{self}: corrupted program header table");
+        };
+        let phdrs = records_from_bytes::<ElfPhdr<E>>(table);
         phdrs.iter().any(|phdr| {
             (phdr.p_type().get() == PT_LOAD || phdr.p_type().get() == PT_GNU_RELRO)
                 && phdr.p_flags().get() & PF_W == 0
