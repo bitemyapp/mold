@@ -277,6 +277,9 @@ impl<E: Arch> InputSection<E> {
             };
 
         let (sh_size, p2align) = if shdr.sh_flags.get() & SHF_COMPRESSED as u64 != 0 {
+            if contents.len() < ElfChdr::<E>::size() {
+                fatal!("{file}:({name}): corrupted compressed section");
+            }
             let chdr = record_from_bytes::<ElfChdr<E>>(contents);
             (chdr.ch_size().get(), to_p2align(chdr.ch_addralign().get()))
         } else {
@@ -293,7 +296,9 @@ impl<E: Arch> InputSection<E> {
             },
             namelen: name.len().min(u16::MAX as usize) as u16,
             sh_flags: shdr.sh_flags.get(),
-            contents: contents.as_ptr() as usize,
+            // A NOBITS section has no bytes, whatever its size says, so it
+            // stores the same null that clear_contents() sets.
+            contents: if contents.is_empty() { 0 } else { contents.as_ptr() as usize },
             sh_size,
             p2align: AtomicU8::new(p2align),
             output_section: None,
@@ -427,10 +432,10 @@ impl<E: Arch> InputSection<E> {
             return &[];
         }
         debug_assert!(!self.is_compressed());
-        // SAFETY: contents points into an input mapping or a leaked
-        // decompression buffer, both live for the complete link. sh_size is
-        // their current logical size except during relaxation, whose callers
-        // use original_contents below.
+        // SAFETY: a nonzero `contents` points into an input mapping or a
+        // leaked decompression buffer, both live for the complete link.
+        // sh_size is their current logical size except during relaxation,
+        // whose callers use original_contents below.
         unsafe { std::slice::from_raw_parts(self.contents as *const u8, self.sh_size as usize) }
     }
 
@@ -445,8 +450,9 @@ impl<E: Arch> InputSection<E> {
         } else {
             file.shdr(self.shndx as usize).sh_size.get()
         };
-        // SAFETY: as in contents; an uncompressed buffer has sh_size bytes,
-        // while an ordinary input view has its ELF section header's size.
+        // SAFETY: as in contents; a nonzero `contents` is an uncompressed
+        // buffer of sh_size bytes or an input view of its ELF section
+        // header's size.
         unsafe { std::slice::from_raw_parts(self.contents as *const u8, size as usize) }
     }
 
@@ -537,6 +543,11 @@ impl<E: Arch> InputSection<E> {
         input_size: usize,
         buf: &mut [u8],
     ) {
+        if self.contents == 0 {
+            // A NOBITS section reads as zeros.
+            buf.fill(0);
+            return;
+        }
         if !self.is_compressed() {
             // SAFETY: an ordinary input section has at least sh_size bytes,
             // and replacement buffers are created with that same size.
