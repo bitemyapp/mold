@@ -437,20 +437,12 @@ fn is_absrel<E: Arch>(r: &ElfRel<E>) -> bool {
     }
 }
 
-// Scan word-size absolute relocations (e.g. R_X86_64_64). This is
-// separated from scan_relocations() because only such relocations can
-// be promoted to dynamic relocations.
-pub fn scan_abs_relocations<E: Arch>(
-    ctx: &Context<E>,
-    id: OutputSectionId,
-) -> (Vec<AbsRel>, Vec<u64>) {
+/// Collects the word-size absolute relocations (e.g. R_X86_64_64) of an
+/// output section. They are separate from scan_relocations() because only
+/// such relocations can be promoted to dynamic relocations.
+pub fn collect_abs_relocations<E: Arch>(ctx: &Context<E>, id: OutputSectionId) -> Vec<AbsRel> {
     let osec = &ctx.output_sections[id.index()];
-
-    // Collect all word-size absolute relocations. Count them per member
-    // first so that they can be written to their final positions in
-    // parallel, without a per-member vector.
-    let mut abs_rels: Vec<AbsRel> = osec
-        .members
+    osec.members
         .par_iter()
         .flat_map_iter(|&m| {
             let isec = ctx.input_section(m);
@@ -481,25 +473,48 @@ pub fn scan_abs_relocations<E: Arch>(
                     kind: AbsRelKind::None,
                 })
         })
-        .collect();
+        .collect()
+}
 
-    // We can sometimes avoid creating dynamic relocations in read-only
-    // sections by promoting symbols to canonical PLT or copy relocations.
-    let promote = !ctx.args.pic && osec.hdr.shdr.sh_flags.get() & SHF_WRITE as u64 == 0;
+/// Promotes the imported symbols that a read-only section refers to with
+/// absolute relocations to canonical PLT entries or copy relocations, which
+/// lets the section do without dynamic relocations. Every section is
+/// promoted before any relocation is classified, so the classification of a
+/// relocation against the same symbol elsewhere does not depend on the order
+/// in which sections are scanned.
+pub fn promote_abs_relocations<E: Arch>(
+    ctx: &Context<E>,
+    id: OutputSectionId,
+    abs_rels: &[AbsRel],
+) {
+    let osec = &ctx.output_sections[id.index()];
+    if ctx.args.pic || osec.hdr.shdr.sh_flags.get() & SHF_WRITE as u64 != 0 {
+        return;
+    }
+    abs_rels.par_chunks(DYNREL_SHARD_SIZE).for_each(|shard| {
+        for r in shard {
+            let sym = &ctx.symbols[r.sym];
+            if sym.is_imported() && !sym.is_absolute() {
+                sym.add_flags(NEEDS_CANONICAL);
+            }
+        }
+    });
+}
 
-    // Classify relocations and retain exact per-shard output counts. A
-    // single output section such as .data.rel.ro can account for most of
-    // an output's absolute relocations, so this runs in the same parallel
-    // shards as write_dynrels().
+/// Classifies the relocations and returns them with exact per-shard output
+/// counts. A single output section such as .data.rel.ro can account for most
+/// of an output's absolute relocations, so this runs in the same parallel
+/// shards as write_dynrels().
+pub fn classify_abs_relocations<E: Arch>(
+    ctx: &Context<E>,
+    mut abs_rels: Vec<AbsRel>,
+) -> (Vec<AbsRel>, Vec<u64>) {
     let counts: Vec<u64> = abs_rels
         .par_chunks_mut(DYNREL_SHARD_SIZE)
         .map(|shard| {
             let mut count = 0;
             for r in shard {
                 let sym = &ctx.symbols[r.sym];
-                if promote && sym.is_imported() && !sym.is_absolute() {
-                    sym.add_flags(NEEDS_CANONICAL);
-                }
                 r.kind = abs_rel_kind(ctx, sym);
 
                 let emit = matches!(r.kind, AbsRelKind::BaseRel | AbsRelKind::DynRel)
