@@ -536,8 +536,11 @@ where
 
             match rel.r_type() {
                 R_LARCH_32 => {
-                    debug_assert!(IS_64);
-                    write_ul32(loc, sa as u32);
+                    // On LoongArch32 this is R_ABS, which the output
+                    // section applies.
+                    if IS_64 {
+                        write_ul32(loc, sa as u32);
+                    }
                 }
                 R_LARCH_B16 => {
                     check_branch(pcrel as i64, -(1 << 17), 1 << 17);
