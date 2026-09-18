@@ -1058,15 +1058,8 @@ impl<E: Layout> ExactSizeIterator for RelocationIter<'_, E> {}
 //
 // This function converts a CREL relocation table to a regular one.
 fn decode_crel<E: Arch>(file: &dyn fmt::Display, data: &[u8]) -> Box<[ElfRel<E>]> {
-    let reader = CrelReader::<E>::new(file, data);
-    // Own a fixed-size array without value-initializing trivial elements
-    // that the caller is about to overwrite.
-    let mut rels = Box::<[ElfRel<E>]>::new_uninit_slice(reader.len());
-    for (i, rel) in reader.enumerate() {
-        rels[i].write(rel);
-    }
-    // SAFETY: CrelReader visits every index from zero to len once.
-    unsafe { rels.assume_init() }
+    // The reader's size hint is exact, so this allocates once.
+    CrelReader::<E>::new(file, data).collect()
 }
 
 impl<E: Arch> ObjectFile<E> {
@@ -1484,9 +1477,8 @@ impl<E: Arch> ObjectFile<E> {
     pub fn read_section_metadata(&mut self) {
         debug_assert!(!self.sections_parsed);
 
-        for i in 0..self.num_elf_sections {
-            // SAFETY: `i` comes from the section-header table's range.
-            let shdr = unsafe { self.base.shdrs.get_unchecked(i) };
+        let shdrs = self.base.shdrs;
+        for (i, shdr) in shdrs.iter().enumerate() {
             let (sh_type, sh_flags) = (shdr.sh_type.get(), shdr.sh_flags.get());
 
             if sh_flags & SHF_EXCLUDE as u64 != 0
@@ -1656,17 +1648,13 @@ impl<E: Arch> ObjectFile<E> {
         let nsections = self.num_elf_sections;
         let expected_reloc_type = if E::IS_RELA { SHT_RELA } else { SHT_REL };
         debug_assert!(self.comdat_discarded.is_empty() || self.comdat_discarded.len() == nsections);
-        for i in 0..nsections {
-            if !self.comdat_discarded.is_empty()
-                // SAFETY: a nonempty COMDAT bitmap has one entry per input
-                // section, and `i` is in that range.
-                && unsafe { *self.comdat_discarded.get_unchecked(i) }
-            {
+        let shdrs = self.base.shdrs;
+        for (i, shdr) in shdrs.iter().enumerate() {
+            // A nonempty COMDAT bitmap has one entry per input section.
+            if self.comdat_discarded.get(i).is_some_and(|&discarded| discarded) {
                 continue;
             }
 
-            // SAFETY: `i` comes from the file's section-header range.
-            let shdr = unsafe { self.base.shdrs.get_unchecked(i) };
             let (sh_type, flags) = (shdr.sh_type.get(), shdr.sh_flags.get());
             if flags & SHF_EXCLUDE as u64 != 0
                 && flags & SHF_ALLOC as u64 == 0
@@ -1852,9 +1840,7 @@ impl<E: Arch> ObjectFile<E> {
         }
 
         // Attach relocation sections to their target sections.
-        for i in 0..nsections {
-            // SAFETY: `i` comes from the file's section-header range.
-            let shdr = unsafe { self.base.shdrs.get_unchecked(i) };
+        for (i, shdr) in shdrs.iter().enumerate() {
             let sh_type = shdr.sh_type.get();
             if sh_type != expected_reloc_type && sh_type != SHT_CREL {
                 continue;
@@ -3520,9 +3506,6 @@ pub struct SymbolResolver<'a, E: Arch> {
     dsos: &'a FileList<SharedFile<E>>,
     default_version: u16,
 }
-
-// SymbolResolver's mutable symbol-table access is serialized by its editor.
-unsafe impl<E: Arch> Sync for SymbolResolver<'_, E> {}
 
 impl<'a, E: Arch> SymbolResolver<'a, E> {
     pub fn new(
