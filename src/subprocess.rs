@@ -2,7 +2,11 @@
 //! handling for disk-full errors, and the `-run` subcommand.
 
 #[cfg(not(windows))]
-use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd};
+use std::fs::File;
+#[cfg(not(windows))]
+use std::io::{Read, Write};
+#[cfg(not(windows))]
+use std::os::unix::io::{FromRawFd, OwnedFd};
 #[cfg(not(windows))]
 use std::sync::Mutex;
 
@@ -17,33 +21,39 @@ static PIPE_WRITER: Mutex<Option<OwnedFd>> = Mutex::new(None);
 #[cfg(not(windows))]
 pub fn fork_child() {
     let mut pipefd = [0i32; 2];
-    // Preserve pipe's descriptor inheritance across the LTO restart.
+    // The descriptors are inherited across the LTO restart, so the pipe is
+    // created without CLOEXEC.
     // SAFETY: pipe initializes both descriptors on success; each then has
     // exactly one owner in this process.
     let (reader, writer) = unsafe {
         if libc::pipe(pipefd.as_mut_ptr()) == -1 {
-            eprintln!("mold: pipe failed");
-            std::process::exit(1);
+            fatal!("pipe failed: {}", std::io::Error::last_os_error());
         }
         (OwnedFd::from_raw_fd(pipefd[0]), OwnedFd::from_raw_fd(pipefd[1]))
     };
     // SAFETY: this runs before the linker starts its worker threads. The
     // parent only waits for completion and exits; the child continues linking.
-    unsafe {
-        let pid = libc::fork();
-        if pid == -1 {
-            eprintln!("mold: fork failed");
-            std::process::exit(1);
+    let pid = unsafe { libc::fork() };
+    if pid == -1 {
+        fatal!("fork failed: {}", std::io::Error::last_os_error());
+    }
+    if pid > 0 {
+        // Parent
+        drop(writer);
+        if File::from(reader).read_exact(&mut [0u8; 1]).is_ok() {
+            // SAFETY: _exit has no preconditions.
+            unsafe { libc::_exit(0) };
         }
-        if pid > 0 {
-            // Parent
-            drop(writer);
-            let mut buf = [0u8; 1];
-            if libc::read(reader.as_raw_fd(), buf.as_mut_ptr() as *mut libc::c_void, 1) == 1 {
-                libc::_exit(0);
+        // The child exited without finishing the output. Report its status.
+        let mut status = 0;
+        // SAFETY: waitpid writes only the status word, and _exit and raise
+        // have no preconditions.
+        unsafe {
+            while libc::waitpid(pid, &mut status, 0) == -1 {
+                if std::io::Error::last_os_error().raw_os_error() != Some(libc::EINTR) {
+                    libc::_exit(1);
+                }
             }
-            let mut status = 0;
-            libc::waitpid(pid, &mut status, 0);
             if libc::WIFEXITED(status) {
                 libc::_exit(libc::WEXITSTATUS(status));
             }
@@ -67,11 +77,7 @@ pub fn notify_parent() {
     let Some(writer) = PIPE_WRITER.lock().unwrap().take() else {
         return;
     };
-    let buf = [1u8];
-    // SAFETY: writer owns a valid pipe write end.
-    unsafe {
-        libc::write(writer.as_raw_fd(), buf.as_ptr() as *const libc::c_void, 1);
-    }
+    let _ = File::from(writer).write_all(&[1]);
 }
 
 #[cfg(windows)]
@@ -121,9 +127,6 @@ extern "C" fn on_signal(
 
 #[cfg(not(windows))]
 pub fn install_signal_handler() {
-    // OneTBB 2021.9.0 (interface version 12090) installs its own signal
-    // handler. This binary does not link OneTBB, so no compatibility condition
-    // is needed.
     // SAFETY: installing a signal handler with the three-argument SA_SIGINFO
     // calling convention.
     unsafe {
@@ -146,7 +149,8 @@ pub fn process_run_subcommand(argv: &[std::ffi::OsString]) -> ! {
     if argv.len() < 3 {
         fatal!("-run: argument missing");
     }
-    let self_path = std::env::current_exe().expect("cannot get current executable path");
+    let self_path = std::env::current_exe()
+        .unwrap_or_else(|err| fatal!("cannot get current executable path: {err}"));
     let candidates = [
         // Look for mold-wrapper.so from the same directory as the executable is.
         self_path.parent().map(|p| p.join("mold-wrapper.so")),

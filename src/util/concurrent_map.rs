@@ -26,7 +26,7 @@ use std::alloc::{Layout, alloc_zeroed, dealloc};
 use std::cell::UnsafeCell;
 use std::mem::MaybeUninit;
 use std::ptr::{self, NonNull};
-use std::sync::atomic::{AtomicPtr, Ordering};
+use std::sync::atomic::{AtomicPtr, AtomicU32, Ordering};
 
 pub const NUM_SHARDS: usize = 64;
 
