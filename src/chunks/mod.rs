@@ -529,18 +529,6 @@ fn create_phdr<E: Arch>(ctx: &Context<E>) -> Vec<ElfPhdr<E>> {
         define(&mut vec, PT_GNU_PROPERTY, PF_R, &ctx.chunk_header(id).shdr);
     }
 
-    // Create a PT_RISCV_ATTRIBUTES
-    if let Some(osec) = &ctx.riscv_attributes
-        && osec.hdr.shdr.sh_size.get() != 0
-    {
-        define(&mut vec, PT_RISCV_ATTRIBUTES, PF_R, &osec.hdr.shdr);
-    }
-
-    // Create a PT_ARM_EDXIDX
-    if let Some(osec) = &ctx.arm_exidx {
-        define(&mut vec, PT_ARM_EXIDX, PF_R, &osec.hdr.shdr);
-    }
-
     // Add PT_GNU_STACK, which is a marker segment that doesn't really
     // contain any segments. It controls executable bit of stack area.
     let mut stack = ElfPhdr::<E>::default();
@@ -566,6 +554,18 @@ fn create_phdr<E: Arch>(ctx: &Context<E>) -> Vec<ElfPhdr<E>> {
                 vec.last_mut().unwrap().p_align_mut().set(1);
             }
         }
+    }
+
+    // Create a PT_ARM_EXIDX
+    if let Some(osec) = &ctx.arm_exidx {
+        define(&mut vec, PT_ARM_EXIDX, PF_R, &osec.hdr.shdr);
+    }
+
+    // Create a PT_RISCV_ATTRIBUTES
+    if let Some(osec) = &ctx.riscv_attributes
+        && osec.hdr.shdr.sh_size.get() != 0
+    {
+        define(&mut vec, PT_RISCV_ATTRIBUTES, PF_R, &osec.hdr.shdr);
     }
 
     // Create a PT_OPENBSD_RANDOMIZE
