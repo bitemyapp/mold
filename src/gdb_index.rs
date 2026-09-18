@@ -1089,6 +1089,24 @@ fn limited_parallel_for_mut_init<T: Send, S: Send>(
     });
 }
 
+/// The constant pool, shared by the parallel phases that fill it.
+#[derive(Clone, Copy)]
+struct PoolPtr(*mut u32);
+
+// SAFETY: the pool is written only at the disjoint offsets that the prefix
+// scan assigned to each entry, and each phase joins before the next reads
+// what it wrote.
+unsafe impl Send for PoolPtr {}
+unsafe impl Sync for PoolPtr {}
+
+impl PoolPtr {
+    // Closures capture the whole wrapper through this method rather than
+    // its raw-pointer field.
+    fn get(self) -> *mut u32 {
+        self.0
+    }
+}
+
 /// Build the name lookup table and the constant pool for .gdb_index. They
 /// depend on compilation-unit order but not on relocated address ranges, so
 /// they can be built in the background once .debug_info offsets are fixed.
@@ -1108,18 +1126,16 @@ pub fn build_tables(timer: Timer, mut data: GdbIndexData, workers: usize) -> Gdb
     let pool_size = (data.type_pool_size + data.name_pool_size) as usize;
     let table_size = symtab_size + pool_size;
     let table_words = table_size.div_ceil(4);
-    let mut tables = Box::<[u32]>::new_uninit_slice(table_words);
-    let table_addr = tables.as_mut_ptr() as usize;
+    // Zeroed storage is what empty hash-table slots and the padding at the
+    // end of the tables must hold anyway, and fresh pages cost nothing until
+    // they are written.
+    let mut tables = vec![0u32; table_words].into_boxed_slice();
 
     // `tables` contains the name hash table followed by the constant pool. The
     // constant pool contains all type vectors followed by all name strings.
     // Each occupied hash-table slot contains the constant-pool offsets of a
     // name and its type vector.
-    // SAFETY: table storage has at least symtab_size bytes. Initializing them
-    // before making the u32 slice avoids forming references to uninitialized
-    // integers.
-    unsafe { std::ptr::write_bytes(table_addr as *mut u8, 0, symtab_size) };
-    let ht = unsafe { std::slice::from_raw_parts_mut(table_addr as *mut u32, symtab_size / 4) };
+    let (ht, pool) = tables.split_at_mut(symtab_size / 4);
 
     // This probing sequence is part of the .gdb_index format. The table size
     // is a power of two, so an odd step visits every slot.
@@ -1135,7 +1151,7 @@ pub fn build_tables(timer: Timer, mut data: GdbIndexData, workers: usize) -> Gdb
         ht[i as usize * 2 + 1] = entry.type_vector_offset.to_le();
     }
 
-    let pool_addr = table_addr + symtab_size;
+    let pool = PoolPtr(pool.as_mut_ptr());
 
     // Each occurrence of a name contributes one value to its type vector. Each
     // occurrence was assigned a distinct slot while the names were interned, so
@@ -1148,10 +1164,9 @@ pub fn build_tables(timer: Timer, mut data: GdbIndexData, workers: usize) -> Gdb
             let offset = entry.type_vector_offset as usize + name.type_vector_idx as usize * 4;
             debug_assert!(offset + 4 <= data.type_pool_size as usize);
             let value = (name.kind as u32) << 24 | unit as u32;
-            // SAFETY: the pool starts on a u32 boundary, all offsets are
-            // multiples of four, and every occurrence reserved a distinct
-            // slot before this parallel phase.
-            unsafe { (pool_addr as *mut u32).add(offset / 4).write(value) };
+            // SAFETY: all offsets are multiples of four, and every occurrence
+            // reserved a distinct slot before this parallel phase.
+            unsafe { pool.get().add(offset / 4).write(value) };
         }
     };
     let num_cus = data.cus.len();
@@ -1168,7 +1183,7 @@ pub fn build_tables(timer: Timer, mut data: GdbIndexData, workers: usize) -> Gdb
         let entry_ref = *entry_ref;
         let entry = entry_ref.value(names);
         let count = entry.count.load(Ordering::Relaxed);
-        let words = (pool_addr as *mut u32).wrapping_add(entry.type_vector_offset as usize / 4);
+        let words = pool.get().wrapping_add(entry.type_vector_offset as usize / 4);
         // SAFETY: every occurrence filled its distinct value slot above;
         // writing the prefix completes this vector before a slice is made.
         unsafe { words.write(count) };
@@ -1184,7 +1199,7 @@ pub fn build_tables(timer: Timer, mut data: GdbIndexData, workers: usize) -> Gdb
             *word = word.to_le();
         }
         let key = entry_ref.key(names);
-        let name = (pool_addr as *mut u8).wrapping_add(entry.name_offset as usize);
+        let name = pool.get().cast::<u8>().wrapping_add(entry.name_offset as usize);
         // SAFETY: prefix-scan offsets assign this entry a distinct
         // key.len()+1 byte range in the name pool.
         unsafe {
@@ -1192,18 +1207,6 @@ pub fn build_tables(timer: Timer, mut data: GdbIndexData, workers: usize) -> Gdb
             name.add(key.len()).write(0);
         }
     });
-
-    // Box<[u32]> rounds the byte allocation up to a whole word; initialize only
-    // those padding bytes, which are not part of the serialized tables.
-    let padded_size = table_words * 4;
-    for i in table_size..padded_size {
-        // SAFETY: these are the allocation's final padding bytes and no worker
-        // remains active.
-        unsafe { (table_addr as *mut u8).add(i).write(0) };
-    }
-    // SAFETY: the hash table, every type vector, every name including its NUL,
-    // and the final allocation padding have all been initialized.
-    let tables = unsafe { tables.assume_init() };
 
     // The serialized tables contain everything needed from names and the map.
     // Release their storage here so reclamation remains part of this background
