@@ -255,10 +255,10 @@ pub struct Symbol {
     type_and_bind: u8,
 
     pub ver_idx: u16,
-    pub visibility: AtomicU8,
+    visibility: AtomicU8,
 
     // `flags` has NEEDS_ flags.
-    pub flags: AtomicU8,
+    flags: AtomicU8,
 
     // Index into SymbolTable's side array of auxiliary data, allocated on
     // demand for dynamic symbols.
@@ -510,18 +510,7 @@ impl Symbol {
     /// Records the lowest file priority while symbol resolution is clear.
     #[inline]
     pub(crate) fn record_comdat_owner(&self, priority: u32) {
-        let mut old = self.sym_idx.load(Ordering::Relaxed);
-        while priority < old {
-            match self.sym_idx.compare_exchange_weak(
-                old,
-                priority,
-                Ordering::Relaxed,
-                Ordering::Relaxed,
-            ) {
-                Ok(_) => break,
-                Err(actual) => old = actual,
-            }
-        }
+        self.sym_idx.fetch_min(priority, Ordering::Relaxed);
     }
 
     #[inline]
@@ -601,19 +590,9 @@ impl Symbol {
 
     #[inline]
     fn set_visibility_bits(&self, mask: u8, value: u8) {
-        let mut cur = self.visibility.load(Ordering::Relaxed);
-        loop {
-            let new = (cur & !mask) | (value & mask);
-            match self.visibility.compare_exchange_weak(
-                cur,
-                new,
-                Ordering::Relaxed,
-                Ordering::Relaxed,
-            ) {
-                Ok(_) => return,
-                Err(actual) => cur = actual,
-            }
-        }
+        let _ = self.visibility.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |cur| {
+            Some((cur & !mask) | (value & mask))
+        });
     }
 
     #[inline]
@@ -1323,7 +1302,7 @@ struct Pending<S> {
 
 /// The keys recorded by one task for interning, grouped by shard.
 #[derive(Debug)]
-pub struct Bins<S = (u32, u32)>(Vec<Vec<Pending<S>>>);
+pub struct Bins<S>(Vec<Vec<Pending<S>>>);
 
 impl<S> Default for Bins<S> {
     fn default() -> Self {
