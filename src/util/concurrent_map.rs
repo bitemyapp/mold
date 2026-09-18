@@ -9,7 +9,7 @@
 //! mergeable sections.
 //!
 //! We've implemented this ourselves because the performance of
-//! conrurent hash map is critical for our linker.
+//! concurrent hash map is critical for our linker.
 //!
 //! The map is an open-addressing table. Insertion is lock-free: a thread
 //! claims an empty bucket with a compare-and-swap on its key pointer,
@@ -35,6 +35,7 @@ pub const NUM_SHARDS: usize = 64;
 // a probe that visits MAX_RETRY distinct occupied slots aborts.
 const MIN_NBUCKETS: usize = 16384;
 const MAX_RETRY: usize = 256;
+const _: () = assert!(MIN_NBUCKETS / NUM_SHARDS >= MAX_RETRY);
 
 /// The key pointer of a bucket that a thread has claimed but not yet
 /// published: -1 marks the slot as claimed until its value has been
@@ -47,7 +48,9 @@ const CLAIMED: *mut u8 = usize::MAX as *mut u8;
 #[repr(C, align(32))]
 struct Entry<T> {
     key: AtomicPtr<u8>,
-    keylen: UnsafeCell<u32>,
+    // Published by the release store of `key` and read after the acquire
+    // load that observes it, so relaxed accesses suffice.
+    keylen: AtomicU32,
     value: UnsafeCell<MaybeUninit<T>>,
 }
 
@@ -210,7 +213,7 @@ impl<T> ConcurrentMap<T> {
                 // SAFETY: published keys remain live for the link.
                 unsafe { std::slice::from_raw_parts(ptr, len as usize) == key }
             },
-            || (key.len() as u32, init()),
+            || (u32::try_from(key.len()).expect("key length fits in 32 bits"), init()),
         )
     }
 
@@ -258,8 +261,7 @@ impl<T> ConcurrentMap<T> {
             // Avoid an atomic update when the slot is already occupied.
             let mut ptr = ent.key.load(Ordering::Acquire);
             if !ptr.is_null() && ptr != CLAIMED {
-                // SAFETY: a published pointer and length name a live key.
-                if equals(ptr, unsafe { *ent.keylen.get() }) {
+                if equals(ptr, ent.keylen.load(Ordering::Relaxed)) {
                     return (EntryId(idx as u32), self.value_at(idx), false);
                 }
                 continue;
@@ -273,13 +275,11 @@ impl<T> ConcurrentMap<T> {
                     Ordering::Acquire,
                 ) {
                     Ok(_) => {
+                        let (keylen, value) = initialize.take().expect("initialized once")();
                         // SAFETY: the claim gives this thread exclusive
                         // access to the bucket until the key is published.
-                        unsafe {
-                            let (keylen, value) = initialize.take().expect("initialized once")();
-                            (*ent.value.get()).write(value);
-                            *ent.keylen.get() = keylen;
-                        }
+                        unsafe { (*ent.value.get()).write(value) };
+                        ent.keylen.store(keylen, Ordering::Relaxed);
                         ent.key.store(key as *mut u8, Ordering::Release);
                         return (EntryId(idx as u32), self.value_at(idx), true);
                     }
@@ -292,8 +292,7 @@ impl<T> ConcurrentMap<T> {
                 std::hint::spin_loop();
                 ptr = ent.key.load(Ordering::Acquire);
             }
-            // SAFETY: the claiming thread published the pointer and length.
-            if equals(ptr, unsafe { *ent.keylen.get() }) {
+            if equals(ptr, ent.keylen.load(Ordering::Relaxed)) {
                 return (EntryId(idx as u32), self.value_at(idx), false);
             }
         }
@@ -370,7 +369,9 @@ impl<T> FrozenMap<T> {
         }
         // SAFETY: a published key is a live 'static slice whose length was
         // written before the key pointer.
-        Some(unsafe { std::slice::from_raw_parts(key, *ent.keylen.get() as usize) })
+        Some(unsafe {
+            std::slice::from_raw_parts(key, ent.keylen.load(Ordering::Relaxed) as usize)
+        })
     }
 
     /// Returns a published entry identified by an ID obtained from this map.
@@ -471,6 +472,9 @@ impl<T> MapEntryRef<T> {
         unsafe { (*self.entry(owner).value.get()).assume_init_ref() }
     }
 
+    /// Returns a pointer to the value for modification. Dereferencing it
+    /// requires that no other reference to the value is live, as with
+    /// `UnsafeCell::get`.
     pub(crate) fn value_mut_ptr(self, owner: &FrozenMap<T>) -> *mut T {
         self.entry(owner).value.get().cast()
     }
@@ -481,13 +485,11 @@ impl<T> MapEntryRef<T> {
         debug_assert!(!key.is_null() && key != CLAIMED);
         // SAFETY: this is a published key whose length was written before the
         // key pointer, and map keys remain live for the complete link.
-        unsafe { std::slice::from_raw_parts(key, *ent.keylen.get() as usize) }
+        unsafe { std::slice::from_raw_parts(key, ent.keylen.load(Ordering::Relaxed) as usize) }
     }
 
     pub(crate) fn key_len(self, owner: &FrozenMap<T>) -> usize {
-        // SAFETY: the entry is published, so its key length is initialized and
-        // immutable.
-        unsafe { *self.entry(owner).keylen.get() as usize }
+        self.entry(owner).keylen.load(Ordering::Relaxed) as usize
     }
 }
 
