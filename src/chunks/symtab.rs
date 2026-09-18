@@ -6,6 +6,7 @@ use crate::arch::{Arch, Family};
 use crate::chunks::{self, ChunkHeader, ChunkId, strtab};
 use crate::context::Context;
 use crate::elf::*;
+use crate::fatal;
 use crate::input_files::{SymtabBlock, SymtabEntries};
 use crate::input_sections::{InputSection, r_delta};
 use crate::symbol::{AddrFlags, OriginValue, Symbol};
@@ -313,8 +314,12 @@ pub fn to_output_esym<E: Arch>(ctx: &Context<E>, sym: &Symbol, st_name: u32) -> 
                     // Symbol in a mergeable section that was split into fragments
                     // but whose symbols were not attached to them, which is the
                     // case for non-SHF_ALLOC sections such as .debug_str
-                    let (frag, addend) =
-                        m.fragment(sym.esym(ctx).st_value().get()).expect("fragment");
+                    let Some((frag, addend)) = m.fragment(sym.esym(ctx).st_value().get()) else {
+                        fatal!(
+                            "{}: symbol {sym} is not in a fragment",
+                            ctx.input_section_display(section)
+                        );
+                    };
                     let msec = &ctx.merged_sections[m.parent.index()];
                     shndx = Some(msec.hdr.shndx);
                     esym.set_visibility(sym.visibility());

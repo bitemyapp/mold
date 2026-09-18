@@ -490,14 +490,14 @@ fn read_rnglist<E: Arch>(r: &mut Reader<E>, addrx: &[u8], mut base: u64) -> Vec<
             DW_RLE_startx_length => {
                 let (a, len) = (r.uleb(), r.uleb());
                 let start = addr_at(a);
-                vec.push((start, start + len));
+                vec.push((start, start.wrapping_add(len)));
             }
             DW_RLE_offset_pair => {
                 let (a, b) = (r.uleb(), r.uleb());
                 // If the base is 0, this address range is for an eliminated
                 // section. We only emit it if it's alive.
                 if base != 0 {
-                    vec.push((base + a, base + b));
+                    vec.push((base.wrapping_add(a), base.wrapping_add(b)));
                 }
             }
             DW_RLE_base_address => base = r.uint(E::WORD_SIZE),
@@ -788,7 +788,7 @@ fn read_pubnames<E: Arch>(file: &GdbInputFile, units: &mut FileUnits) {
             let (set_size, offset_size, field_offset) = if r.u32() == u32::MAX {
                 // Header of one GNU pubnames or pubtypes set in DWARF64 format.
                 let size = r.u64();
-                (size + 12, 8, pos as u64 + 14)
+                (size.saturating_add(12), 8, pos as u64 + 14)
             } else {
                 // Header of one GNU pubnames or pubtypes set in DWARF32 format.
                 r.pos = pos;
@@ -805,7 +805,7 @@ fn read_pubnames<E: Arch>(file: &GdbInputFile, units: &mut FileUnits) {
                     display_file(&file.filename, file.archive_name)
                 );
             };
-            let end = pos + set_size as usize;
+            let end = pos.saturating_add(set_size as usize);
             while r.pos < end {
                 if r.offset(offset_size) == 0 {
                     break;

@@ -918,7 +918,12 @@ where
                             isec.display(file)
                         );
                     }
-                    1u64 << r.r_addend()
+                    1u64.checked_shl(r.r_addend() as u32).unwrap_or_else(|| {
+                        fatal!(
+                            "{}: R_LARCH_ALIGN: invalid alignment requirement: {i}",
+                            isec.display(file)
+                        )
+                    })
                 } else {
                     let alignment = r.r_addend() as u64 + 4;
                     if !alignment.is_power_of_two() {
