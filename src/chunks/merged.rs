@@ -16,6 +16,7 @@ use rayon::prelude::*;
 
 use crate::arch::Arch;
 use crate::chunks::ChunkHeader;
+use crate::chunks::output_section::OutputBuffer;
 use crate::cmdline::Args;
 use crate::context::Context;
 use crate::elf::*;
@@ -630,24 +631,18 @@ pub fn write_to<E: Arch>(ctx: &Context<E>, id: MergedSectionId, buf: &mut [u8]) 
     }
 
     // Copy strings
-    let output = buf.as_mut_ptr() as usize;
-    let output_len = buf.len();
+    let output = OutputBuffer::new(buf);
     msec.shards.par_iter().for_each(|shard| {
         for &entry in &shard.fragments {
             let frag = frags.get(entry);
             if frag.is_alive() {
                 let key = frags.key(entry);
                 let offset = frag.offset() as usize;
-                debug_assert!(offset + key.len() <= output_len);
                 // SAFETY: layout assigns every live fragment a distinct range
                 // within `buf`; each entry occurs in exactly one shard, so the
                 // parallel copies do not overlap.
                 unsafe {
-                    std::ptr::copy_nonoverlapping(
-                        key.as_ptr(),
-                        (output as *mut u8).add(offset),
-                        key.len(),
-                    );
+                    output.with_slice(offset..offset + key.len(), |dst| dst.copy_from_slice(key));
                 }
             }
         }
