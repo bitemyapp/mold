@@ -232,7 +232,7 @@ fn mapping_symbol_kind(name: &[u8]) -> Option<MappingKind> {
 //
 // This function is called after we copy the input section contents to the
 // output file. We rewrite instructions in the output buffer in place.
-pub fn swap_code_bytes<End: Endian>(ctx: &Context<Arm32Target<End>>, buf: &mut [u8])
+fn swap_code_bytes<End: Endian>(ctx: &Context<Arm32Target<End>>, buf: &mut [u8])
 where
     Arm32Target<End>: Layout<Endian = End>,
 {

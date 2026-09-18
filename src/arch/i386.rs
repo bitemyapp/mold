@@ -43,7 +43,7 @@ use crate::elf::*;
 use crate::input_sections::NonAllocReloc;
 use crate::input_sections::{InputSection, check_tlsle, scan_absrel, scan_pcrel, scan_tlsdesc};
 use crate::symbol::{NEEDS_GOT, NEEDS_GOTTP, NEEDS_PLT, NEEDS_TLSGD, Symbol};
-use crate::util::endian::{LittleEndian, Ul32};
+use crate::util::endian::{LittleEndian, Ul32, write_ul16 as write_u16, write_ul32 as write_u32};
 use crate::{error, fatal};
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -217,10 +217,8 @@ impl Arch for I386 {
                 R_386_GOT32X => {
                     // We always want to relax GOT32X even if --no-relax is given
                     // because static PIE doesn't work without it.
-                    if sym.is_pcrel_linktime_const(ctx) && relax_got32x(loc_before(isec, rel)) != 0
+                    if !sym.is_pcrel_linktime_const(ctx) || relax_got32x(loc_before(isec, rel)) == 0
                     {
-                        // Do nothing
-                    } else {
                         sym.add_flags(NEEDS_GOT);
                     }
                 }
@@ -543,14 +541,6 @@ impl Arch for I386 {
             _ => 0,
         }
     }
-}
-
-fn write_u16(buf: &mut [u8], v: u16) {
-    buf[..2].copy_from_slice(&v.to_le_bytes());
-}
-
-fn write_u32(buf: &mut [u8], v: u32) {
-    buf[..4].copy_from_slice(&v.to_le_bytes());
 }
 
 /// The bytes of a section preceding a relocated location.
