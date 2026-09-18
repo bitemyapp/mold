@@ -250,7 +250,8 @@ impl<'a, E: Arch> Reader<'a, E> {
     }
 
     fn take(&mut self, n: usize) -> &'a [u8] {
-        let Some(bytes) = self.data.get(self.pos..self.pos + n) else {
+        let Some(bytes) = self.pos.checked_add(n).and_then(|end| self.data.get(self.pos..end))
+        else {
             fatal!("--gdb-index: truncated debug info");
         };
         self.pos += n;
@@ -338,8 +339,12 @@ fn parse_unit_header<E: Arch>(data: &[u8], pos: usize) -> UnitHeader {
         fatal!("--gdb-index: DWARF version {version} is not supported");
     }
 
+    let Some(size) = unit_length.checked_add(initial_length_size).filter(|_| unit_length != 0)
+    else {
+        fatal!("--gdb-index: corrupted unit header");
+    };
     let mut hdr = UnitHeader {
-        size: unit_length + initial_length_size,
+        size,
         header_size: 0,
         abbrev_offset: 0,
         type_die_offset: 0,
@@ -503,7 +508,7 @@ fn read_rnglist<E: Arch>(r: &mut Reader<E>, addrx: &[u8], mut base: u64) -> Vec<
             DW_RLE_start_length => {
                 let a = r.uint(E::WORD_SIZE);
                 let len = r.uleb();
-                vec.push((a, a + len));
+                vec.push((a, a.wrapping_add(len)));
             }
             kind => fatal!("--gdb-index: unknown .debug_rnglists entry kind: {kind:#x}"),
         }
@@ -543,7 +548,12 @@ fn read_address_ranges<E: Arch>(secs: &RangeSections, cu: &Compunit) -> Vec<(u64
             DW_AT_low_pc => low_pc = Some((form, val)),
             DW_AT_high_pc => high_pc = Some((form, val)),
             DW_AT_rnglists_base => rnglists_base = Some(val),
-            DW_AT_addr_base => addrx = &secs.addr[val as usize..],
+            DW_AT_addr_base => {
+                addrx = secs
+                    .addr
+                    .get(val as usize..)
+                    .unwrap_or_else(|| fatal!("--gdb-index: DW_AT_addr_base is out of range"));
+            }
             DW_AT_ranges => ranges = Some((form, val)),
             _ => {}
         }
@@ -734,7 +744,7 @@ fn read_debug_units<E: Arch>(file: &GdbInputFile, file_idx: u32) -> FileUnits {
                 }),
                 kind => fatal!("--gdb-index: unknown unit type: {kind:#x}"),
             }
-            pos += unit.size as usize;
+            pos = pos.saturating_add(unit.size as usize);
         }
     }
     units
