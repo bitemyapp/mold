@@ -248,7 +248,7 @@ where
                 let kind = mapping_symbol_kind(sym.name())?;
                 let sec = sym.input_section()?;
                 let isec = ctx.input_section(sec);
-                (isec.is_alive() && isec.sh_flags & SHF_EXECINSTR as u64 != 0)
+                (isec.is_alive() && !isec.is_nobits() && isec.sh_flags & SHF_EXECINSTR as u64 != 0)
                     .then_some((sec, sym.value, kind))
             })
             .collect();
@@ -263,14 +263,21 @@ where
                 MappingKind::Data => continue,
             };
             let isec = ctx.input_section(sec);
+            // Mapping symbols come from the input symbol table, so their
+            // ranges are clamped to the section.
             let end = match marks.get(i + 1) {
                 Some(&(next, offset, _)) if next == sec => offset,
                 _ => isec.sh_size,
-            };
+            }
+            .min(isec.sh_size);
+            if start >= end {
+                continue;
+            }
             let osec = ctx.output_section(isec.output_section.expect("output section"));
             let base = osec.hdr.shdr.sh_offset.get() + isec.offset();
-            // SAFETY: live input sections occupy disjoint output ranges, and
-            // this file's mapping-symbol ranges are processed sequentially.
+            // SAFETY: live input sections occupy disjoint output ranges, the
+            // range lies within this section, and this file's mapping-symbol
+            // ranges are processed sequentially.
             unsafe {
                 output.with_slice((base + start) as usize..(base + end) as usize, |buf| {
                     for insn in buf.chunks_exact_mut(width) {
