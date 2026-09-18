@@ -289,7 +289,7 @@ impl Arch for I386 {
             let got = u64::from(ctx.got.hdr.shdr.sh_addr.get());
             let g = || sym.got_addr(ctx).wrapping_sub(got);
 
-            let check = |val: i64, lo: i64, hi: i64| isec.check_range(ctx, rel_idx, val, lo, hi);
+            let check = |val: i64, lo: i64, hi: i64| isec.check_range(ctx, &rel, val, lo, hi);
 
             match rel.r_type() {
                 R_386_8 => {
@@ -460,7 +460,7 @@ impl Arch for I386 {
     fn apply_reloc_nonalloc(ctx: &Context<Self>, isec: &InputSection<I386>, buf: &mut [u8]) {
         let mut fragment_cache = crate::input_sections::FragmentLookup::default();
         let file = &ctx.objs[isec.file.index()];
-        for (i, rel) in isec.relocations(ctx).enumerate() {
+        for rel in isec.relocations(ctx) {
             let Some(NonAllocReloc { sym, s, a, frag }) =
                 isec.resolve_nonalloc(ctx, file, &rel, &mut fragment_cache)
             else {
@@ -469,7 +469,7 @@ impl Arch for I386 {
             let off = rel.r_offset() as usize;
             let got = u64::from(ctx.got.hdr.shdr.sh_addr.get());
 
-            let check = |val: i64, lo: i64, hi: i64| isec.check_range(ctx, i, val, lo, hi);
+            let check = |val: i64, lo: i64, hi: i64| isec.check_range(ctx, &rel, val, lo, hi);
 
             match rel.r_type() {
                 R_386_8 => {

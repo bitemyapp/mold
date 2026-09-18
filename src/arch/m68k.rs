@@ -168,7 +168,7 @@ impl Arch for M68k {
         let file = &ctx.objs[isec.file.index()];
         let got = u64::from(ctx.got.hdr.shdr.sh_addr.get());
 
-        for (i, rel) in rels.iter().enumerate() {
+        for rel in rels {
             if rel.r_type() == R_NONE {
                 continue;
             }
@@ -183,7 +183,7 @@ impl Arch for M68k {
             let p = isec.addr(ctx) + rel.r_offset();
             let g = || sym.got_addr(ctx).wrapping_sub(got);
             let sa = s.wrapping_add(a);
-            let check = |val: i64, lo: i64, hi: i64| isec.check_range(ctx, i, val, lo, hi);
+            let check = |val: i64, lo: i64, hi: i64| isec.check_range(ctx, rel, val, lo, hi);
 
             // The narrower fields come in unsigned and signed flavors.
             let write32 = |buf: &mut [u8], val: u64| write_ub32(&mut buf[off..], val as u32);
