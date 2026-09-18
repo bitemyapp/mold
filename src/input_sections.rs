@@ -558,7 +558,7 @@ impl<E: Arch> InputSection<E> {
             return;
         }
 
-        let hdr_size = std::mem::size_of::<ElfChdr<E>>();
+        let hdr_size = ElfChdr::<E>::size();
         if input_size < hdr_size {
             fatal!("{file}:({name}): corrupted compressed section");
         }
