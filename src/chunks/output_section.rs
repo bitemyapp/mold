@@ -15,7 +15,6 @@ use crate::input_sections::{InputSectionId, r_delta};
 use crate::symbol::{AddrFlags, NEEDS_CANONICAL, SymbolId};
 use crate::thunks::Thunk;
 use crate::util::align_to;
-use crate::util::endian::Endian;
 use crate::{error, warn};
 
 /// How a word-size absolute relocation is resolved.
@@ -66,8 +65,9 @@ pub(crate) struct OutputBuffer<'a> {
     marker: PhantomData<&'a mut [u8]>,
 }
 
-// SAFETY: Parallel loops use the pointer only for ranges that the ELF layout
-// proves disjoint, just as their C++ counterparts do.
+// SAFETY: every concurrent `with_slice` or `write_word` call receives a range
+// that the output layout proves disjoint from the ranges of all other live
+// calls, so no two threads ever access the same bytes.
 unsafe impl Sync for OutputBuffer<'_> {}
 
 impl<'a> OutputBuffer<'a> {
@@ -100,16 +100,17 @@ impl<'a> OutputBuffer<'a> {
     /// # Safety
     /// No other live access may overlap the word at `offset`.
     unsafe fn write_word<E: Arch>(&self, offset: u64, value: u64) {
-        // SAFETY: The caller guarantees that the word is within the output
-        // section and exclusively owned by this relocation.
-        debug_assert!(offset as usize + E::WORD_SIZE <= self.len);
-        let ptr = unsafe { self.ptr.add(offset as usize) };
-        let slot = unsafe { std::slice::from_raw_parts_mut(ptr, E::WORD_SIZE) };
-        if E::IS_64 {
-            E::Endian::write_u64(slot, value);
-        } else {
-            E::Endian::write_u32(slot, value as u32);
-        }
+        // The offset derives from an input file, so the bounds check stays
+        // in release builds.
+        let start = usize::try_from(offset).ok();
+        let end = start.and_then(|start| start.checked_add(E::WORD_SIZE));
+        let (Some(start), Some(end)) = (start, end) else {
+            panic!("relocated word at offset {offset:#x} is outside the output");
+        };
+        assert!(end <= self.len, "relocated word at offset {offset:#x} is outside the output");
+        // SAFETY: the range is in bounds, and the caller guarantees that no
+        // other live access overlaps it.
+        unsafe { self.with_slice(start..end, |slot| E::Word::new(value).write(slot)) }
     }
 }
 
@@ -454,13 +455,31 @@ pub fn scan_abs_relocations<E: Arch>(
         .flat_map_iter(|&m| {
             let isec = ctx.input_section(m);
             let file = &ctx.objs[isec.file.index()];
-            isec.rels(file).iter().filter(|r| is_absrel::<E>(r)).map(move |r| AbsRel {
-                isec: m,
-                offset: r.r_offset(),
-                sym: file.base.symbols[r.r_sym() as usize],
-                addend: isec.rel_addend(r),
-                kind: AbsRelKind::None,
-            })
+            isec.rels(file)
+                .iter()
+                .filter(|r| is_absrel::<E>(r))
+                .filter(move |r| {
+                    // copy_buf() trusts this offset when it writes the
+                    // relocated word, so reject the ones a corrupt file
+                    // may carry.
+                    let end = r.r_offset().checked_add(E::WORD_SIZE as u64);
+                    let in_range = end.is_some_and(|end| end <= isec.sh_size);
+                    if !in_range {
+                        error!(
+                            "{}: relocation at offset 0x{:x} is out of range",
+                            ctx.input_section_display(m),
+                            r.r_offset()
+                        );
+                    }
+                    in_range
+                })
+                .map(move |r| AbsRel {
+                    isec: m,
+                    offset: r.r_offset(),
+                    sym: file.base.symbols[r.r_sym() as usize],
+                    addend: isec.rel_addend(r),
+                    kind: AbsRelKind::None,
+                })
         })
         .collect();
 
