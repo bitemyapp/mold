@@ -11,7 +11,7 @@ use std::marker::PhantomData;
 use std::mem::MaybeUninit;
 use std::ops::{Index, IndexMut};
 use std::path::Path;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{OnceLock, RwLock};
 
 use rayon::prelude::*;
@@ -598,7 +598,9 @@ pub struct ComdatGroupRef {
     pub sect_idx: u32,
 
     // The high bit records ownership; symbol IDs occupy the remaining bits.
-    signature_and_owner: u32,
+    // An exceptional signature's ID is stored while the file is shared, so
+    // the word is atomic; every access is relaxed.
+    signature_and_owner: AtomicU32,
 }
 
 impl ComdatGroupRef {
@@ -606,34 +608,35 @@ impl ComdatGroupRef {
 
     fn new(sect_idx: u32, signature: SymbolId) -> ComdatGroupRef {
         assert!(signature.0 < Self::IS_OWNER);
-        ComdatGroupRef { sect_idx, signature_and_owner: signature.0 }
+        ComdatGroupRef { sect_idx, signature_and_owner: AtomicU32::new(signature.0) }
     }
 
     #[inline]
     pub fn signature(&self) -> SymbolId {
-        SymbolId(self.signature_and_owner & !Self::IS_OWNER)
+        SymbolId(self.signature_and_owner.load(Ordering::Relaxed) & !Self::IS_OWNER)
     }
 
     #[inline]
     pub fn is_owner(&self) -> bool {
-        self.signature_and_owner & Self::IS_OWNER != 0
+        self.signature_and_owner.load(Ordering::Relaxed) & Self::IS_OWNER != 0
     }
 
     #[inline]
     pub fn set_owner(&mut self, is_owner: bool) {
+        let word = self.signature_and_owner.get_mut();
         if is_owner {
-            self.signature_and_owner |= Self::IS_OWNER;
+            *word |= Self::IS_OWNER;
         } else {
-            self.signature_and_owner &= !Self::IS_OWNER;
+            *word &= !Self::IS_OWNER;
         }
     }
 
     /// Returns the word that receives an exceptional signature while COMDAT
     /// metadata is gathered. Ownership has not been selected at that point.
     #[inline]
-    pub(crate) fn signature_word_mut(&mut self) -> &mut u32 {
+    pub(crate) fn signature_word(&self) -> &AtomicU32 {
         debug_assert!(!self.is_owner());
-        &mut self.signature_and_owner
+        &self.signature_and_owner
     }
 }
 

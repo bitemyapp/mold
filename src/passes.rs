@@ -4,8 +4,7 @@ use crate::util::worker_local::WorkerLocal;
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write as _;
-use std::ptr::NonNull;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Mutex, RwLock};
 
 use bstr::BStr;
@@ -459,40 +458,17 @@ fn resolve_skip_dso_symbols_pass<E: Arch>(ctx: &mut Context<E>) {
     });
 }
 
-/// An exceptional COMDAT signature whose Symbol slot is filled by gathering.
-/// The owning ObjectFile and its group vector stay in place through the
-/// gather, just as they do for the files' ordinary SymbolSlots.
-struct PendingComdatOwner {
-    group: NonNull<ComdatGroupRef>,
+/// An exceptional COMDAT signature whose symbol is interned by gathering.
+struct PendingComdatOwner<'a> {
+    group: &'a ComdatGroupRef,
     priority: u32,
     is_lto_output: bool,
 }
 
-// SAFETY: every pending record names a distinct group, and it is consumed only
-// after gathering has stopped writing the group's signature slot.
-unsafe impl Send for PendingComdatOwner {}
-
-/// A packed COMDAT signature word that receives the interned SymbolId before
-/// ownership is selected.
-#[derive(Clone, Copy)]
-struct ComdatSymbolSlot(NonNull<u32>);
-
-// SAFETY: each exceptional COMDAT signature has one pending slot, and one
-// symbol-map shard writes it before the groups are examined again.
-unsafe impl Send for ComdatSymbolSlot {}
-unsafe impl Sync for ComdatSymbolSlot {}
-
-impl ComdatSymbolSlot {
-    fn new(group: &mut ComdatGroupRef) -> ComdatSymbolSlot {
-        ComdatSymbolSlot(NonNull::from(group.signature_word_mut()))
-    }
-
-    fn assign(self, id: SymbolId) {
-        assert!(id.0 < 1 << 31);
-        // SAFETY: guaranteed by the construction and synchronization rules
-        // documented on ComdatSymbolSlot.
-        unsafe { self.0.write(id.0) };
-    }
+/// Stores an interned signature in its group's packed signature word.
+fn assign_comdat_signature(word: &AtomicU32, id: SymbolId) {
+    assert!(id.0 < 1 << 31);
+    word.store(id.0, Ordering::Relaxed);
 }
 
 // Select COMDAT groups and construct input sections. If LTO will run,
@@ -508,73 +484,67 @@ fn parse_input_sections<E: Arch>(ctx: &mut Context<E>) {
     // Ordinary global signatures already refer to the files' symbols; record
     // the other signatures for interning while each file's metadata is hot.
     let t = ctx.timer("read_section_metadata");
-    let (bins, pending): (Vec<Bins<ComdatSymbolSlot>>, Vec<Vec<PendingComdatOwner>>) = {
+    {
         let Context { objs, symbols, .. } = ctx;
-        // Reuse each worker's buffers across jobs, locking once per file.
-        let work = WorkerLocal::new(|| (Bins::new(), Vec::new()));
         objs.par_iter_mut().for_each(|file| {
-            let mut local = work.get();
-            let (bins, pending) = &mut *local;
-            if file.base.is_reachable() {
-                if file.base.mf.is_some() && !file.is_lto_input() && !file.sections_parsed {
-                    file.read_section_metadata();
-                }
-                let priority = file.base.priority;
-                let is_lto_output = file.origin == ObjectOrigin::LtoOutput;
-                for group in &mut file.comdat_groups {
-                    if group.signature() != SymbolId::DISCARDED_COMDAT {
-                        let sym = &symbols[group.signature()];
-                        // A group claimed by an IR file belongs to the LTO result, so only an
-                        // LTO-generated file may own it. LLVM keeps claimed groups in its output;
-                        // GCC emits their contents without a group, so no file owns them.
-                        if !sym.comdat_claimed_by_ir() || is_lto_output {
-                            sym.record_comdat_owner(priority);
-                        }
+            if !file.base.is_reachable() {
+                return;
+            }
+            if file.base.mf.is_some() && !file.is_lto_input() && !file.sections_parsed {
+                file.read_section_metadata();
+            }
+            let priority = file.base.priority;
+            let is_lto_output = file.origin == ObjectOrigin::LtoOutput;
+            for group in &file.comdat_groups {
+                if group.signature() != SymbolId::DISCARDED_COMDAT {
+                    let sym = &symbols[group.signature()];
+                    // A group claimed by an IR file belongs to the LTO result, so only an
+                    // LTO-generated file may own it. LLVM keeps claimed groups in its output;
+                    // GCC emits their contents without a group, so no file owns them.
+                    if !sym.comdat_claimed_by_ir() || is_lto_output {
+                        sym.record_comdat_owner(priority);
                     }
-                }
-                let signatures = &file.pending_comdat_signatures;
-                let groups = &mut file.comdat_groups;
-                for signature in signatures {
-                    let group = &mut groups[signature.group_idx as usize];
-                    bins.record(
-                        signature.key,
-                        signature.name_len as usize,
-                        ComdatSymbolSlot::new(group),
-                    );
-                    pending.push(PendingComdatOwner {
-                        group: NonNull::from(group),
-                        priority,
-                        is_lto_output,
-                    });
                 }
             }
         });
-        work.into_values().unzip()
-    };
-
+    }
     drop(t);
 
-    // Intern the signature symbols all at once, as for the files' own symbols.
+    // Intern the exceptional signatures all at once, as for the files' own
+    // symbols, and record their owners, which the traversal above could not
+    // see. The files stay shared throughout, so the signature words are
+    // written through their atomics.
     let t = ctx.timer("comdat_signatures");
     {
         let Context { objs, symbols, .. } = ctx;
-        symbols.gather(bins, 0, ComdatSymbolSlot::assign);
+        let objs: &FileList<ObjectFile<E>> = objs;
+        // Reuse each worker's buffers across jobs, locking once per file.
+        let work = WorkerLocal::new(|| (Bins::new(), Vec::new()));
+        objs.par_iter().filter(|file| file.base.is_reachable()).for_each(|file| {
+            let mut local = work.get();
+            let (bins, pending): &mut (Bins<&AtomicU32>, Vec<PendingComdatOwner<'_>>) = &mut local;
+            for signature in &file.pending_comdat_signatures {
+                let group = &file.comdat_groups[signature.group_idx as usize];
+                bins.record(signature.key, signature.name_len as usize, group.signature_word());
+                pending.push(PendingComdatOwner {
+                    group,
+                    priority: file.base.priority,
+                    is_lto_output: file.origin == ObjectOrigin::LtoOutput,
+                });
+            }
+        });
+        let (bins, pending): (Vec<_>, Vec<_>) = work.into_values().unzip();
+        symbols.gather(bins, 0, assign_comdat_signature);
 
-        // Signatures just interned could not participate in the metadata
-        // traversal above. Record them now.
         let symbols: &crate::symbol::SymbolTable = symbols;
-        pending.into_par_iter().flatten().for_each(|pending| {
-            // SAFETY: each pending pointer came from a distinct group that
-            // stays in place, and symbol gathering has joined before this
-            // parallel traversal begins.
-            let group = unsafe { &*pending.group.as_ptr() };
-            let sym = &symbols[group.signature()];
+        pending.into_par_iter().flatten().for_each(|pending: PendingComdatOwner<'_>| {
+            let sym = &symbols[pending.group.signature()];
             if !sym.comdat_claimed_by_ir() || pending.is_lto_output {
                 sym.record_comdat_owner(pending.priority);
             }
         });
-        objs.par_iter_mut().for_each(|file| file.pending_comdat_signatures = Vec::new());
     }
+    ctx.objs.par_iter_mut().for_each(|file| file.pending_comdat_signatures = Vec::new());
 
     // IR objects name their COMDAT groups per symbol.
     for file in &mut ctx.objs {
