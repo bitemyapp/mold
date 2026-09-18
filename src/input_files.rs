@@ -791,16 +791,7 @@ pub struct ObjectFile<E: Arch> {
 
 impl<E: Arch> fmt::Display for ObjectFile<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.archive_name.as_os_str().is_empty() {
-            write!(f, "{}", path_clean(&self.base.filename))
-        } else {
-            write!(
-                f,
-                "{}({})",
-                crate::util::clean_path(self.archive_name).display(),
-                self.base.filename
-            )
-        }
+        display_file(&self.base.filename, self.archive_name).fmt(f)
     }
 }
 
@@ -1144,13 +1135,6 @@ impl<E: Arch> ObjectFile<E> {
         self.shndx_from(idx, st_shndx)
     }
 
-    /// Like [`Self::shndx_at`] for code specialized for the target.
-    #[inline]
-    pub fn shndx_at_in(&self, idx: usize) -> usize {
-        let st_shndx = self.base.elf_syms[idx].st_shndx().get();
-        self.shndx_from(idx, st_shndx)
-    }
-
     /// Resolves an already-read symbol's section index.
     #[inline]
     pub(crate) fn shndx_from(&self, idx: usize, st_shndx: u16) -> usize {
@@ -1241,8 +1225,8 @@ impl<E: Arch> ObjectFile<E> {
             return &mut [];
         };
         let index = relsec_idx as usize;
-        if self.decoded_crel.get(index).is_some_and(Option::is_some) {
-            return self.decoded_crel[index].as_mut().unwrap().as_mut_slice();
+        if let Some(Some(rels)) = self.decoded_crel.get_mut(index) {
+            return rels.as_mut_slice();
         }
 
         let base = &self.base;
@@ -1313,14 +1297,7 @@ impl<E: Arch> ObjectFile<E> {
     /// Whether the symbol at `idx` is defined in a discarded COMDAT group.
     #[inline]
     pub fn is_discarded_comdat(&self, idx: usize) -> bool {
-        if self.comdat_discarded.is_empty() {
-            return false;
-        }
-        let st_shndx = self.base.elf_syms[idx].st_shndx().get() as u32;
-        if st_shndx == SHN_ABS || st_shndx == SHN_COMMON {
-            return false;
-        }
-        self.comdat_discarded[self.shndx_from(idx, st_shndx as u16)]
+        self.is_discarded_comdat_sym(idx, &self.base.elf_syms[idx])
     }
 
     #[inline]
@@ -2137,7 +2114,7 @@ impl<E: Arch> ObjectFile<E> {
         // in `fdes` vector.
         let section_of = |file: &ObjectFile<E>, fde: &FdeRecord| -> usize {
             let rel = fde.rels(file)[0];
-            file.shndx_at_in(rel.r_sym() as usize)
+            file.shndx_at(rel.r_sym() as usize)
         };
         let mut fdes = std::mem::take(&mut self.fdes);
         fdes.sort_by_cached_key(|fde| {
@@ -2408,8 +2385,7 @@ impl<E: Arch> ObjectFile<E> {
                 (relsec_idx, isec.contents())
             };
 
-            // Rewrite a relocation table in one visit, as the in-memory
-            // ElfRel array is updated in place in C++. Ordinary records live
+            // Rewrite a relocation table in one visit. Ordinary records live
             // in the private input mapping; decoded CREL records remain in
             // the side table.
             let relsec_idx = relsec_idx as usize;
@@ -2684,7 +2660,7 @@ impl<E: Arch> ObjectFile<E> {
             isec.uncompress(&name, section_name, input_size);
             let contents = isec.contents();
             let mut p = first_size;
-            while contents.len() - p >= 12 {
+            while p + 12 <= contents.len() {
                 if E::Endian::read_u32(&contents[p..]) != 0xffff_ffff {
                     return true;
                 }
