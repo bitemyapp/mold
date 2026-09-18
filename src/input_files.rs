@@ -32,7 +32,7 @@ use crate::symbol::{
 };
 use crate::util::endian::Endian;
 use crate::util::perf::Counter;
-use crate::util::{self, align_to, bits, cstr_at, leak_bytes, path_clean, read_uleb};
+use crate::util::{self, align_to, bits, cstr_at, leak_bytes, path_clean, try_read_uleb};
 use crate::{error, fatal, out, warn};
 use bstr::BStr;
 
@@ -895,6 +895,7 @@ fn is_known_section_type<E: Arch>(shdr: &ElfShdr<E>) -> bool {
 // Decode CREL entries one at a time so callers can either stream them or
 // materialize them in an array.
 struct CrelReader<'a, E: Layout> {
+    file: &'a dyn fmt::Display,
     data: &'a [u8],
     remaining: usize,
     scale: u32,
@@ -907,13 +908,16 @@ struct CrelReader<'a, E: Layout> {
 }
 
 impl<'a, E: Arch> CrelReader<'a, E> {
-    fn new(file: &dyn fmt::Display, mut data: &'a [u8]) -> Self {
-        let hdr = read_uleb(&mut data);
+    fn new(file: &'a dyn fmt::Display, mut data: &'a [u8]) -> Self {
+        let Some(hdr) = try_read_uleb(&mut data) else {
+            fatal!("{file}: truncated CREL section");
+        };
         let is_rela = hdr & 0b100 != 0;
         if is_rela && !E::IS_RELA {
             fatal!("{file}: CREL with addends is not supported for {}", E::NAME);
         }
         CrelReader {
+            file,
             data,
             remaining: (hdr >> 3) as usize,
             scale: (hdr & 0b11) as u32,
@@ -945,6 +949,23 @@ fn crel_count(data: &[u8]) -> Option<usize> {
     None
 }
 
+impl<E: Layout> CrelReader<'_, E> {
+    #[cold]
+    fn truncated(&self) -> ! {
+        fatal!("{}: truncated CREL section", self.file);
+    }
+
+    #[inline(always)]
+    fn uleb(&mut self) -> u64 {
+        try_read_uleb(&mut self.data).unwrap_or_else(|| self.truncated())
+    }
+
+    #[inline(always)]
+    fn sleb(&mut self) -> i64 {
+        util::try_read_sleb(&mut self.data).unwrap_or_else(|| self.truncated())
+    }
+}
+
 impl<E: Layout> Iterator for CrelReader<'_, E> {
     type Item = ElfRel<E>;
 
@@ -952,27 +973,29 @@ impl<E: Layout> Iterator for CrelReader<'_, E> {
     fn next(&mut self) -> Option<ElfRel<E>> {
         self.remaining = self.remaining.checked_sub(1)?;
         let nflags = if self.is_rela { 3 } else { 2 };
-        let flags = self.data[0];
-        self.data = &self.data[1..];
+        let Some((&flags, rest)) = self.data.split_first() else {
+            self.truncated();
+        };
+        self.data = rest;
 
         // The first byte combines flags with the low bits of an offset
         // delta. A large delta continues as ULEB128 and can wrap the
         // current offset.
         let delta = if flags & 0x80 != 0 {
-            (read_uleb(&mut self.data) << (7 - nflags)) | ((flags & 0x7f) as u64 >> nflags)
+            (self.uleb() << (7 - nflags)) | ((flags & 0x7f) as u64 >> nflags)
         } else {
             (flags >> nflags) as u64
         };
         self.offset = self.offset.wrapping_add(delta << self.scale);
 
         if flags & 1 != 0 {
-            self.r_sym += util::read_sleb(&mut self.data);
+            self.r_sym += self.sleb();
         }
         if flags & 2 != 0 {
-            self.r_type += util::read_sleb(&mut self.data);
+            self.r_type += self.sleb();
         }
         if self.is_rela && flags & 4 != 0 {
-            self.addend = self.addend.wrapping_add(util::read_sleb(&mut self.data));
+            self.addend = self.addend.wrapping_add(self.sleb());
         }
 
         Some(ElfRel::<E>::new(self.offset, self.r_type as u32, self.r_sym as u32, self.addend))
@@ -1577,6 +1600,9 @@ impl<E: Arch> ObjectFile<E> {
         let mut data = &data[1..];
 
         while !data.is_empty() {
+            if data.len() < 4 {
+                fatal!("{self}: corrupted .riscv.attributes section");
+            }
             let sz = E::Endian::read_u32(data) as usize;
             if data.len() < sz || sz < 4 {
                 fatal!("{self}: corrupted .riscv.attributes section");
@@ -1588,16 +1614,21 @@ impl<E: Arch> ObjectFile<E> {
                 continue;
             };
             p = rest;
-            if p.first() != Some(&(ELF_TAG_FILE as u8)) {
+            if p.first() != Some(&(ELF_TAG_FILE as u8)) || p.len() < 5 {
                 fatal!("{self}: corrupted .riscv.attributes section");
             }
             p = &p[5..]; // skip the tag and the sub-sub-section size
 
             while !p.is_empty() {
-                let tag = read_uleb(&mut p) as u32;
+                let mut uleb = || {
+                    try_read_uleb(&mut p)
+                        .unwrap_or_else(|| fatal!("{self}: corrupted .riscv.attributes section"))
+                };
+                let tag = uleb() as u32;
                 match tag {
                     ELF_TAG_RISCV_STACK_ALIGN => {
-                        self.riscv_attributes.stack_align = Some(read_uleb(&mut p))
+                        let align = uleb();
+                        self.riscv_attributes.stack_align = Some(align);
                     }
                     ELF_TAG_RISCV_ARCH => {
                         let end = p.iter().position(|&b| b == 0).unwrap_or(p.len());
@@ -2891,22 +2922,27 @@ fn parse_fde_encoding<E: Arch>(file: &ObjectFile<E>, isec: &InputSection<E>, dat
             );
         }
 
-        // ULEB128 and SLEB128 values have the same framing, so read_uleb
-        // skips both.
-        read_uleb(&mut rest); // code alignment factor
-        read_uleb(&mut rest); // data alignment factor
+        // ULEB128 and SLEB128 values have the same framing, so a ULEB128
+        // read skips both.
+        let skip_leb = |rest: &mut &[u8]| {
+            try_read_uleb(rest).unwrap_or_else(|| truncated_cie(file, isec));
+        };
+        skip_leb(&mut rest); // code alignment factor
+        skip_leb(&mut rest); // data alignment factor
         if version == 1 {
-            rest = &rest[1..]; // return address register
+            // return address register
+            rest = rest.get(1..).unwrap_or_else(|| truncated_cie(file, isec));
         } else {
-            read_uleb(&mut rest);
+            skip_leb(&mut rest);
         }
-        read_uleb(&mut rest); // augmentation data length
+        skip_leb(&mut rest); // augmentation data length
 
         // Walk the augmentation data, looking for 'R', whose data byte
         // specifies how FDE pointers are encoded.
         for &c in &aug[1..] {
+            let first = rest.first().copied().unwrap_or_else(|| truncated_cie(file, isec));
             match c {
-                b'R' => break 'enc rest[0],
+                b'R' => break 'enc first,
                 b'L' => {
                     // A byte specifying the LSDA pointer encoding
                     rest = &rest[1..];
@@ -2914,7 +2950,9 @@ fn parse_fde_encoding<E: Arch>(file: &ObjectFile<E>, isec: &InputSection<E>, dat
                 b'P' => {
                     // A byte specifying the personality function pointer encoding,
                     // followed by the pointer itself
-                    rest = &rest[ptr_size(rest[0]) as usize + 1..];
+                    rest = rest
+                        .get(ptr_size(first) as usize + 1..)
+                        .unwrap_or_else(|| truncated_cie(file, isec));
                 }
                 b'S' | b'B' | b'G' => {
                     // 'S' (signal frame), 'B' (AArch64 pointer authentication) and
@@ -2938,22 +2976,29 @@ fn parse_fde_encoding<E: Arch>(file: &ObjectFile<E>, isec: &InputSection<E>, dat
     ptr_size(enc)
 }
 
+#[cold]
+fn truncated_cie<E: Arch>(file: &ObjectFile<E>, isec: &InputSection<E>) -> ! {
+    fatal!("{}: truncated CIE", isec.display(file));
+}
+
 // Returns the byte length of the SFrame FRE block at offset `offset`:
 // a 5-byte attribute header followed by a series of frame row
 // entries, each of which is a start address (whose width is given by
 // the attribute header), a one-byte info field and a number of
 // variable-width data words encoded in that info field.
-fn sframe_fre_block_size<E: Arch>(data: &[u8], offset: usize) -> usize {
-    let num_fres = E::Endian::read_u16(&data[offset..]) as usize;
-    let addr_size = 1usize << bits(data[offset + 2] as u64, 3, 0);
+// Returns `None` if the block runs past the end of the section.
+fn sframe_fre_block_size<E: Arch>(data: &[u8], offset: usize) -> Option<usize> {
+    let hdr = data.get(offset..offset.checked_add(5)?)?;
+    let num_fres = E::Endian::read_u16(hdr) as usize;
+    let addr_size = 1usize << bits(hdr[2] as u64, 3, 0);
     let mut p = offset + 5;
     for _ in 0..num_fres {
-        let info = data[p + addr_size] as u64;
+        let info = *data.get(p.checked_add(addr_size)?)? as u64;
         let num_words = bits(info, 4, 1) as usize;
         let word_size = 1usize << bits(info, 6, 5);
-        p += addr_size + 1 + num_words * word_size;
+        p = p.checked_add(addr_size + 1 + num_words * word_size)?;
     }
-    p - offset
+    Some(p - offset)
 }
 
 // SharedFile represents an input .so file.
