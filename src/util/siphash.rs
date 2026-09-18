@@ -19,7 +19,7 @@ impl<const C_ROUNDS: usize, const D_ROUNDS: usize, const OUTLEN: usize>
 {
     #[inline]
     pub(crate) fn new(key: &[u8; 16]) -> Self {
-        assert!(OUTLEN == 64 || OUTLEN == 128);
+        const { assert!(OUTLEN == 64 || OUTLEN == 128) };
 
         let k0 = u64::from_le_bytes(key[..8].try_into().unwrap());
         let k1 = u64::from_le_bytes(key[8..].try_into().unwrap());
@@ -60,10 +60,11 @@ impl<const C_ROUNDS: usize, const D_ROUNDS: usize, const OUTLEN: usize>
             self.buflen = 0;
         }
 
-        while msg.len() >= 8 {
-            self.compress(u64::from_le_bytes(msg[..8].try_into().unwrap()));
-            msg = &msg[8..];
+        let mut words = msg.chunks_exact(8);
+        for word in &mut words {
+            self.compress(u64::from_le_bytes(word.try_into().unwrap()));
         }
+        let msg = words.remainder();
 
         self.buf[..msg.len()].copy_from_slice(msg);
         self.buflen = msg.len() as u8;
