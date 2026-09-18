@@ -88,9 +88,8 @@ pub struct MergedSection<E: Layout> {
 }
 
 /// A direct reference to one input member while allocated merged sections
-/// are resolved in parallel. C++ mold keeps the same pointers in
-/// `MergedSection::members`; Rust keeps the durable section references there
-/// and borrows the stable objects directly for this phase.
+/// are resolved in parallel. `MergedSection::members` keeps the durable
+/// section references; this borrows the stable objects for the phase.
 pub struct ResolveMember<'a> {
     pub merge_info: &'a mut MergeInfo,
     pub data: &'static [u8],
@@ -145,7 +144,7 @@ impl<E: Arch> BackgroundMerge<E> {
             })
             .collect();
         let mut members: Vec<Vec<BackgroundMember>> =
-            (0..sections.len()).map(|_| Vec::new()).collect();
+            std::iter::repeat_with(Vec::new).take(sections.len()).collect();
         for file in &ctx.objs {
             for info in file.merge_infos() {
                 if sections[info.parent.index()].resolved {
@@ -355,8 +354,7 @@ impl<E: Layout> MergedSection<E> {
 
 /// Splits the members into fragments and deduplicates them.
 pub fn resolve<E: Arch>(ctx: &mut Context<E>, id: MergedSectionId) {
-    let timers = ctx.timers.clone();
-    let Context { objs, merged_sections, args, .. } = ctx;
+    let Context { objs, merged_sections, args, timers, .. } = ctx;
     let msec = &merged_sections[id.index()];
     let gc_sections = args.gc_sections;
 
@@ -438,7 +436,7 @@ pub fn resolve<E: Arch>(ctx: &mut Context<E>, id: MergedSectionId) {
     }
 }
 
-/// Resolves selected merged sections concurrently, as C++ mold does.
+/// Resolves selected merged sections concurrently.
 /// Direct member borrows let different parent sections mutate disjoint
 /// `MergeInfo`s even when they belong to the same object file.
 pub fn resolve_sections<E: Arch>(

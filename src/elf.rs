@@ -35,7 +35,7 @@ pub trait Layout: Copy + Default + Send + Sync + 'static {
     type Rel: RelRecord<Endian = Self::Endian>;
     const IS_64: bool = std::mem::size_of::<Self::Word>() == 8;
     const IS_RELA: bool = <Self::Rel as RelRecord>::IS_RELA;
-    const WORD_SIZE: usize = if Self::IS_64 { 8 } else { 4 };
+    const WORD_SIZE: usize = std::mem::size_of::<Self::Word>();
 }
 
 /// A record stored in its target-dependent file representation.
@@ -336,17 +336,17 @@ pub trait SymbolRecord: FileRecord + fmt::Debug {
 
     #[inline]
     fn is_undef(&self) -> bool {
-        self.st_shndx().get() as u32 == SHN_UNDEF
+        u32::from(self.st_shndx().get()) == SHN_UNDEF
     }
 
     #[inline]
     fn is_abs(&self) -> bool {
-        self.st_shndx().get() as u32 == SHN_ABS
+        u32::from(self.st_shndx().get()) == SHN_ABS
     }
 
     #[inline]
     fn is_common(&self) -> bool {
-        self.st_shndx().get() as u32 == SHN_COMMON
+        u32::from(self.st_shndx().get()) == SHN_COMMON
     }
 
     #[inline]
@@ -836,7 +836,7 @@ pub(crate) fn rels_from_bytes_mut<E: Layout>(data: &mut [u8]) -> &mut [E::Rel] {
 
 /// An entry of the `.dynamic` section.
 #[repr(C)]
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ElfDyn<E: Layout> {
     pub d_tag: E::Word,
     pub d_val: E::Word,

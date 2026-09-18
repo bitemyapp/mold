@@ -87,9 +87,12 @@ pub fn copy_buf<E: Arch>(ctx: &Context<E>, buf: &mut [u8]) {
     // Write a bloom filter
     let bloom_off = GnuHashSection::<E>::HEADER_SIZE as usize;
     let word_bits = word * 8;
+    let hashes: Vec<u32> = syms
+        .iter()
+        .map(|id| ctx.symbols[id.unwrap()].aux(&ctx.symbols).unwrap().djb_hash)
+        .collect();
     let mut indices = Vec::with_capacity(syms.len());
-    for id in syms {
-        let h = ctx.symbols[id.unwrap()].aux(&ctx.symbols).unwrap().djb_hash;
+    for &h in &hashes {
         indices.push(h % gh.num_buckets);
         let idx = (h as usize / word_bits) % gh.num_bloom as usize;
         let bits = (1u64 << (h as usize % word_bits))
@@ -113,11 +116,10 @@ pub fn copy_buf<E: Arch>(ctx: &Context<E>, buf: &mut [u8]) {
 
     // Write a hash table
     let table_off = buckets_off + gh.num_buckets as usize * 4;
-    for (i, &id) in syms.iter().enumerate() {
+    for (i, &h) in hashes.iter().enumerate() {
         // The last entry in a chain must be terminated with an entry with
         // least-significant bit 1.
-        let h = ctx.symbols[id.unwrap()].aux(&ctx.symbols).unwrap().djb_hash;
-        let last = i + 1 == syms.len() || indices[i] != indices[i + 1];
+        let last = i + 1 == hashes.len() || indices[i] != indices[i + 1];
         E::Endian::write_u32(&mut buf[table_off + i * 4..], if last { h | 1 } else { h & !1 });
     }
 }
