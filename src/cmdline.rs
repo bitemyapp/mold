@@ -1388,7 +1388,10 @@ pub fn parse_args(target: &TargetTraits, raw_cmdline: &[Cow<'_, OsStr>]) -> Pars
         } else if read_arg!("y", true) || read_arg!("trace-symbol", true) {
             a.trace_symbol.push(raw_arg.as_encoded_bytes().to_vec());
         } else if read_arg!("filler") {
-            a.filler = Some(parse_hex("filler", arg) as u8);
+            a.filler =
+                Some(u8::try_from(parse_hex("filler", arg)).unwrap_or_else(|_| {
+                    fatal!("option -filler: value does not fit in a byte: {arg}")
+                }));
         } else if read_arg!("L", true) || read_arg!("library-path", true) {
             a.library_paths.push(PathBuf::from(raw_arg));
         } else if read_arg!("sysroot", true) {

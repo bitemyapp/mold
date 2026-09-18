@@ -830,7 +830,12 @@ where
                     // We need to guarantee that the NOP sequence is valid after byte
                     // removal (e.g. we can't remove the first 2 bytes of a 4-byte NOP).
                     // For the sake of simplicity, we always rewrite the entire NOP sequence.
-                    let padding = (rel.r_addend() - removed) as usize;
+                    let Ok(padding) = usize::try_from(rel.r_addend().wrapping_sub(removed)) else {
+                        fatal!(
+                            "{}: R_RISCV_ALIGN: invalid alignment requirement",
+                            isec.display(&ctx.objs[isec.file.index()])
+                        );
+                    };
                     debug_assert_eq!(padding & 1, 0);
                     let mut k = 0;
                     while k + 4 <= padding {

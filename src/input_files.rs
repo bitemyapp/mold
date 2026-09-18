@@ -1651,7 +1651,8 @@ impl<E: Arch> ObjectFile<E> {
                         p = &p[(end + 1).min(p.len())..];
                     }
                     ELF_TAG_RISCV_UNALIGNED_ACCESS => {
-                        self.riscv_attributes.unaligned_access = read_uleb(&mut p) != 0
+                        let value = uleb();
+                        self.riscv_attributes.unaligned_access = value != 0;
                     }
                     _ => {}
                 }
