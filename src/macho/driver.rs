@@ -65,7 +65,10 @@ fn host_target() -> &'static str {
 /// actually for.
 pub fn link<E: Arch>(cmdline: &[String]) -> Result<i32, String> {
     let cmdline = cmdline::expand_response_files(cmdline);
-    let args = cmdline::parse_args(&cmdline);
+    let mut args = cmdline::parse_args(&cmdline);
+    // ld-prime ad-hoc signs arm64 output and leaves x86-64 unsigned
+    // (Rosetta and Intel Macs run unsigned code).
+    args.adhoc_codesign.get_or_insert(E::CPUTYPE == crate::macho::format::CPU_TYPE_ARM64);
 
     if let Some(arch) = &args.arch
         && arch != E::NAME
