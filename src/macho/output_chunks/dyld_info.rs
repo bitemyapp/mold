@@ -186,17 +186,6 @@ pub fn build_rebase_info<E: Arch>(ctx: &Context<E>) -> Vec<u8> {
         }
     }
 
-    // __thread_ptrs slots hold descriptor addresses, which need
-    // sliding.
-    {
-        let addr = ctx.thread_ptrs.hdr.addr;
-        for (i, &id) in ctx.thread_ptrs.symbols.iter().enumerate() {
-            if !ctx.symbols[id].is_imported() {
-                locs.push(addr + i as u64 * 8);
-            }
-        }
-    }
-
     // Synthesized selector reference slots hold pointers into
     // __objc_methname (a reused input slot has its own relocation).
     for i in 0..ctx.objc_stubs.symbols.len() + ctx.objc_stubs.extra_selrefs.len() {
@@ -337,17 +326,6 @@ pub fn build_bind_info<E: Arch>(ctx: &Context<E>) -> Vec<u8> {
         for (i, &id) in ctx.got.got_syms.iter().enumerate() {
             if ctx.symbols[id].is_imported() {
                 binds.push((got_addr + i as u64 * 8, id, 0));
-            }
-        }
-    }
-
-    // __thread_ptrs slots for thread-locals imported from dylibs: dyld
-    // writes the foreign TLV descriptor's address.
-    {
-        let addr = ctx.thread_ptrs.hdr.addr;
-        for (i, &id) in ctx.thread_ptrs.symbols.iter().enumerate() {
-            if ctx.symbols[id].is_imported() {
-                binds.push((addr + i as u64 * 8, id, 0));
             }
         }
     }

@@ -301,8 +301,8 @@ impl Arch for X86_64 {
                     write32(loc, val as u32);
                 }
                 // A local thread-local's TLV load relaxes just like a
-                // GOT load: the movq of the __thread_ptrs slot becomes
-                // a leaq of the __thread_vars descriptor itself.
+                // GOT load: the movq of the descriptor's GOT slot
+                // becomes a leaq of the __thread_vars descriptor itself.
                 X86_64_RELOC_TLV if relaxed_got_load => {
                     debug_assert!(r.size == 4);
                     let val = s.wrapping_add_signed(a).wrapping_sub(p + 4);
@@ -310,7 +310,7 @@ impl Arch for X86_64 {
                 }
                 X86_64_RELOC_TLV => {
                     debug_assert!(r.size == 4);
-                    let t = ctx.sym_tlv_ptr_addr(ctx.reloc_target_sym(obj, r).unwrap());
+                    let t = ctx.sym_got_addr(ctx.reloc_target_sym(obj, r).unwrap());
                     let val = t.wrapping_add_signed(a).wrapping_sub(p + 4);
                     write32(loc, val as u32);
                 }

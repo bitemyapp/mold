@@ -1,5 +1,5 @@
 //! The synthetic pointer and stub sections: __stubs, __stub_helper,
-//! __la_symbol_ptr, __got and __thread_ptrs. mold-rust's got.rs holds
+//! __la_symbol_ptr and __got. mold-rust's got.rs holds
 //! their ELF counterparts (.plt, .plt.got, .got.plt, .got).
 
 use crate::macho::arch::Arch;
@@ -144,42 +144,6 @@ pub fn copy_buf<E: Arch>(ctx: &Context<E>, buf: &mut [u8]) {
     for (i, &id) in ctx.got.got_syms.iter().enumerate() {
         if !ctx.symbols[id].is_imported() {
             buf[i * 8..i * 8 + 8].copy_from_slice(&ctx.sym_addr(id).to_le_bytes());
-        }
-    }
-}
-
-/// __DATA,__thread_ptrs: pointers to thread-local variable
-/// descriptors, what a TLVP-relocated instruction sequence loads from.
-#[derive(Debug)]
-pub struct ThreadPtrsSection {
-    pub hdr: ChunkHeader,
-    /// Thread-local symbols with a __thread_ptrs slot, in slot order.
-    pub symbols: Vec<SymbolId>,
-}
-
-impl Default for ThreadPtrsSection {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl ThreadPtrsSection {
-    pub fn new() -> ThreadPtrsSection {
-        let mut hdr = ChunkHeader::new("__DATA", "__thread_ptrs");
-        hdr.flags = S_THREAD_LOCAL_VARIABLE_POINTERS;
-        hdr.p2align = 3;
-        ThreadPtrsSection { hdr, symbols: Vec::new() }
-    }
-}
-
-pub mod thread_ptrs {
-    use super::*;
-
-    pub fn copy_buf<E: Arch>(ctx: &Context<E>, buf: &mut [u8]) {
-        for (i, &id) in ctx.thread_ptrs.symbols.iter().enumerate() {
-            if !ctx.symbols[id].is_imported() {
-                buf[i * 8..i * 8 + 8].copy_from_slice(&ctx.sym_addr(id).to_le_bytes());
-            }
         }
     }
 }
