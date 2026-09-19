@@ -199,6 +199,23 @@ impl MappedFile {
         })
     }
 
+    /// Wraps bytes that live for the rest of the process, such as a slice of
+    /// a fat file or a synthesized input, as a file of their own.
+    pub(crate) fn from_static(
+        name: PathBuf,
+        data: &'static [u8],
+        parent: Option<&'static MappedFile>,
+    ) -> &'static MappedFile {
+        util::leak(MappedFile {
+            name,
+            data: NonNull::from(data),
+            given_fullpath: true,
+            parent,
+            thin_parent: None,
+            is_dependency: AtomicBool::new(true),
+        })
+    }
+
     pub fn size(&self) -> usize {
         self.data.len()
     }
