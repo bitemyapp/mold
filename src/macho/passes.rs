@@ -1113,17 +1113,21 @@ pub fn convert_common_symbols<E: Arch>(ctx: &mut Context<E>) {
     let internal = ctx.internal_obj.expect("internal object not created yet") as u32;
     // Where the __common section sorts: with the first object that
     // claims a common symbol still unresolved by a definition.
-    ctx.common_first_obj = ctx.objs.iter().position(|obj| {
-        obj.is_alive
-            && obj.nlists.iter().zip(&obj.symbols).any(|(nlist, &id)| {
-                !nlist.is_stab()
-                    && nlist.is_extern()
-                    && nlist.n_type() == N_UNDF
-                    && nlist.is_common()
-                    && ctx.symbols[id].is_common()
-                    && !ctx.symbols[id].is_defined()
-            })
-    }).map(|i| i as u32);
+    ctx.common_first_obj = ctx
+        .objs
+        .iter()
+        .position(|obj| {
+            obj.is_alive
+                && obj.nlists.iter().zip(&obj.symbols).any(|(nlist, &id)| {
+                    !nlist.is_stab()
+                        && nlist.is_extern()
+                        && nlist.n_type() == N_UNDF
+                        && nlist.is_common()
+                        && ctx.symbols[id].is_common()
+                        && !ctx.symbols[id].is_defined()
+                })
+        })
+        .map(|i| i as u32);
     for i in 0..ctx.symbols.syms.len() {
         let sym = &ctx.symbols[i];
         if !sym.is_common() || sym.is_defined() {
@@ -4954,8 +4958,7 @@ pub fn create_output_symtab<E: Arch>(
         ctx.isecs
             .par_iter()
             .filter(|isec| {
-                isec.is_alive()
-                    && isec.replacement == crate::macho::input_sections::NO_REPLACEMENT
+                isec.is_alive() && isec.replacement == crate::macho::input_sections::NO_REPLACEMENT
             })
             .for_each(|isec| {
                 for rel in crate::macho::input_files::isec_relocs_of(&ctx.objs, isec) {
@@ -5073,7 +5076,13 @@ pub fn create_output_symtab<E: Arch>(
                 Some(i as u32),
             ),
             (_, None) => (
-                NList { n_strx: 0, n_type: N_ABS | N_PEXT, n_sect: 0, n_desc: 0, n_value: sym.value },
+                NList {
+                    n_strx: 0,
+                    n_type: N_ABS | N_PEXT,
+                    n_sect: 0,
+                    n_desc: 0,
+                    n_value: sym.value,
+                },
                 None,
             ),
         };
