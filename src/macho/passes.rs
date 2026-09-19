@@ -1626,6 +1626,33 @@ pub fn hide_all_exports<E: Arch>(ctx: &mut Context<E>) {
 /// same replacement mechanism literal merging and ICF use, so
 /// section-target relocations into a loser resolve into the winning
 /// copy. Only same-shape losers are folded: the defining symbol must
+/// -exported_symbols_list / -unexported_symbols_list: a definition the
+/// lists leave unexported becomes a private external, so the symbol
+/// table shows it as a local ("was a private external") the way ld64
+/// does - _main and __mh_execute_header included when the list omits
+/// them. The export trie applies the same lists itself.
+pub fn apply_export_lists<E: Arch>(ctx: &mut Context<E>) {
+    if ctx.args.relocatable
+        || (ctx.args.exported_symbols.is_none() && ctx.args.unexported_symbols.is_empty())
+    {
+        return;
+    }
+    use rayon::prelude::*;
+    let exported = ctx.args.exported_symbols.clone();
+    let unexported = ctx.args.unexported_symbols.clone();
+    ctx.symbols.syms.par_iter_mut().for_each(|sym| {
+        if !matches!(sym.file(), Some(FileId::Obj(_))) || !sym.is_extern() {
+            return;
+        }
+        let name = sym.name();
+        let hidden = exported.as_ref().is_some_and(|list| !list.iter().any(|p| p == name))
+            || unexported.iter().any(|p| p == name);
+        if hidden {
+            sym.set_is_private_extern(true);
+        }
+    });
+}
+
 /// sit at the same offset in both, and the subsections must be the
 /// same size, or differ only by trailing zero padding (Swift's
 /// __swift5_typeref strings come with or without a pad byte from
@@ -4875,7 +4902,11 @@ pub fn create_output_symtab<E: Arch>(
             .map(|i| {
                 let sym = &ctx.symbols[i];
                 if matches!(sym.file(), Some(FileId::Dylib(_))) {
-                    return Class::Undef;
+                    return if live_ref[i].load(std::sync::atomic::Ordering::Relaxed) {
+                        Class::Undef
+                    } else {
+                        Class::No
+                    };
                 }
                 if sym.is_extern()
                     && sym.is_private_extern()
@@ -4907,13 +4938,87 @@ pub fn create_output_symtab<E: Arch>(
         let sym = &ctx.symbols[i];
         let isec = ctx.resolve_isec(sym.input_section().unwrap() as usize);
         names.push(sym.name());
-        let ent = NList {
-            n_strx: 0,
-            n_type: N_SECT | N_PEXT,
-            n_sect: ctx.isec_n_sect(&ctx.isecs[isec]),
-            n_desc: 0,
-            n_value: 0,
+        let ent = match (sym.file(), sym.input_section()) {
+            (_, Some(isec)) => {
+                let isec = ctx.resolve_isec(isec as usize);
+                (
+                    NList {
+                        n_strx: 0,
+                        n_type: N_SECT | N_PEXT,
+                        n_sect: ctx.isec_n_sect(&ctx.isecs[isec]),
+                        n_desc: 0,
+                        n_value: 0,
+                    },
+                    Some(i as u32),
+                )
+            }
+            // A demoted __mh_execute_header (an export list that omits
+            // it) sits in the first section, the mach header.
+            (Some(FileId::Obj(o)), None) if ctx.is_internal(o as usize) => (
+                NList { n_strx: 0, n_type: N_SECT | N_PEXT, n_sect: 1, n_desc: 0, n_value: 0 },
+                Some(i as u32),
+            ),
+            (_, None) => (
+                NList { n_strx: 0, n_type: N_ABS | N_PEXT, n_sect: 0, n_desc: 0, n_value: sym.value },
+                None,
+            ),
         };
+    // An import is listed only while live code or data refers to it:
+    // after -dead_strip, ld-prime drops the imports only stripped
+    // functions used. A reference is a relocation from a live
+    // subsection or a stub or GOT slot (unwind personalities, the
+    // selector stubs' _objc_msgSend and dyld_stub_binder have slots).
+    let live_ref: Vec<std::sync::atomic::AtomicBool> =
+        (0..ctx.symbols.syms.len()).map(|_| std::sync::atomic::AtomicBool::new(false)).collect();
+    {
+        use rayon::prelude::*;
+        use std::sync::atomic::Ordering;
+        ctx.isecs
+            .par_iter()
+            .filter(|isec| {
+                isec.is_alive()
+                    && isec.replacement == crate::macho::input_sections::NO_REPLACEMENT
+            })
+            .for_each(|isec| {
+                for rel in crate::macho::input_files::isec_relocs_of(&ctx.objs, isec) {
+                    if let Some(id) = ctx.reloc_target_sym(isec.file as usize, rel) {
+                        live_ref[id as usize].store(true, Ordering::Relaxed);
+                    }
+                }
+            });
+        let slots = ctx
+            .stubs
+            .symbols
+            .iter()
+            .chain(&ctx.got.got_syms)
+            .copied()
+            .chain(ctx.objc_stubs.msgsend_sym)
+            .chain(ctx.stub_helper.dyld_stub_binder);
+        for id in slots {
+            live_ref[id as usize].store(true, Ordering::Relaxed);
+        }
+        // The pointer fields of synthesized records (merged category
+        // lists, the class registrations) refer to symbols too.
+        for blob in &ctx.data_blobs {
+            for field in &blob.fields {
+                if let DataField::Ptr(ObjcRef::Sym(id, _)) = field {
+                    live_ref[*id as usize].store(true, Ordering::Relaxed);
+                }
+            }
+        }
+        // -u names an import the program must keep whether or not
+        // anything refers to it, and an -alias of an import re-exports
+        // it by name (the N_INDR entry points at the import's).
+        for name in &ctx.args.forced_undefined {
+            if let Some(id) = ctx.symbols.get(name) {
+                live_ref[id as usize].store(true, Ordering::Relaxed);
+            }
+        }
+        for &(_, target) in &ctx.indirect_aliases {
+            live_ref[target as usize].store(true, Ordering::Relaxed);
+        }
+    }
+
         data.entries.push((ent, Some(i as u32)));
     }
     data.nlocal = data.entries.len() as u32;
@@ -4933,6 +5038,9 @@ pub fn create_output_symtab<E: Arch>(
             // sits in the first section: the mach header.
             (Some(FileId::Obj(o)), None) if ctx.is_internal(o as usize) => {
                 (N_SECT | N_EXT, 1, REFERENCED_DYNAMICALLY)
+                // A private external in a live object: a definition in
+                // a live subsection, or an absolute one (N_ABS), which
+                // ld64 keeps as a local too.
             }
             (_, None) => (N_ABS | N_EXT, 0, 0),
         };
