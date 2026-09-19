@@ -391,7 +391,9 @@ fn replace_file_link(source: &Path, destination: &Path) -> io::Result<()> {
     }
 }
 
-fn prepare_work_dir(mold: &Path) -> io::Result<PathBuf> {
+/// Lays out the work directory. The ELF tests need mold-wrapper.so next
+/// to the linker for `mold -run`; the Mach-O tests do not.
+fn prepare_work_dir(mold: &Path, need_wrapper: bool) -> io::Result<PathBuf> {
     let mold = mold.canonicalize()?;
     let profile_dir = mold.parent().ok_or_else(|| {
         io::Error::new(
@@ -400,7 +402,7 @@ fn prepare_work_dir(mold: &Path) -> io::Result<PathBuf> {
         )
     })?;
     let wrapper = profile_dir.join("mold-wrapper.so");
-    if !wrapper.is_file() {
+    if need_wrapper && !wrapper.is_file() {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
             format!("{} does not exist", wrapper.display()),
@@ -414,7 +416,9 @@ fn prepare_work_dir(mold: &Path) -> io::Result<PathBuf> {
     fs::create_dir_all(&work_dir)?;
     replace_file_link(&mold, &work_dir.join("mold"))?;
     replace_file_link(&mold, &work_dir.join("ld"))?;
-    replace_file_link(&wrapper, &work_dir.join("mold-wrapper.so"))?;
+    if need_wrapper {
+        replace_file_link(&wrapper, &work_dir.join("mold-wrapper.so"))?;
+    }
     Ok(work_dir)
 }
 
@@ -658,7 +662,7 @@ fn print_summary(results: &[TestResult]) -> bool {
 
 pub fn run(cases_dirs: &[PathBuf], mold: &Path) -> ExitCode {
     let options = parse_options();
-    let work_dir = match prepare_work_dir(mold) {
+    let work_dir = match prepare_work_dir(mold, true) {
         Ok(dir) => dir,
         Err(err) => {
             eprintln!("mold-tests: {err}");
@@ -694,7 +698,7 @@ pub fn run(cases_dirs: &[PathBuf], mold: &Path) -> ExitCode {
 /// and the architecture as `$ARCH`.
 pub fn run_macho(cases_dir: &Path, mold: &Path) -> ExitCode {
     let options = parse_options();
-    let work_dir = match prepare_work_dir(mold) {
+    let work_dir = match prepare_work_dir(mold, false) {
         Ok(dir) => dir,
         Err(err) => {
             eprintln!("mold-tests: {err}");
@@ -734,11 +738,11 @@ pub fn run_macho(cases_dir: &Path, mold: &Path) -> ExitCode {
             label: format!("macho-{arch}"),
         });
         let result_dir = work_dir.join("out/test/results").join(&target.label);
-        if !options.list {
-            if let Err(err) = clear_results(&result_dir) {
-                eprintln!("mold-tests: {err}");
-                return ExitCode::FAILURE;
-            }
+        if !options.list
+            && let Err(err) = clear_results(&result_dir)
+        {
+            eprintln!("mold-tests: {err}");
+            return ExitCode::FAILURE;
         }
         for (name, script) in &scripts {
             if matches_patterns(name, &options.patterns) {
