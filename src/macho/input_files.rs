@@ -2606,7 +2606,7 @@ fn register_tbd<E: Arch>(
             path: path.to_owned(),
             install_name: tbd.install_name,
             current_version: tbd.current_version,
-            compatibility_version: encode_version(1, 0, 0),
+            compatibility_version: tbd.compatibility_version,
             dylib_idx: next_dylib_ordinal(ctx),
             is_bundle_loader: false,
             priority,
