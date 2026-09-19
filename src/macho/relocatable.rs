@@ -366,7 +366,9 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
 
     // The sections whose atoms ld64 names itself: (N_PEXT, record
     // size; 0 for one record per subsection, as cstring literals are
-    // split).
+    // split). The entries of the __objc_*list sections get no symbol
+    // at all in ld-prime's output (their l_OBJC_LABEL_CLASS_$_ labels
+    // vanish).
     let rename_kind = |flags: u32, segname: &str, sectname: &str| -> Option<(bool, u64)> {
         if flags & SECTION_TYPE == S_CSTRING_LITERALS {
             return Some((true, 0));
@@ -374,12 +376,16 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
         match (segname, sectname) {
             ("__DATA", "__cfstring") => Some((true, 32)),
             ("__DATA", "__objc_selrefs") | ("__DATA", "__objc_classrefs") => Some((true, 8)),
-            ("__DATA", "__objc_classlist")
-            | ("__DATA", "__objc_nlclslist")
-            | ("__DATA", "__objc_catlist")
-            | ("__DATA", "__objc_nlcatlist") => Some((false, 8)),
             _ => None,
         }
+    };
+    let unnamed_list = |isec: usize| -> bool {
+        let h = ctx.hdr_of(&ctx.isecs[isec]);
+        h.segname() == "__DATA"
+            && matches!(
+                h.sectname(),
+                "__objc_classlist" | "__objc_nlclslist" | "__objc_catlist" | "__objc_nlcatlist"
+            )
     };
     // (subsection, record index) -> entry in `locals`; and the record
     // size of each such output section.
