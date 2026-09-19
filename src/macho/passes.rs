@@ -4274,7 +4274,7 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
         ctx.chunks.push(ChunkId::IndirectSymtab);
     }
     ctx.chunks.push(ChunkId::Strtab);
-    if ctx.args.adhoc_codesign {
+    if ctx.args.adhoc_codesign == Some(true) {
         ctx.chunks.push(ChunkId::CodeSignature);
     }
 
@@ -5572,7 +5572,7 @@ pub fn copy_chunks<E: Arch>(
     // only, not on the signature blob (whose identifier is the output's
     // basename); unsigned output hashes its pages the same way.
     let mut hashes: Vec<[u8; 32]> = Vec::new();
-    if ctx.args.uuid || ctx.args.adhoc_codesign {
+    if ctx.args.uuid || ctx.args.adhoc_codesign == Some(true) {
         t!("page-hashes", hashes = output_chunks::misc::page_hashes(&buf[..sig_start]));
     }
     if ctx.args.uuid {
@@ -5590,7 +5590,7 @@ pub fn copy_chunks<E: Arch>(
     }
     out.queue(0, hdr_end);
 
-    if ctx.args.adhoc_codesign {
+    if ctx.args.adhoc_codesign == Some(true) {
         t!("codesign", output_chunks::misc::write_code_signature(ctx, buf, &hashes));
     }
     out.queue(sig_start, buf.len() - sig_start);
