@@ -16,7 +16,7 @@ use crate::macho::output_chunks::dyld_info::{
 use crate::macho::output_chunks::eh_frame::EhFrameSection;
 use crate::macho::output_chunks::export_trie::ExportTrieSection;
 use crate::macho::output_chunks::got::{
-    GotSection, LazyPtrsSection, StubHelperSection, StubsSection, ThreadPtrsSection,
+    GotSection, LazyPtrsSection, StubHelperSection, StubsSection,
 };
 use crate::macho::output_chunks::misc::{
     CodeSignatureSection, DataInCodeSection, FunctionStartsSection, InitOffsetsSection,
@@ -73,7 +73,6 @@ pub struct Context<E: Arch> {
     pub stub_helper: StubHelperSection,
     pub lazy_ptrs: LazyPtrsSection,
     pub got: GotSection,
-    pub thread_ptrs: ThreadPtrsSection,
     pub objc_stubs: ObjcStubsSection,
     pub objc_methlist: ObjcMethlistSection,
     pub objc_imageinfo: ObjcImageInfoSection,
@@ -154,7 +153,6 @@ impl<E: Arch> Context<E> {
             stub_helper: StubHelperSection::new(),
             lazy_ptrs: LazyPtrsSection::new(),
             got: GotSection::new(),
-            thread_ptrs: ThreadPtrsSection::new(),
             objc_stubs: ObjcStubsSection::new(),
             objc_methlist: ObjcMethlistSection::new(),
             objc_imageinfo: ObjcImageInfoSection::new(),
@@ -198,7 +196,6 @@ impl<E: Arch> Context<E> {
             ChunkId::StubHelper => &self.stub_helper.hdr,
             ChunkId::LazyPtrs => &self.lazy_ptrs.hdr,
             ChunkId::Got => &self.got.hdr,
-            ChunkId::ThreadPtrs => &self.thread_ptrs.hdr,
             ChunkId::ObjcStubs => &self.objc_stubs.hdr,
             ChunkId::ObjcMethlist => &self.objc_methlist.hdr,
             ChunkId::ObjcImageInfo => &self.objc_imageinfo.hdr,
@@ -229,7 +226,6 @@ impl<E: Arch> Context<E> {
             ChunkId::StubHelper => &mut self.stub_helper.hdr,
             ChunkId::LazyPtrs => &mut self.lazy_ptrs.hdr,
             ChunkId::Got => &mut self.got.hdr,
-            ChunkId::ThreadPtrs => &mut self.thread_ptrs.hdr,
             ChunkId::ObjcStubs => &mut self.objc_stubs.hdr,
             ChunkId::ObjcMethlist => &mut self.objc_methlist.hdr,
             ChunkId::ObjcImageInfo => &mut self.objc_imageinfo.hdr,
@@ -603,11 +599,6 @@ impl<E: Arch> Context<E> {
     /// Returns the address of a symbol's __got slot.
     pub fn sym_got_addr(&self, id: SymbolId) -> u64 {
         self.got.hdr.addr + self.sym_aux(id).got_idx as u64 * 8
-    }
-
-    /// Returns the address of a symbol's __thread_ptrs slot.
-    pub fn sym_tlv_ptr_addr(&self, id: SymbolId) -> u64 {
-        self.thread_ptrs.hdr.addr + self.sym_aux(id).tlv_idx as u64 * 8
     }
 
     /// Returns the symbol a relocation refers to, if it refers to one.

@@ -112,7 +112,6 @@ pub enum ChunkId {
     StubHelper,
     LazyPtrs,
     Got,
-    ThreadPtrs,
     ObjcStubs,
     ObjcMethlist,
     ObjcImageInfo,
@@ -140,13 +139,12 @@ pub enum ChunkId {
 impl ChunkId {
     /// The chunks that exist at most once, in the order `pack` numbers
     /// them.
-    const UNITS: [ChunkId; 24] = [
+    const UNITS: [ChunkId; 23] = [
         ChunkId::MachHeader,
         ChunkId::Stubs,
         ChunkId::StubHelper,
         ChunkId::LazyPtrs,
         ChunkId::Got,
-        ChunkId::ThreadPtrs,
         ChunkId::ObjcStubs,
         ChunkId::ObjcMethlist,
         ChunkId::ObjcImageInfo,
@@ -253,7 +251,6 @@ pub fn copy_buf<E: Arch>(ctx: &Context<E>, id: ChunkId, buf: &mut [u8]) {
         ChunkId::StubHelper => got::stub_helper::copy_buf(ctx, buf),
         ChunkId::LazyPtrs => got::lazy_ptrs::copy_buf(ctx, buf),
         ChunkId::Got => got::copy_buf(ctx, buf),
-        ChunkId::ThreadPtrs => got::thread_ptrs::copy_buf(ctx, buf),
         ChunkId::ObjcStubs => objc::objc_stubs::copy_buf(ctx, buf),
         ChunkId::ObjcMethlist => objc::objc_methlist::copy_buf(ctx, buf),
         ChunkId::ObjcImageInfo => objc::objc_imageinfo::copy_buf(ctx, buf),
