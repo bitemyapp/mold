@@ -341,8 +341,9 @@ pub fn build_function_starts<E: Arch>(ctx: &Context<E>) -> Vec<u8> {
             }
         })
         .collect();
+    // No functions: the terminator alone, padded like any table.
     if addrs.is_empty() {
-        return Vec::new();
+        return vec![0; 8];
     }
     addrs.par_sort_unstable();
     addrs.dedup();

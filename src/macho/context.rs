@@ -103,6 +103,10 @@ pub struct Context<E: Arch> {
     /// ld64's __OBJC_$_INSTANCE_METHODS_Foo(A|B) on a merged method
     /// list, and the like. (name, subsection).
     pub extra_local_syms: Vec<(&'static str, u32)>,
+    /// The first object (in input order) that claimed a common symbol:
+    /// the synthesized __common section takes its place in the section
+    /// order from it, as ld64's does.
+    pub common_first_obj: Option<u32>,
     /// -alias and selective reexports: (alias, imported target).
     /// Emitted as N_INDR symbols and re-export trie entries.
     pub indirect_aliases: Vec<(SymbolId, SymbolId)>,
@@ -174,6 +178,7 @@ impl<E: Arch> Context<E> {
             code_signature: CodeSignatureSection::new(),
             data_blobs: Vec::new(),
             extra_local_syms: Vec::new(),
+            common_first_obj: None,
             dylib_load_seq: 0,
             indirect_aliases: Vec::new(),
             boundary_syms: Vec::new(),
@@ -542,7 +547,6 @@ impl<E: Arch> Context<E> {
             && !sym.is_private_extern()
     }
 
-    /// True if dyld fills the references to this symbol: an import, or
     /// A weak reference to an overlay's __swift_FORCE_LOAD_$_ marker.
     /// The Swift compiler emits one per module to keep the overlay
     /// loaded; ld-prime keeps the dylib as a dependency but writes no
@@ -552,6 +556,7 @@ impl<E: Arch> Context<E> {
         sym.is_imported() && sym.is_weak_ref() && sym.name().starts_with("__swift_FORCE_LOAD_$_")
     }
 
+    /// True if dyld fills the references to this symbol: an import, or
     /// a weak definition subject to coalescing.
     pub fn binds_at_runtime(&self, id: SymbolId) -> bool {
         self.symbols[id].is_imported() || self.is_weak_coalesced(id)

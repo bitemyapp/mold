@@ -1108,12 +1108,35 @@ pub fn do_lto<E: Arch>(ctx: &mut Context<E>) -> bool {
 /// definitions in a synthetic __DATA,__common zero-fill section.
 pub fn convert_common_symbols<E: Arch>(ctx: &mut Context<E>) {
     let internal = ctx.internal_obj.expect("internal object not created yet") as u32;
+    // Where the __common section sorts: with the first object that
+    // claims a common symbol still unresolved by a definition.
+    ctx.common_first_obj = ctx.objs.iter().position(|obj| {
+        obj.is_alive
+            && obj.nlists.iter().zip(&obj.symbols).any(|(nlist, &id)| {
+                !nlist.is_stab()
+                    && nlist.is_extern()
+                    && nlist.n_type() == N_UNDF
+                    && nlist.is_common()
+                    && ctx.symbols[id].is_common()
+                    && !ctx.symbols[id].is_defined()
+            })
+    }).map(|i| i as u32);
     for i in 0..ctx.symbols.syms.len() {
         let sym = &ctx.symbols[i];
         if !sym.is_common() || sym.is_defined() {
             continue;
         }
-        let (size, p2align) = (sym.value, sym.common_p2align);
+        let size = sym.value;
+        // An alignment the object gave (.comm's third operand) is kept;
+        // without one, ld64 aligns the symbol to its size rounded up to
+        // a power of two, capped at the page on arm64 (a 100000-byte
+        // array lands 16KB-aligned) and at 16 bytes on x86-64.
+        let p2align = if sym.common_p2align != 0 || size == 0 {
+            sym.common_p2align
+        } else {
+            let cap = if E::CPUTYPE == crate::macho::format::CPU_TYPE_ARM64 { 14 } else { 4 };
+            (size.next_power_of_two().trailing_zeros() as u8).min(cap)
+        };
 
         let (file, shndx) = ctx.add_synthetic_section(MachSection {
             sectname: str_to_name("__common"),
@@ -1603,29 +1626,6 @@ pub fn auto_hide_weak_defs<E: Arch>(ctx: &mut Context<E>) {
     });
 }
 
-/// Hide definitions before dead stripping and relocation scanning so
-/// they neither keep otherwise unused code alive nor bind as exports.
-pub fn hide_all_exports<E: Arch>(ctx: &mut Context<E>) {
-    if !ctx.args.no_exported_symbols {
-        return;
-    }
-    use rayon::prelude::*;
-    ctx.symbols.syms.par_iter_mut().for_each(|sym| {
-        if matches!(sym.file(), Some(FileId::Obj(_))) {
-            sym.set_is_private_extern(true);
-        }
-    });
-}
-
-/// Discards the losing copies of coalesced weak definitions. Symbol
-/// resolution picks one definition per weak symbol, but the losing
-/// objects' subsections still hold the duplicate bodies - a C++-heavy
-/// link would otherwise ship every object's copy of every template
-/// instantiation as anonymous dead weight (12MB of clang's 80MB
-/// __text). Each losing subsection is redirected to the winner's, the
-/// same replacement mechanism literal merging and ICF use, so
-/// section-target relocations into a loser resolve into the winning
-/// copy. Only same-shape losers are folded: the defining symbol must
 /// -exported_symbols_list / -unexported_symbols_list: a definition the
 /// lists leave unexported becomes a private external, so the symbol
 /// table shows it as a local ("was a private external") the way ld64
@@ -1653,6 +1653,29 @@ pub fn apply_export_lists<E: Arch>(ctx: &mut Context<E>) {
     });
 }
 
+/// Hide definitions before dead stripping and relocation scanning so
+/// they neither keep otherwise unused code alive nor bind as exports.
+pub fn hide_all_exports<E: Arch>(ctx: &mut Context<E>) {
+    if !ctx.args.no_exported_symbols {
+        return;
+    }
+    use rayon::prelude::*;
+    ctx.symbols.syms.par_iter_mut().for_each(|sym| {
+        if matches!(sym.file(), Some(FileId::Obj(_))) {
+            sym.set_is_private_extern(true);
+        }
+    });
+}
+
+/// Discards the losing copies of coalesced weak definitions. Symbol
+/// resolution picks one definition per weak symbol, but the losing
+/// objects' subsections still hold the duplicate bodies - a C++-heavy
+/// link would otherwise ship every object's copy of every template
+/// instantiation as anonymous dead weight (12MB of clang's 80MB
+/// __text). Each losing subsection is redirected to the winner's, the
+/// same replacement mechanism literal merging and ICF use, so
+/// section-target relocations into a loser resolve into the winning
+/// copy. Only same-shape losers are folded: the defining symbol must
 /// sit at the same offset in both, and the subsections must be the
 /// same size, or differ only by trailing zero padding (Swift's
 /// __swift5_typeref strings come with or without a pad byte from
@@ -2384,6 +2407,9 @@ pub struct ObjcMethList {
 }
 
 fn objc_relative_method_lists<E: Arch>(ctx: &Context<E>) -> bool {
+    // ld-prime converts method lists on arm64 only; an x86-64 image
+    // keeps the compiler's absolute lists in __objc_const at any
+    // deployment target.
     ctx.args.objc_relative_method_lists.unwrap_or_else(|| {
         E::CPUTYPE == crate::macho::format::CPU_TYPE_ARM64
             && ctx.args.platform == crate::macho::format::PLATFORM_MACOS
@@ -2435,9 +2461,6 @@ fn objc_pointer_at<E: Arch>(ctx: &Context<E>, isec: u32, off: u64) -> Option<Obj
         RelocTarget::Section(t) => ObjcRef::Isec(t, rel.addend as u64),
     })
 }
-    // ld-prime converts method lists on arm64 only; an x86-64 image
-    // keeps the compiler's absolute lists in __objc_const at any
-    // deployment target.
 
 /// A reference's location as (live subsection, offset), for data
 /// defined in this link; None for an import or an absolute.
@@ -3637,7 +3660,6 @@ fn output_section_rank(segname: &str, sectname: &str) -> u32 {
         ("__TEXT", "__init_offsets") => 4,
         ("__TEXT", "__objc_methlist") => 5,
         ("__TEXT", _) => 10,
-        ("__DATA_CONST", "__got") => 0,
         ("__DATA_CONST", "__mod_init_func") => 1,
         ("__DATA_CONST", "__mod_term_func") => 2,
         ("__DATA_CONST", "__const") => 3,
@@ -3650,6 +3672,10 @@ fn output_section_rank(segname: &str, sectname: &str) -> u32 {
         ("__DATA_CONST", "__objc_imageinfo") => 10,
         ("__DATA_CONST", "__objc_protorefs") => 11,
         ("__DATA_CONST", "__objc_superrefs") => 12,
+        // The GOT closes __DATA_CONST, after every input-derived
+        // section (ld-prime: __cfstring, __objc_classlist,
+        // __objc_imageinfo, then __got).
+        ("__DATA_CONST", "__got") => 25,
         ("__DATA_CONST", _) => 20,
         ("__DATA", "__la_symbol_ptr") => 0,
         ("__DATA", "__got") => 1,
@@ -3667,8 +3693,10 @@ fn output_section_rank(segname: &str, sectname: &str) -> u32 {
         ("__DATA", "__thread_vars") => 30,
         ("__DATA", "__thread_data") => 31,
         ("__DATA", "__thread_bss") => 0,
+        // __bss and __common in first-seen order: the synthesized
+        // __common counts from the first object with a common symbol.
         ("__DATA", "__bss") => 3,
-        ("__DATA", "__common") => 4,
+        ("__DATA", "__common") => 3,
         _ => 10,
     }
 }
@@ -3905,6 +3933,51 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
         ctx.isecs[i].set_output_section(ChunkId::Output(osec_id));
     }
 
+    // A final image always has a __TEXT,__text section, empty if no
+    // code reached it (a dylib of only data; ld-prime writes one of
+    // size 0, byte-aligned).
+    if !relocatable && !by_out.contains_key(&("__TEXT", "__text")) {
+        let mut osec = OutputSection::new("__TEXT", "__text");
+        osec.hdr.flags = S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS;
+        let id = OutputSectionId::new(ctx.output_sections.len() as u32);
+        ctx.output_sections.push(osec);
+        ctx.chunks.push(ChunkId::Output(id));
+        by_out.insert(("__TEXT", "__text"), id);
+    }
+
+    // The thread-local template (__thread_data followed by
+    // __thread_bss) is one image dyld copies per thread, so ld64 gives
+    // both sections the stricter of their alignments.
+    if let (Some(&data), Some(&bss)) =
+        (by_out.get(&("__DATA", "__thread_data")), by_out.get(&("__DATA", "__thread_bss")))
+    {
+        let p2align = ctx.output_sections[data.index()]
+            .hdr
+            .p2align
+            .max(ctx.output_sections[bss.index()].hdr.p2align);
+        ctx.output_sections[data.index()].hdr.p2align = p2align;
+        ctx.output_sections[bss.index()].hdr.p2align = p2align;
+    }
+
+    // A section cannot be aligned beyond the segment's page: ld64
+    // reduces the alignment with a warning (an x86-64 .align 16 asks
+    // for 64KB).
+    if !relocatable {
+        let max = E::PAGE_SIZE.trailing_zeros();
+        for osec in &mut ctx.output_sections {
+            if osec.hdr.p2align > max {
+                crate::warn!(
+                    "reducing alignment of section {},{} from 0x{:x} to 0x{:x} because it exceeds segment maximum alignment",
+                    osec.hdr.segname,
+                    osec.hdr.sectname,
+                    1u64 << osec.hdr.p2align,
+                    1u64 << max
+                );
+                osec.hdr.p2align = max;
+            }
+        }
+    }
+
     // -sectalign overrides an output section's alignment, e.g. to
     // page-align a blob that will be mapped or measured separately.
     // It can only raise the alignment: subsections were placed by
@@ -3960,51 +4033,6 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
 
     // Compute each input section's offset within its output section.
     // Following mold's design, sections lay out in parallel: each
-    // A final image always has a __TEXT,__text section, empty if no
-    // code reached it (a dylib of only data; ld-prime writes one of
-    // size 0, byte-aligned).
-    if !relocatable && !by_out.contains_key(&("__TEXT", "__text")) {
-        let mut osec = OutputSection::new("__TEXT", "__text");
-        osec.hdr.flags = S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS;
-        let id = OutputSectionId::new(ctx.output_sections.len() as u32);
-        ctx.output_sections.push(osec);
-        ctx.chunks.push(ChunkId::Output(id));
-        by_out.insert(("__TEXT", "__text"), id);
-    }
-
-    // The thread-local template (__thread_data followed by
-    // __thread_bss) is one image dyld copies per thread, so ld64 gives
-    // both sections the stricter of their alignments.
-    if let (Some(&data), Some(&bss)) =
-        (by_out.get(&("__DATA", "__thread_data")), by_out.get(&("__DATA", "__thread_bss")))
-    {
-        let p2align = ctx.output_sections[data.index()]
-            .hdr
-            .p2align
-            .max(ctx.output_sections[bss.index()].hdr.p2align);
-        ctx.output_sections[data.index()].hdr.p2align = p2align;
-        ctx.output_sections[bss.index()].hdr.p2align = p2align;
-    }
-
-    // A section cannot be aligned beyond the segment's page: ld64
-    // reduces the alignment with a warning (an x86-64 .align 16 asks
-    // for 64KB).
-    if !relocatable {
-        let max = E::PAGE_SIZE.trailing_zeros();
-        for osec in &mut ctx.output_sections {
-            if osec.hdr.p2align > max {
-                crate::warn!(
-                    "reducing alignment of section {},{} from 0x{:x} to 0x{:x} because it exceeds segment maximum alignment",
-                    osec.hdr.segname,
-                    osec.hdr.sectname,
-                    1u64 << osec.hdr.p2align,
-                    1u64 << max
-                );
-                osec.hdr.p2align = max;
-            }
-        }
-    }
-
     // output section's offsets depend only on its own members, so the
     // per-section prefix sums run on all cores and the results are
     // written back serially. The exception is a __TEXT section big
@@ -4082,6 +4110,12 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
     if !ctx.stubs.symbols.is_empty() {
         ctx.stubs.hdr.reserved2 = E::STUB_SIZE as u32;
         ctx.stubs.hdr.size = ctx.stubs.symbols.len() as u64 * E::STUB_SIZE;
+        // ld-prime's x86-64 stubs are 2-byte aligned with chained
+        // fixups and byte-aligned with classic dyld info; arm64's are
+        // instruction-aligned.
+        if E::CPUTYPE == crate::macho::format::CPU_TYPE_X86_64 {
+            ctx.stubs.hdr.p2align = if ctx.use_chained_fixups() { 1 } else { 0 };
+        }
         ctx.chunks.push(ChunkId::Stubs);
     }
     // (A stub bound by weak lookup goes through the GOT; only lazily
@@ -4116,6 +4150,10 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
 
     if !ctx.objc_stubs.symbols.is_empty() {
         ctx.objc_stubs.hdr.size = ctx.objc_stubs.symbols.len() as u64 * E::OBJC_STUB_SIZE;
+        // 32-byte stubs on arm64; ld-prime leaves x86-64's byte-aligned.
+        if E::CPUTYPE == crate::macho::format::CPU_TYPE_X86_64 {
+            ctx.objc_stubs.hdr.p2align = 0;
+        }
         ctx.chunks.push(ChunkId::ObjcStubs);
     }
     {
@@ -4137,12 +4175,6 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
                 .output_sections
                 .iter()
                 .position(|o| o.hdr.segname == seg && o.hdr.sectname == sect)
-        // ld-prime's x86-64 stubs are 2-byte aligned with chained
-        // fixups and byte-aligned with classic dyld info; arm64's are
-        // instruction-aligned.
-        if E::CPUTYPE == crate::macho::format::CPU_TYPE_X86_64 {
-            ctx.stubs.hdr.p2align = if ctx.use_chained_fixups() { 1 } else { 0 };
-        }
             {
                 Some(i) => OutputSectionId::new(i as u32),
                 None => {
@@ -4177,10 +4209,6 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
             ctx.objc_stubs.methname = Some(id);
         }
         if selrefs_size > 0 {
-        // 32-byte stubs on arm64; ld-prime leaves x86-64's byte-aligned.
-        if E::CPUTYPE == crate::macho::format::CPU_TYPE_X86_64 {
-            ctx.objc_stubs.hdr.p2align = 0;
-        }
             let id = tail_section(
                 ctx,
                 "__DATA",
@@ -4399,8 +4427,32 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
     }
 
     // Sort the chunks into file order: the standard segment order, and
-    // section ranks within a segment (the sort is stable, so chunks of
-    // one rank keep their creation order).
+    // section ranks within a segment. Sections of one rank follow the
+    // order their first input section was seen in - object, then
+    // section ordinal - as ld-prime lays them out (__cstring before
+    // __gcc_except_tab when the object has them that way); a merged
+    // literal section counts from its first input, not from the pass
+    // that merged it. Purely synthetic sections keep their creation
+    // order (the sort is stable).
+    let mut first_seen: Vec<u64> = vec![u64::MAX; ctx.output_sections.len()];
+    for (i, isec) in ctx.isecs.iter().enumerate() {
+        if ctx.is_internal(isec.file as usize) {
+            continue;
+        }
+        let Some(ChunkId::Output(id)) = ctx.isecs[ctx.resolve_isec(i)].output_section() else {
+            continue;
+        };
+        let key = ((isec.file as u64) << 32) | isec.shndx as u64;
+        let slot = &mut first_seen[id.index()];
+        *slot = (*slot).min(key);
+    }
+    if let Some(obj) = ctx.common_first_obj {
+        for (i, osec) in ctx.output_sections.iter().enumerate() {
+            if osec.hdr.segname == "__DATA" && osec.hdr.sectname == "__common" {
+                first_seen[i] = ((obj as u64) << 32) | u32::MAX as u64;
+            }
+        }
+    }
     let mut order = ctx.chunks.clone();
     order.sort_by_key(|&id| {
         let hdr = ctx.chunk_header(id);
@@ -4418,9 +4470,13 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
             ChunkId::CodeSignature => u32::MAX,
             _ => 1 + output_section_rank(hdr.segname, &hdr.sectname),
         };
+        let seen = match id {
+            ChunkId::Output(osec) => first_seen[osec.index()],
+            _ => u64::MAX,
+        };
         // Zero-fill sections go last in their segment so that they don't
         // occupy file space in the middle of it.
-        (seg_rank, hdr.is_zerofill(), sect_rank)
+        (seg_rank, hdr.is_zerofill(), sect_rank, seen)
     });
 
     // Group them into segments, and number the sections: an nlist's
@@ -4885,84 +4941,6 @@ pub fn create_output_symtab<E: Arch>(
         eprintln!("      symtab-locals {:?}", __t.elapsed());
     }
     let __t = std::time::Instant::now();
-    // One parallel pass classifies the whole symbol table - private
-    // externals (emitted among the locals), defined globals and
-    // undefineds - instead of three full scans over millions of
-    // slots.
-    #[derive(Clone, Copy, PartialEq)]
-    enum Class {
-        No,
-        Pext,
-        Undef,
-    }
-    let classes: Vec<Class> = {
-        use rayon::prelude::*;
-        (0..ctx.symbols.syms.len())
-            .into_par_iter()
-            .map(|i| {
-                let sym = &ctx.symbols[i];
-                if matches!(sym.file(), Some(FileId::Dylib(_))) {
-                    return if live_ref[i].load(std::sync::atomic::Ordering::Relaxed) {
-                        Class::Undef
-                    } else {
-                        Class::No
-                    };
-                }
-                if sym.is_extern()
-                    && sym.is_private_extern()
-                    && matches!(sym.file(), Some(FileId::Obj(_)))
-                    && sym
-                        .input_section()
-                        .is_some_and(|isec| ctx.isecs[ctx.resolve_isec(isec as usize)].is_alive())
-                {
-                    // A private external becomes a local, and a label
-                    // is not emitted (ld-prime keeps clang's
-                    // __OBJC_LABEL_PROTOCOL_$_X, demoted, but not an
-                    // l_OBJC_LABEL_PROTOCOL_$_X).
-                    if !keep_local_symbol(sym.name()) {
-                        return Class::No;
-                    }
-                    return Class::Pext;
-                }
-                Class::No
-            })
-            .collect()
-    };
-
-    // Private external symbols resolve globally but appear as locals
-    // (with N_PEXT still set) in the output.
-    for (i, &class) in classes.iter().enumerate() {
-        if class != Class::Pext {
-            continue;
-        }
-        let sym = &ctx.symbols[i];
-        let isec = ctx.resolve_isec(sym.input_section().unwrap() as usize);
-        names.push(sym.name());
-        let ent = match (sym.file(), sym.input_section()) {
-            (_, Some(isec)) => {
-                let isec = ctx.resolve_isec(isec as usize);
-                (
-                    NList {
-                        n_strx: 0,
-                        n_type: N_SECT | N_PEXT,
-                        n_sect: ctx.isec_n_sect(&ctx.isecs[isec]),
-                        n_desc: 0,
-                        n_value: 0,
-                    },
-                    Some(i as u32),
-                )
-            }
-            // A demoted __mh_execute_header (an export list that omits
-            // it) sits in the first section, the mach header.
-            (Some(FileId::Obj(o)), None) if ctx.is_internal(o as usize) => (
-                NList { n_strx: 0, n_type: N_SECT | N_PEXT, n_sect: 1, n_desc: 0, n_value: 0 },
-                Some(i as u32),
-            ),
-            (_, None) => (
-                NList { n_strx: 0, n_type: N_ABS | N_PEXT, n_sect: 0, n_desc: 0, n_value: sym.value },
-                None,
-            ),
-        };
     // An import is listed only while live code or data refers to it:
     // after -dead_strip, ld-prime drops the imports only stripped
     // functions used. A reference is a relocation from a live
@@ -5019,7 +4997,87 @@ pub fn create_output_symtab<E: Arch>(
         }
     }
 
-        data.entries.push((ent, Some(i as u32)));
+    // One parallel pass classifies the whole symbol table - private
+    // externals (emitted among the locals), defined globals and
+    // undefineds - instead of three full scans over millions of
+    // slots.
+    #[derive(Clone, Copy, PartialEq)]
+    enum Class {
+        No,
+        Pext,
+        Undef,
+    }
+    let classes: Vec<Class> = {
+        use rayon::prelude::*;
+        (0..ctx.symbols.syms.len())
+            .into_par_iter()
+            .map(|i| {
+                let sym = &ctx.symbols[i];
+                if matches!(sym.file(), Some(FileId::Dylib(_))) {
+                    return if live_ref[i].load(std::sync::atomic::Ordering::Relaxed) {
+                        Class::Undef
+                    } else {
+                        Class::No
+                    };
+                }
+                // A private external in a live object: a definition in
+                // a live subsection, or an absolute one (N_ABS), which
+                // ld64 keeps as a local too.
+                if sym.is_extern()
+                    && sym.is_private_extern()
+                    && matches!(sym.file(), Some(FileId::Obj(o)) if ctx.objs[o as usize].is_alive)
+                    && sym
+                        .input_section()
+                        .is_none_or(|isec| ctx.isecs[ctx.resolve_isec(isec as usize)].is_alive())
+                {
+                    // A private external becomes a local, and a label
+                    // is not emitted (ld-prime keeps clang's
+                    // __OBJC_LABEL_PROTOCOL_$_X, demoted, but not an
+                    // l_OBJC_LABEL_PROTOCOL_$_X).
+                    if !keep_local_symbol(sym.name()) {
+                        return Class::No;
+                    }
+                    return Class::Pext;
+                }
+                Class::No
+            })
+            .collect()
+    };
+
+    // Private external symbols resolve globally but appear as locals
+    // (with N_PEXT still set) in the output.
+    for (i, &class) in classes.iter().enumerate() {
+        if class != Class::Pext {
+            continue;
+        }
+        let sym = &ctx.symbols[i];
+        names.push(sym.name());
+        let ent = match (sym.file(), sym.input_section()) {
+            (_, Some(isec)) => {
+                let isec = ctx.resolve_isec(isec as usize);
+                (
+                    NList {
+                        n_strx: 0,
+                        n_type: N_SECT | N_PEXT,
+                        n_sect: ctx.isec_n_sect(&ctx.isecs[isec]),
+                        n_desc: 0,
+                        n_value: 0,
+                    },
+                    Some(i as u32),
+                )
+            }
+            // A demoted __mh_execute_header (an export list that omits
+            // it) sits in the first section, the mach header.
+            (Some(FileId::Obj(o)), None) if ctx.is_internal(o as usize) => (
+                NList { n_strx: 0, n_type: N_SECT | N_PEXT, n_sect: 1, n_desc: 0, n_value: 0 },
+                Some(i as u32),
+            ),
+            (_, None) => (
+                NList { n_strx: 0, n_type: N_ABS | N_PEXT, n_sect: 0, n_desc: 0, n_value: sym.value },
+                None,
+            ),
+        };
+        data.entries.push(ent);
     }
     data.nlocal = data.entries.len() as u32;
 
@@ -5038,9 +5096,6 @@ pub fn create_output_symtab<E: Arch>(
             // sits in the first section: the mach header.
             (Some(FileId::Obj(o)), None) if ctx.is_internal(o as usize) => {
                 (N_SECT | N_EXT, 1, REFERENCED_DYNAMICALLY)
-                // A private external in a live object: a definition in
-                // a live subsection, or an absolute one (N_ABS), which
-                // ld64 keeps as a local too.
             }
             (_, None) => (N_ABS | N_EXT, 0, 0),
         };
