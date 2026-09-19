@@ -467,17 +467,17 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
         if !obj.is_alive {
             continue;
         }
+        // Without subsections the object's sections are whole atoms,
+        // which ld64 marks no-dead-strip - every symbol, the
+        // assembler's ltmpN labels (they name the atoms) included -
+        // and an alt entry means nothing there.
+        let whole = !obj.subsections_via_symbols;
         let r = obj.local_range();
         for (nlist, &sym_id) in obj.nlists[r.clone()].iter().zip(&obj.symbols[r]) {
             if nlist.is_stab() || nlist.is_extern() {
                 continue;
             }
             let sym = &ctx.symbols[sym_id];
-        // Without subsections the object's sections are whole atoms,
-        // which ld64 marks no-dead-strip - every symbol, the
-        // assembler's ltmpN labels (they name the atoms) included -
-        // and an alt entry means nothing there.
-        let whole = !obj.subsections_via_symbols;
             let Some(isec) = sym.input_section().map(|i| i as usize) else { continue };
             let isec = ctx.resolve_isec(isec);
             if !ctx.isecs[isec].is_alive() || sym.name().is_empty() {
@@ -588,7 +588,6 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
             n_value: l.addr,
         });
     }
-    let nlocal = nlists_out.len() as u32;
 
     // The n_desc flags a defined global carries in its object, which the
     // next link needs as much as this one did. N_ALT_ENTRY is the
@@ -651,21 +650,20 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
         if sym.is_weak_def() {
             n_desc |= N_WEAK_DEF;
         }
+        if let Some(FileId::Obj(o)) = sym.file()
+            && !ctx.objs[o as usize].subsections_via_symbols
+        {
+            n_desc = whole_desc(n_desc, true);
+        }
         index_of_sym.insert(i as u32, nlists_out.len() as u32);
         nlists_out.push(NList {
             n_strx: add_string(&mut strtab, sym.name()),
             n_type,
             n_sect,
             n_desc,
-        if let Some(FileId::Obj(o)) = sym.file()
-            && !ctx.objs[o as usize].subsections_via_symbols
-        {
-            n_desc = whole_desc(n_desc, true);
-        }
             n_value: sym_addr(ctx, i as u32),
         });
     }
-    let nextdef = nlists_out.len() as u32 - nlocal;
 
     // Undefined and tentative symbols, sorted by name.
     let mut undefs: Vec<usize> = (0..ctx.symbols.syms.len())
@@ -694,7 +692,6 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
             n_value,
         });
     }
-    let nundef = nlists_out.len() as u32 - nlocal - nextdef;
     while !strtab.len().is_multiple_of(8) {
         strtab.push(0);
     }
@@ -799,17 +796,7 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
                 cie_off.insert(c, off);
             }
         }
-        let pair = |rels: &mut Vec<MachRel>, at: u32, length: u32, from: u32, to: u32| {
-            rels.push(MachRel {
-                r_address: at,
-                bits: from | (length << 25) | (1 << 27) | ((E::RELOC_SUBTRACTOR as u32) << 28),
-            });
-            rels.push(MachRel {
-                r_address: at,
-                bits: to | (length << 25) | (1 << 27) | ((E::RELOC_UNSIGNED as u32) << 28),
-            });
-        };
-        for (i, &(r, off)) in eh_records.iter().enumerate() {
+        for &(r, off) in &eh_records {
             debug_assert_eq!(off as usize, eh_data.len());
             match r {
                 EhRec::Cie(c) => {
@@ -967,10 +954,11 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
     let num_sections = sects.len();
     let seg_cmd_size = size_of::<SegmentCommand>() + num_sections * size_of::<MachSection>();
     let sizeofcmds = seg_cmd_size
-        + size_of::<BuildVersionCommand>()
-        + linker_options.iter().map(|o| linker_option_cmdsize(o)).sum::<usize>()
         + size_of::<SymtabCommand>()
-        + size_of::<DysymtabCommand>();
+        + size_of::<BuildVersionCommand>()
+        + 8
+        + size_of::<LinkEditDataCommand>()
+        + linker_options.iter().map(|o| linker_option_cmdsize(o)).sum::<usize>();
     let mut off = (size_of::<MachHeader>() + sizeofcmds) as u64;
 
     // File offsets mirror addresses, except that the address span of a
@@ -1032,6 +1020,32 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
         extra.reloff = off;
         off += (extra.relocs.len() * size_of::<MachRel>()) as u64;
     }
+    // LC_DATA_IN_CODE: the inputs' entries at their merged offsets,
+    // between the relocations and the symbol table (the command is
+    // present even with no entries, as ld64 writes it).
+    let mut dice: Vec<(u32, u16, u16)> = Vec::new();
+    for obj in &ctx.objs {
+        if !obj.is_alive {
+            continue;
+        }
+        for &(o, len, kind) in &obj.dice {
+            let Some((isec, off_in)) =
+                crate::macho::input_files::find_subsec(&ctx.isecs, &obj.subsecs, o as u64)
+            else {
+                continue;
+            };
+            let isec = &ctx.isecs[ctx.resolve_isec(isec)];
+            if !isec.is_alive() {
+                continue;
+            }
+            let Some(chunk) = isec.output_section() else { continue };
+            let fileoff = ctx.chunk_header(chunk).fileoff + isec.offset as u64 + off_in;
+            dice.push((fileoff as u32, len, kind));
+        }
+    }
+    dice.sort_unstable();
+    let diceoff = off;
+    off += dice.len() as u64 * 8;
     let symoff = off;
     off += (nlists_out.len() * size_of::<NList>()) as u64;
     let stroff = off;
@@ -1126,16 +1140,61 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
         p += size_of::<MachSection>();
     }
 
+    // ld64's order: the symbol table, the build version, data in
+    // code, then the carried auto-link options. A -r output has no
+    // LC_DYSYMTAB (ld-prime writes none).
+    let st = SymtabCommand {
+        cmd: LC_SYMTAB,
+        cmdsize: size_of::<SymtabCommand>() as u32,
+        symoff: symoff as u32,
+        nsyms: nlists_out.len() as u32,
+        stroff: stroff as u32,
+        strsize: strtab.len() as u32,
+    };
+    st.write_to(&mut buf[p..]);
+    p += size_of::<SymtabCommand>();
+
+    // The build version: -platform_version's, else the first object's
+    // (ld64 warns about inputs built for a newer OS than the first,
+    // whose target the output takes), with the linker's tool entry as
+    // in a final image.
+    let (platform, minos, sdk) = if ctx.args.platform_minos != 0 {
+        (ctx.args.platform, ctx.args.platform_minos, ctx.args.platform_sdk)
+    } else {
+        ctx.objs
+            .iter()
+            .filter(|o| o.is_alive)
+            .find_map(|o| o.platform_versions.first())
+            .map_or((ctx.args.platform, 0, 0), |v| (v.platform, v.minos, v.sdk))
+    };
     let bv = BuildVersionCommand {
         cmd: LC_BUILD_VERSION,
-        cmdsize: size_of::<BuildVersionCommand>() as u32,
-        platform: ctx.args.platform,
-        minos: ctx.args.platform_minos,
-        sdk: ctx.args.platform_sdk,
-        ntools: 0,
+        cmdsize: (size_of::<BuildVersionCommand>() + 8) as u32,
+        platform,
+        minos,
+        sdk,
+        ntools: 1,
     };
     bv.write_to(&mut buf[p..]);
     p += size_of::<BuildVersionCommand>();
+    buf[p..p + 4].copy_from_slice(&54321u32.to_le_bytes());
+    buf[p + 4..p + 8].copy_from_slice(&1u32.to_le_bytes());
+    p += 8;
+
+    let dc = LinkEditDataCommand {
+        cmd: LC_DATA_IN_CODE,
+        cmdsize: size_of::<LinkEditDataCommand>() as u32,
+        dataoff: diceoff as u32,
+        datasize: (dice.len() * 8) as u32,
+    };
+    dc.write_to(&mut buf[p..]);
+    p += size_of::<LinkEditDataCommand>();
+    for (i, &(o, len, kind)) in dice.iter().enumerate() {
+        let q = diceoff as usize + i * 8;
+        buf[q..q + 4].copy_from_slice(&o.to_le_bytes());
+        buf[q + 4..q + 6].copy_from_slice(&len.to_le_bytes());
+        buf[q + 6..q + 8].copy_from_slice(&kind.to_le_bytes());
+    }
 
     for opt in &linker_options {
         let cmdsize = linker_option_cmdsize(opt);
@@ -1149,30 +1208,6 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
         }
         p += cmdsize;
     }
-
-    let st = SymtabCommand {
-        cmd: LC_SYMTAB,
-        cmdsize: size_of::<SymtabCommand>() as u32,
-        symoff: symoff as u32,
-        nsyms: nlists_out.len() as u32,
-        stroff: stroff as u32,
-        strsize: strtab.len() as u32,
-    };
-    st.write_to(&mut buf[p..]);
-    p += size_of::<SymtabCommand>();
-
-    let dst_cmd = DysymtabCommand {
-        cmd: LC_DYSYMTAB,
-        cmdsize: size_of::<DysymtabCommand>() as u32,
-        ilocalsym: 0,
-        nlocalsym: nlocal,
-        iextdefsym: nlocal,
-        nextdefsym: nextdef,
-        iundefsym: nlocal + nextdef,
-        nundefsym: nundef,
-        ..Default::default()
-    };
-    dst_cmd.write_to(&mut buf[p..]);
 
     // Section contents: raw copies, with non-external targets' embedded
     // addresses rewritten into the merged address space.
