@@ -45,7 +45,10 @@ fn section_rank(segname: &str, sectname: &str, flags: u32) -> (u32, u32) {
     };
     let sect = match (segname, sectname) {
         ("__TEXT", "__text") => 0,
-        ("__TEXT", "__eh_frame") => 3,
+        // ld-prime keeps the exception tables after the other __TEXT
+        // sections (__const, __cstring), just before __eh_frame.
+        ("__TEXT", "__gcc_except_tab") => 3,
+        ("__TEXT", "__eh_frame") => 4,
         ("__TEXT", _) if flags & S_ATTR_PURE_INSTRUCTIONS != 0 => 1,
         ("__TEXT", _) => 2,
         ("__DATA", "__got") => 0,
