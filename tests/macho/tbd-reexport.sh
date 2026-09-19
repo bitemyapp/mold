@@ -83,3 +83,6 @@ $CC --ld-path=$mold -o $t/exe3 $t/b.o -F$t/priv -Wl,-framework,Priv
 otool -L $t/exe3 > $t/deps3
 not grep -q libbar $t/deps3
 dyld_info -fixups $t/exe3 | grep -q 'Priv/_bar'
+
+# The load command carries the stub's compatibility version.
+otool -L $t/exe | grep SomeFramework | grep -q 'compatibility version 150.0.0'
