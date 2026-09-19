@@ -461,7 +461,12 @@ fn log_says_skipped(path: &Path) -> bool {
     })
 }
 
-fn run_process(root: &Path, job: &TestJob, timeout: Duration) -> Result<Outcome, String> {
+fn run_process(
+    root: &Path,
+    job: &TestJob,
+    timeout: Duration,
+    set_env: &(dyn Fn(&mut Command, &TestJob) + Sync),
+) -> Result<Outcome, String> {
     let log = File::create(&job.log)
         .map_err(|err| format!("cannot create {}: {err}", job.log.display()))?;
     let stderr =
@@ -472,16 +477,9 @@ fn run_process(root: &Path, job: &TestJob, timeout: Duration) -> Result<Outcome,
     command
         .current_dir(root)
         .stdin(Stdio::null())
-        .env("MACHINE", &job.target.machine)
         .stdout(Stdio::from(log))
         .stderr(Stdio::from(stderr));
-    for (name, value) in [("TRIPLE", &job.target.triple), ("CPU", &job.target.cpu)] {
-        if let Some(value) = value {
-            command.env(name, value);
-        } else {
-            command.env_remove(name);
-        }
-    }
+    set_env(&mut command, job);
 
     // A timeout must also kill compiler and QEMU children.
     #[cfg(unix)]
@@ -517,8 +515,26 @@ fn run_process(root: &Path, job: &TestJob, timeout: Duration) -> Result<Outcome,
     }
 }
 
-fn run_job(root: &Path, job: &TestJob, timeout: Duration) -> TestResult {
-    let mut outcome = run_process(root, job, timeout).unwrap_or_else(|err| {
+/// The ELF scripts read the target from MACHINE, and TRIPLE and CPU when
+/// cross-linking.
+fn elf_env(command: &mut Command, job: &TestJob) {
+    command.env("MACHINE", &job.target.machine);
+    for (name, value) in [("TRIPLE", &job.target.triple), ("CPU", &job.target.cpu)] {
+        if let Some(value) = value {
+            command.env(name, value);
+        } else {
+            command.env_remove(name);
+        }
+    }
+}
+
+fn run_job(
+    root: &Path,
+    job: &TestJob,
+    timeout: Duration,
+    set_env: &(dyn Fn(&mut Command, &TestJob) + Sync),
+) -> TestResult {
+    let mut outcome = run_process(root, job, timeout, set_env).unwrap_or_else(|err| {
         eprintln!("{}: {err}", job.name);
         Outcome::Fail
     });
@@ -549,6 +565,16 @@ fn run_job(root: &Path, job: &TestJob, timeout: Duration) -> TestResult {
 }
 
 fn run_jobs(root: &Path, jobs: Vec<TestJob>, options: &Options) -> Vec<TestResult> {
+    run_jobs_with(root, jobs, options, elf_env)
+}
+
+fn run_jobs_with(
+    root: &Path,
+    jobs: Vec<TestJob>,
+    options: &Options,
+    set_env: impl Fn(&mut Command, &TestJob) + Sync,
+) -> Vec<TestResult> {
+    let set_env = &set_env;
     if jobs.is_empty() {
         return Vec::new();
     }
@@ -567,7 +593,7 @@ fn run_jobs(root: &Path, jobs: Vec<TestJob>, options: &Options) -> Vec<TestResul
                     let Some(job) = jobs.get(index) else {
                         break;
                     };
-                    if sender.send(run_job(root, job, options.timeout)).is_err() {
+                    if sender.send(run_job(root, job, options.timeout, set_env)).is_err() {
                         break;
                     }
                 }
@@ -659,6 +685,80 @@ pub fn run(cases_dirs: &[PathBuf], mold: &Path) -> ExitCode {
     }
 
     let results = run_jobs(&work_dir, jobs, &options);
+    if print_summary(&results) { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+}
+
+/// Runs the Mach-O shell tests natively on a macOS host, for the host's
+/// architecture and, when Rosetta is available, for x86-64 as well. The
+/// scripts see the linker under test as `$mold`, invoked as `ld64.mold`,
+/// and the architecture as `$ARCH`.
+pub fn run_macho(cases_dir: &Path, mold: &Path) -> ExitCode {
+    let options = parse_options();
+    let work_dir = match prepare_work_dir(mold) {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("mold-tests: {err}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let mut archs = vec![if cfg!(target_arch = "aarch64") { "arm64" } else { "x86_64" }];
+    if archs[0] == "arm64"
+        && Command::new("arch")
+            .args(["-x86_64", "/usr/bin/true"])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .is_ok_and(|status| status.success())
+    {
+        archs.push("x86_64");
+    }
+    let scripts = match discover_scripts(cases_dir) {
+        Ok(scripts) => scripts,
+        Err(err) => {
+            eprintln!("mold-tests: {err}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let ld64 = work_dir.join("ld64.mold");
+    if let Err(err) = replace_file_link(&work_dir.join("mold"), &ld64) {
+        eprintln!("mold-tests: {err}");
+        return ExitCode::FAILURE;
+    }
+
+    let mut jobs = Vec::new();
+    for &arch in &archs {
+        let target = Arc::new(Target {
+            machine: arch.to_owned(),
+            triple: None,
+            cpu: None,
+            label: format!("macho-{arch}"),
+        });
+        let result_dir = work_dir.join("out/test/results").join(&target.label);
+        if !options.list {
+            if let Err(err) = clear_results(&result_dir) {
+                eprintln!("mold-tests: {err}");
+                return ExitCode::FAILURE;
+            }
+        }
+        for (name, script) in &scripts {
+            if matches_patterns(name, &options.patterns) {
+                jobs.push(TestJob {
+                    target: Arc::clone(&target),
+                    script: script.clone(),
+                    name: name.clone(),
+                    log: result_dir.join(format!("{name}.log")),
+                    status_file: result_dir.join(format!("{name}.status")),
+                });
+            }
+        }
+    }
+    if options.list {
+        print_inventory(&jobs, &[]);
+        return ExitCode::SUCCESS;
+    }
+    let results = run_jobs_with(&work_dir, jobs, &options, |command, job| {
+        command.env("mold", &ld64).env("ARCH", &job.target.machine);
+    });
     if print_summary(&results) { ExitCode::SUCCESS } else { ExitCode::FAILURE }
 }
 
