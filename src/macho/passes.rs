@@ -1435,7 +1435,7 @@ pub fn coalesce_objc_refs<E: Arch>(ctx: &mut Context<E>) {
                 && !rel.is_subtracted
         };
         let key = match h.sectname() {
-            "__objc_classrefs" if !ctx.args.relocatable => continue,
+            "__objc_classrefs" if !ctx.args.relocatable && objc_refs_are_const(ctx) => continue,
             "__objc_selrefs" | "__objc_classrefs" => {
                 if isec.size != 8 || rels.len() != 1 || !plain_ptr(&rels[0]) {
                     continue;
@@ -2358,7 +2358,8 @@ pub struct ObjcMethList {
 
 fn objc_relative_method_lists<E: Arch>(ctx: &Context<E>) -> bool {
     ctx.args.objc_relative_method_lists.unwrap_or_else(|| {
-        ctx.args.platform == crate::macho::format::PLATFORM_MACOS
+        E::CPUTYPE == crate::macho::format::CPU_TYPE_ARM64
+            && ctx.args.platform == crate::macho::format::PLATFORM_MACOS
             && ctx.args.platform_minos >= crate::macho::format::encode_version(11, 0, 0)
     })
 }
@@ -2407,6 +2408,9 @@ fn objc_pointer_at<E: Arch>(ctx: &Context<E>, isec: u32, off: u64) -> Option<Obj
         RelocTarget::Section(t) => ObjcRef::Isec(t, rel.addend as u64),
     })
 }
+    // ld-prime converts method lists on arm64 only; an x86-64 image
+    // keeps the compiler's absolute lists in __objc_const at any
+    // deployment target.
 
 /// A reference's location as (live subsection, offset), for data
 /// defined in this link; None for an import or an absolute.
@@ -3929,6 +3933,51 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
 
     // Compute each input section's offset within its output section.
     // Following mold's design, sections lay out in parallel: each
+    // A final image always has a __TEXT,__text section, empty if no
+    // code reached it (a dylib of only data; ld-prime writes one of
+    // size 0, byte-aligned).
+    if !relocatable && !by_out.contains_key(&("__TEXT", "__text")) {
+        let mut osec = OutputSection::new("__TEXT", "__text");
+        osec.hdr.flags = S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS;
+        let id = OutputSectionId::new(ctx.output_sections.len() as u32);
+        ctx.output_sections.push(osec);
+        ctx.chunks.push(ChunkId::Output(id));
+        by_out.insert(("__TEXT", "__text"), id);
+    }
+
+    // The thread-local template (__thread_data followed by
+    // __thread_bss) is one image dyld copies per thread, so ld64 gives
+    // both sections the stricter of their alignments.
+    if let (Some(&data), Some(&bss)) =
+        (by_out.get(&("__DATA", "__thread_data")), by_out.get(&("__DATA", "__thread_bss")))
+    {
+        let p2align = ctx.output_sections[data.index()]
+            .hdr
+            .p2align
+            .max(ctx.output_sections[bss.index()].hdr.p2align);
+        ctx.output_sections[data.index()].hdr.p2align = p2align;
+        ctx.output_sections[bss.index()].hdr.p2align = p2align;
+    }
+
+    // A section cannot be aligned beyond the segment's page: ld64
+    // reduces the alignment with a warning (an x86-64 .align 16 asks
+    // for 64KB).
+    if !relocatable {
+        let max = E::PAGE_SIZE.trailing_zeros();
+        for osec in &mut ctx.output_sections {
+            if osec.hdr.p2align > max {
+                crate::warn!(
+                    "reducing alignment of section {},{} from 0x{:x} to 0x{:x} because it exceeds segment maximum alignment",
+                    osec.hdr.segname,
+                    osec.hdr.sectname,
+                    1u64 << osec.hdr.p2align,
+                    1u64 << max
+                );
+                osec.hdr.p2align = max;
+            }
+        }
+    }
+
     // output section's offsets depend only on its own members, so the
     // per-section prefix sums run on all cores and the results are
     // written back serially. The exception is a __TEXT section big
@@ -4061,6 +4110,12 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
                 .output_sections
                 .iter()
                 .position(|o| o.hdr.segname == seg && o.hdr.sectname == sect)
+        // ld-prime's x86-64 stubs are 2-byte aligned with chained
+        // fixups and byte-aligned with classic dyld info; arm64's are
+        // instruction-aligned.
+        if E::CPUTYPE == crate::macho::format::CPU_TYPE_X86_64 {
+            ctx.stubs.hdr.p2align = if ctx.use_chained_fixups() { 1 } else { 0 };
+        }
             {
                 Some(i) => OutputSectionId::new(i as u32),
                 None => {
@@ -4095,6 +4150,10 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
             ctx.objc_stubs.methname = Some(id);
         }
         if selrefs_size > 0 {
+        // 32-byte stubs on arm64; ld-prime leaves x86-64's byte-aligned.
+        if E::CPUTYPE == crate::macho::format::CPU_TYPE_X86_64 {
+            ctx.objc_stubs.hdr.p2align = 0;
+        }
             let id = tail_section(
                 ctx,
                 "__DATA",
