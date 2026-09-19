@@ -39,7 +39,8 @@ not grep -q '__objc_classrefs' $t/lc
 nm $t/exe > $t/nm
 not grep -q 'OBJC_CLASSLIST_REFERENCES' $t/nm
 dyld_info -fixups $t/exe > $t/fixups
-# One GOT slot per class, bound (NSMutableArray) or rebased (Foo).
+# The imported class binds through exactly one GOT slot; identical
+# references share it.
 [ "$(grep '__got' $t/fixups | grep -c 'OBJC_CLASS_\$_NSMutableArray')" = 1 ]
 
 $CC --ld-path=$mold -o $t/exe14 $t/a.o $t/b.o -framework Foundation -mmacosx-version-min=14.0
