@@ -359,6 +359,18 @@ impl<E: Arch> Context<E> {
         })
     }
 
+    /// Whether initializers default to __TEXT,__init_offsets: the
+    /// deployment targets that default to chained fixups, unless
+    /// -no_fixup_chains asked for the classic layout outright.
+    pub fn init_offsets_by_default(&self) -> bool {
+        if self.args.fixup_chains == Some(false) {
+            return false;
+        }
+        let min = if E::CPUTYPE == crate::macho::format::CPU_TYPE_ARM64 { 12 } else { 13 };
+        self.args.platform == crate::macho::format::PLATFORM_MACOS
+            && self.args.platform_minos >= crate::macho::format::encode_version(min, 0, 0)
+    }
+
     /// Whether the file is the internal object holding synthesized
     /// sections and symbols.
     pub fn is_internal(&self, idx: usize) -> bool {
