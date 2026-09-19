@@ -58,3 +58,7 @@ int get_tls(void) { return tls_var; }
 EOF
 $CC --ld-path=$mold -o $t/exe2 $t/main.o $t/a.o $t/b.o $t/c.o
 $t/exe2 | grep -q '^5 ok$'
+# The empty sections make no output section, as with ld64.
+otool -l $t/exe2 > $t/lc2
+not grep -q '__zero_one' $t/lc2
+not grep -q '__zero_two' $t/lc2

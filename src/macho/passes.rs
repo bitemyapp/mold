@@ -3832,6 +3832,28 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
         ctx.isecs[i].set_output_section(ChunkId::Output(osec_id));
     }
 
+    // An input section with no bytes makes no output section (an
+    // assembler's empty .section, an emptied coverage section): ld64
+    // drops it, and its subsections with it.
+    if !relocatable {
+        let dropped: Vec<OutputSectionId> = (0..ctx.output_sections.len())
+            .filter(|&i| {
+                let osec = &ctx.output_sections[i];
+                !osec.members.is_empty()
+                    && osec.members.iter().all(|&m| ctx.isecs[m as usize].size == 0)
+                    && !(osec.hdr.segname == "__TEXT" && osec.hdr.sectname == "__text")
+            })
+            .map(|i| OutputSectionId::new(i as u32))
+            .collect();
+        for id in dropped {
+            for m in std::mem::take(&mut ctx.output_sections[id.index()].members) {
+                ctx.isecs[m as usize].set_alive(false);
+            }
+            ctx.chunks.retain(|&c| c != ChunkId::Output(id));
+            by_out.retain(|_, &mut v| v != id);
+        }
+    }
+
     // -sectalign overrides an output section's alignment, e.g. to
     // page-align a blob that will be mapped or measured separately.
     // It can only raise the alignment: subsections were placed by
