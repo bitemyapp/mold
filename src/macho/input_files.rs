@@ -68,6 +68,10 @@ pub struct ObjectFile {
     /// -hidden-l: this file's external definitions become private
     /// externals.
     pub hidden: bool,
+    /// MH_SUBSECTIONS_VIA_SYMBOLS was set: symbols split the sections
+    /// into atoms. A -r output carries the flag only if every input
+    /// had it.
+    pub subsections_via_symbols: bool,
     /// Section headers in ordinal order (all segments' sections
     /// concatenated in load command order). Borrowed from the mapped
     /// file; the internal object owns its, and grows the list as the
@@ -120,6 +124,7 @@ impl ObjectFile {
             linker_options: Vec::new(),
             platform_versions: Vec::new(),
             hidden: false,
+            subsections_via_symbols: true,
             sect_hdrs: std::borrow::Cow::Owned(Vec::new()),
             relocs: Vec::new(),
             subsecs: Vec::new(),
@@ -250,6 +255,8 @@ pub struct StagedObject {
     pub sect_hdrs: &'static [MachSection],
     pub linker_options: Vec<Vec<String>>,
     pub platform_versions: Vec<PlatformVersion>,
+    /// MH_SUBSECTIONS_VIA_SYMBOLS: symbols split sections into atoms.
+    pub subsections_via_symbols: bool,
     pub isecs: Vec<InputSection>,
     pub relocs: Vec<crate::macho::input_sections::Reloc>,
     pub subsecs: Vec<crate::macho::input_sections::InputSectionId>,
@@ -468,6 +475,42 @@ pub fn stage_object<E: Arch>(
                 && let Some(points) = split_points.get_mut(nlist.n_sect as usize - 1)
             {
                 points.push(nlist.n_value);
+            }
+        }
+    } else {
+        // Without subsections a section is one atom, which ld64 names
+        // after the symbol at its start - and an atom is never weak:
+        // that symbol loses N_WEAK_DEF (later symbols in the section
+        // keep theirs, as aliases into the atom). Measured on
+        // ld-prime: a section holding only a weak _w exports _w as a
+        // plain definition, and a weak _w followed by a strong _pad2
+        // makes both plain.
+        let mut first: Vec<Option<u64>> = vec![None; sect_hdrs.len()];
+        for nlist in nlists.iter() {
+            if !nlist.is_stab()
+                && nlist.n_type() == N_SECT
+                && nlist.n_sect >= 1
+                && let Some(slot) = first.get_mut(nlist.n_sect as usize - 1)
+            {
+                *slot = Some(slot.map_or(nlist.n_value, |v| v.min(nlist.n_value)));
+            }
+        }
+        let strengthen: Vec<usize> = nlists
+            .iter()
+            .enumerate()
+            .filter(|(_, n)| {
+                !n.is_stab()
+                    && n.n_type() == N_SECT
+                    && n.n_desc & N_WEAK_DEF != 0
+                    && n.n_sect >= 1
+                    && first.get(n.n_sect as usize - 1).copied().flatten() == Some(n.n_value)
+            })
+            .map(|(i, _)| i)
+            .collect();
+        if !strengthen.is_empty() {
+            let owned = nlists.to_mut();
+            for i in strengthen {
+                owned[i].n_desc &= !N_WEAK_DEF;
             }
         }
     }
@@ -698,6 +741,7 @@ pub fn stage_object<E: Arch>(
         sect_hdrs,
         linker_options,
         platform_versions,
+        subsections_via_symbols: split_ok,
         isecs,
         relocs: obj_relocs,
         subsecs,
@@ -942,6 +986,7 @@ pub fn integrate_objects<E: Arch>(
             linker_options: st.linker_options,
             platform_versions: st.platform_versions,
             hidden: st.hidden,
+            subsections_via_symbols: st.subsections_via_symbols,
             sect_hdrs: std::borrow::Cow::Borrowed(st.sect_hdrs),
             relocs: st.relocs,
             subsecs: st.subsecs,
@@ -1034,6 +1079,7 @@ pub fn integrate_object_with<E: Arch>(
     ctx.objs.push(ObjectFile {
         mf: staged.mf,
         is_alive: staged.alive,
+        subsections_via_symbols: staged.subsections_via_symbols,
         priority: staged.priority,
         linker_options: staged.linker_options,
         platform_versions: staged.platform_versions,
@@ -1105,6 +1151,7 @@ pub fn parse_bitcode<E: Arch>(ctx: &mut Context<E>, mf: &'static MappedFile, ali
         mf,
         is_alive: alive,
         priority,
+        subsections_via_symbols: true,
         linker_options: Vec::new(),
         platform_versions: Vec::new(),
         hidden: false,
