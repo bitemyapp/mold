@@ -55,3 +55,9 @@ _pad2: .quad 2
 EOF2
 $CC --ld-path=$mold -o $t/exe3 $t/main.o $t/a8.o $t/c.o
 $t/exe3 | grep -q '^copy-C-whole-section 1 2 0$'
+# That whole-section atom is not weak in ld64's eyes: the symbol at
+# its start loses its weak flag, so the image exports a plain _w and
+# claims neither WEAK_DEFINES nor BINDS_TO_WEAK.
+dyld_info -exports $t/exe3 | grep '_w' | not grep -q weak-def
+nm -m $t/exe3 | grep ' _w$' | not grep -q weak
+[ "$(otool -h $t/exe3 | tail -1 | awk '{print $NF}')" = 0x00200085 ]
