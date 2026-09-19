@@ -34,6 +34,8 @@ otool -l $t/r.o > $t/lc
 [ "$(grep -c LC_LINKER_OPTION $t/lc)" = 2 ]
 grep -q -- '-lz' $t/lc
 grep -q Foundation $t/lc
+# b.o and c.o lack MH_SUBSECTIONS_VIA_SYMBOLS, so the output does too.
+otool -h $t/r.o | tail -1 | grep -q ' 0x00000000$'
 
 # The final link auto-links libz from the carried option.
 $CC --ld-path=$mold -o $t/exe $t/main.o $t/r.o
