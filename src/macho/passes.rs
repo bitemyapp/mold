@@ -152,6 +152,18 @@ struct PendingObject {
 /// archive members are queued for parallel staging; bitcode is
 /// registered immediately since libLTO calls are kept on one thread.
 #[allow(clippy::too_many_arguments)]
+/// -needed_library / -needed_framework: the dylibs the option names
+/// survive -dead_strip_dylibs. Only those: the public libraries their
+/// stubs re-export (CoreFoundation's libobjc) load implicitly like
+/// any other and are listed only if something binds to them.
+fn mark_needed<E: Arch>(ctx: &mut Context<E>, before: usize) {
+    for dylib in &mut ctx.dylibs[before..] {
+        if !dylib.is_implicit {
+            dylib.is_needed = true;
+        }
+    }
+}
+
 fn collect_file<E: Arch>(
     ctx: &mut Context<E>,
     mf: &'static MappedFile,
@@ -210,10 +222,18 @@ fn collect_file<E: Arch>(
             // -force_load make every member live up front; -ObjC does
             // so for members with Objective-C metadata, which register
             // classes by their mere presence.
+            // ld64 exempts clang's runtime library (libclang_rt.*.a,
+            // which the compiler driver adds to every link) from
+            // -all_load: its members are wanted only when referenced.
+            let all_load = ctx.args.all_load
+                && !std::path::Path::new(mf.name_str())
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .is_some_and(|n| n.starts_with("libclang_rt"));
             let members = crate::macho::files::read_archive_members(mf);
             for member in members {
                 let alive = force_load
-                    || ctx.args.all_load
+                    || all_load
                     || (ctx.args.load_objc && input_files::has_objc_sections(member));
                 match get_file_type(std::path::Path::new(""), member) {
                     FileType::LlvmBitcode => {
@@ -372,9 +392,7 @@ pub fn read_input_files<E: Arch>(ctx: &mut Context<E>) {
                 let mf = crate::macho::files::must_open(Path::new(path));
                 let before = ctx.dylibs.len();
                 collect_file(ctx, mf, false, false, false, false, &mut queue);
-                for dylib in &mut ctx.dylibs[before..] {
-                    dylib.is_needed = true;
-                }
+                mark_needed(ctx, before);
             }
             InputArg::ReexportLib(name) => match find_library(ctx, name) {
                 Some(path) => {
@@ -402,9 +420,7 @@ pub fn read_input_files<E: Arch>(ctx: &mut Context<E>) {
                     let mf = crate::macho::files::must_open(&path);
                     let before = ctx.dylibs.len();
                     collect_file(ctx, mf, false, false, false, false, &mut queue);
-                    for dylib in &mut ctx.dylibs[before..] {
-                        dylib.is_needed = true;
-                    }
+                    mark_needed(ctx, before);
                 }
                 None => error!("library not found: -needed-l{name}"),
             },
@@ -413,9 +429,7 @@ pub fn read_input_files<E: Arch>(ctx: &mut Context<E>) {
                     let mf = crate::macho::files::must_open(&path);
                     let before = ctx.dylibs.len();
                     collect_file(ctx, mf, false, false, false, false, &mut queue);
-                    for dylib in &mut ctx.dylibs[before..] {
-                        dylib.is_needed = true;
-                    }
+                    mark_needed(ctx, before);
                 }
                 None => error!("framework not found: {name}"),
             },
@@ -1895,9 +1909,15 @@ pub fn dead_strip_dylibs<E: Arch>(ctx: &mut Context<E>) {
             || dylib.is_implicit
     };
 
+    // libSystem stays whatever binds to it: ld-prime keeps it under
+    // -dead_strip_dylibs in an image that binds nothing from it (dyld
+    // needs it to run anything), so a dylib exporting only its own
+    // functions still lists it.
     let mut used = vec![false; ctx.dylibs.len()];
     for (i, dylib) in ctx.dylibs.iter().enumerate() {
-        used[i] = dylib.is_needed || !strippable(dylib);
+        used[i] = dylib.is_needed
+            || dylib.install_name == "/usr/lib/libSystem.B.dylib"
+            || !strippable(dylib);
     }
     // A dylib every reference to which is a weak import loads weakly
     // (LC_LOAD_WEAK_DYLIB), as ld64 does: the Swift overlays a program
