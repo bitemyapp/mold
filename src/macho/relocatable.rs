@@ -45,7 +45,10 @@ fn section_rank(segname: &str, sectname: &str, flags: u32) -> (u32, u32) {
     };
     let sect = match (segname, sectname) {
         ("__TEXT", "__text") => 0,
-        ("__TEXT", "__eh_frame") => 3,
+        // ld-prime keeps the exception tables after the other __TEXT
+        // sections (__const, __cstring), just before __eh_frame.
+        ("__TEXT", "__gcc_except_tab") => 3,
+        ("__TEXT", "__eh_frame") => 4,
         ("__TEXT", _) if flags & S_ATTR_PURE_INSTRUCTIONS != 0 => 1,
         ("__TEXT", _) => 2,
         ("__DATA", "__got") => 0,
@@ -75,6 +78,13 @@ fn section_rank(segname: &str, sectname: &str, flags: u32) -> (u32, u32) {
         _ => 0,
     };
     (seg, sect)
+}
+
+/// The n_desc of a symbol from an object without subsections: ld64
+/// marks the whole-section atoms no-dead-strip and drops the alt-entry
+/// marker, which means nothing there.
+fn whole_desc(desc: u16, whole: bool) -> u16 {
+    if whole { (desc | N_NO_DEAD_STRIP) & !N_ALT_ENTRY } else { desc }
 }
 
 pub fn link<E: Arch>(ctx: &mut Context<E>) {
@@ -213,7 +223,13 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
             })
             .sum();
         eh_slot = Some(extras.len());
-        extras.push(new_extra("__TEXT", "__eh_frame", 0, 3, size));
+        extras.push(new_extra(
+            "__TEXT",
+            "__eh_frame",
+            S_COALESCED | S_ATTR_NO_TOC | S_ATTR_STRIP_STATIC_SYMS | S_ATTR_LIVE_SUPPORT,
+            3,
+            size,
+        ));
     }
 
     // Every output section, merged or synthetic, in ld64's order:
@@ -353,7 +369,9 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
 
     // The sections whose atoms ld64 names itself: (N_PEXT, record
     // size; 0 for one record per subsection, as cstring literals are
-    // split).
+    // split). The entries of the __objc_*list sections get no symbol
+    // at all in ld-prime's output (their l_OBJC_LABEL_CLASS_$_ labels
+    // vanish).
     let rename_kind = |flags: u32, segname: &str, sectname: &str| -> Option<(bool, u64)> {
         if flags & SECTION_TYPE == S_CSTRING_LITERALS {
             return Some((true, 0));
@@ -361,12 +379,16 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
         match (segname, sectname) {
             ("__DATA", "__cfstring") => Some((true, 32)),
             ("__DATA", "__objc_selrefs") | ("__DATA", "__objc_classrefs") => Some((true, 8)),
-            ("__DATA", "__objc_classlist")
-            | ("__DATA", "__objc_nlclslist")
-            | ("__DATA", "__objc_catlist")
-            | ("__DATA", "__objc_nlcatlist") => Some((false, 8)),
             _ => None,
         }
+    };
+    let unnamed_list = |isec: usize| -> bool {
+        let h = ctx.hdr_of(&ctx.isecs[isec]);
+        h.segname() == "__DATA"
+            && matches!(
+                h.sectname(),
+                "__objc_classlist" | "__objc_nlclslist" | "__objc_catlist" | "__objc_nlcatlist"
+            )
     };
     // (subsection, record index) -> entry in `locals`; and the record
     // size of each such output section.
@@ -448,6 +470,11 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
         if !obj.is_alive {
             continue;
         }
+        // Without subsections the object's sections are whole atoms,
+        // which ld64 marks no-dead-strip - every symbol, the
+        // assembler's ltmpN labels (they name the atoms) included -
+        // and an alt entry means nothing there.
+        let whole = !obj.subsections_via_symbols;
         let r = obj.local_range();
         for (nlist, &sym_id) in obj.nlists[r.clone()].iter().zip(&obj.symbols[r]) {
             if nlist.is_stab() || nlist.is_extern() {
@@ -465,7 +492,10 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
                 continue;
             }
             let is_label = sym.name().starts_with('l') || sym.name().starts_with('L');
-            if is_label && !referenced.contains(&sym_id) {
+            if is_label && unnamed_list(isec) {
+                continue;
+            }
+            if is_label && !whole && !referenced.contains(&sym_id) {
                 let others =
                     named_at.get(&(obj_idx, nlist.n_sect, nlist.n_value)).copied().unwrap_or(0)
                         - u32::from(!sym.name().starts_with("ltmp"));
@@ -480,7 +510,7 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
             locals.push(Local {
                 name: sym.name().to_string(),
                 n_type: nlist.n_type,
-                n_desc: nlist.n_desc,
+                n_desc: whole_desc(nlist.n_desc, whole),
                 n_sect: ctx.isec_n_sect(&ctx.isecs[isec]),
                 addr: sym_addr(ctx, sym_id),
                 rename: Rename::None,
@@ -518,7 +548,10 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
                 locals.push(Local {
                     name: sym.name().to_string(),
                     n_type: N_PEXT | N_SECT,
-                    n_desc: nlist.n_desc & (N_ALT_ENTRY | N_NO_DEAD_STRIP),
+                    n_desc: whole_desc(
+                        nlist.n_desc & (N_ALT_ENTRY | N_NO_DEAD_STRIP),
+                        !obj.subsections_via_symbols,
+                    ),
                     n_sect: ctx.isec_n_sect(&ctx.isecs[isec]),
                     addr: sym_addr(ctx, sym_id),
                     rename: Rename::None,
@@ -527,28 +560,6 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
             }
         }
     }
-    // ld64 names the __eh_frame atoms too: every CIE is EH_Frame1 and
-    // every FDE func.eh, plain local symbols the FDEs' relocations
-    // (below) are expressed against.
-    let mut eh_local: Vec<usize> = Vec::with_capacity(eh_records.len());
-    if let Some(slot) = eh_slot {
-        for &(r, off) in &eh_records {
-            eh_local.push(locals.len());
-            locals.push(Local {
-                name: match r {
-                    EhRec::Cie(_) => "EH_Frame1".to_string(),
-                    EhRec::Fde(_) => "func.eh".to_string(),
-                },
-                n_type: N_SECT,
-                n_desc: 0,
-                n_sect: extra_ordinals[slot],
-                addr: extras[slot].addr + off as u64,
-                rename: Rename::None,
-                syms: Vec::new(),
-            });
-        }
-    }
-
     // Atom order, the linker-named atoms numbered in it.
     let mut order: Vec<usize> = (0..locals.len()).collect();
     order.sort_by_key(|&i| locals[i].addr);
@@ -580,7 +591,6 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
             n_value: l.addr,
         });
     }
-    let nlocal = nlists_out.len() as u32;
 
     // The n_desc flags a defined global carries in its object, which the
     // next link needs as much as this one did. N_ALT_ENTRY is the
@@ -643,6 +653,11 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
         if sym.is_weak_def() {
             n_desc |= N_WEAK_DEF;
         }
+        if let Some(FileId::Obj(o)) = sym.file()
+            && !ctx.objs[o as usize].subsections_via_symbols
+        {
+            n_desc = whole_desc(n_desc, true);
+        }
         index_of_sym.insert(i as u32, nlists_out.len() as u32);
         nlists_out.push(NList {
             n_strx: add_string(&mut strtab, sym.name()),
@@ -652,7 +667,6 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
             n_value: sym_addr(ctx, i as u32),
         });
     }
-    let nextdef = nlists_out.len() as u32 - nlocal;
 
     // Undefined and tentative symbols, sorted by name.
     let mut undefs: Vec<usize> = (0..ctx.symbols.syms.len())
@@ -681,7 +695,6 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
             n_value,
         });
     }
-    let nundef = nlists_out.len() as u32 - nlocal - nextdef;
     while !strtab.len().is_multiple_of(8) {
         strtab.push(0);
     }
@@ -768,34 +781,25 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
         extras[slot].relocs = cu_relocs;
     }
 
-    // __TEXT,__eh_frame, in ld64's form. A CIE's personality cell is a
-    // 4-byte pcrel GOT reference (the shape compilers emit). An FDE's
-    // self-relative fields become SUBTRACTOR pairs against the atoms'
-    // symbols, the field holding the addend: the CIE pointer is
-    // func.eh + 4 - EH_Frame1, pc_begin is the function's symbol - 8 -
-    // func.eh, and the LSDA pointer its symbol - offset - func.eh. A
-    // function or LSDA without a symbol keeps a self-relative value.
+    // __TEXT,__eh_frame, in ld-prime's form: the input CIEs and FDEs
+    // copied through with their self-relative fields recomputed for
+    // the merged layout - the CIE pointer, pc_begin and the LSDA
+    // pointer - and no symbols or relocations of their own but the
+    // CIE's personality cell, a 4-byte pcrel GOT reference (the shape
+    // compilers emit). ld64 classic named every CIE EH_Frame1 and
+    // every FDE func.eh and wrote the fields as SUBTRACTOR pairs
+    // against them; ld-prime does not.
     let mut eh_data: Vec<u8> = Vec::new();
     let mut eh_relocs: Vec<MachRel> = Vec::new();
     let mut eh_patches: Vec<(u32, u64, u8)> = Vec::new();
     {
-        let mut cie_local: HashMap<usize, usize> = HashMap::new();
-        for (i, &(r, _)) in eh_records.iter().enumerate() {
+        let mut cie_off: HashMap<usize, u32> = HashMap::new();
+        for &(r, off) in &eh_records {
             if let EhRec::Cie(c) = r {
-                cie_local.insert(c, eh_local[i]);
+                cie_off.insert(c, off);
             }
         }
-        let pair = |rels: &mut Vec<MachRel>, at: u32, length: u32, from: u32, to: u32| {
-            rels.push(MachRel {
-                r_address: at,
-                bits: from | (length << 25) | (1 << 27) | ((E::RELOC_SUBTRACTOR as u32) << 28),
-            });
-            rels.push(MachRel {
-                r_address: at,
-                bits: to | (length << 25) | (1 << 27) | ((E::RELOC_UNSIGNED as u32) << 28),
-            });
-        };
-        for (i, &(r, off)) in eh_records.iter().enumerate() {
+        for &(r, off) in &eh_records {
             debug_assert_eq!(off as usize, eh_data.len());
             match r {
                 EhRec::Cie(c) => {
@@ -820,29 +824,20 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
                 }
                 EhRec::Fde(f) => {
                     let fde = &ctx.fdes[f];
-                    let me = entry_symnum[eh_local[i]];
                     eh_data.extend_from_slice(fde.data);
                     let o = off as usize;
-                    // CIE pointer.
-                    let cie_sym = entry_symnum[cie_local[&(fde.cie as usize)]];
-                    eh_data[o + 4..o + 8].copy_from_slice(&4u32.to_le_bytes());
-                    pair(&mut eh_relocs, off + 4, 2, cie_sym, me);
-                    // pc_begin.
+                    // The CIE pointer: how far back the CIE is from
+                    // this field.
+                    let cie_delta = (off + 4).wrapping_sub(cie_off[&(fde.cie as usize)]);
+                    eh_data[o + 4..o + 8].copy_from_slice(&cie_delta.to_le_bytes());
+                    // pc_begin: the function, relative to the field.
                     let func_isec = ctx.resolve_isec(fde.isec as usize);
-                    match sym_at.get(&(func_isec, fde.func_offset as u64)) {
-                        Some(&func_sym) => {
-                            eh_data[o + 8..o + 16].copy_from_slice(&(-8i64).to_le_bytes());
-                            pair(&mut eh_relocs, off + 8, 3, me, func_sym);
-                        }
-                        None => {
-                            let isec = &ctx.isecs[func_isec];
-                            let func_addr = ctx.chunk_header(isec.output_section().unwrap()).addr
-                                + isec.offset as u64
-                                + fde.func_offset as u64;
-                            eh_patches.push((off + 8, func_addr, 8));
-                        }
-                    }
-                    // LSDA.
+                    let isec = &ctx.isecs[func_isec];
+                    let func_addr = ctx.chunk_header(isec.output_section().unwrap()).addr
+                        + isec.offset as u64
+                        + fde.func_offset as u64;
+                    eh_patches.push((off + 8, func_addr, 8));
+                    // The LSDA pointer, past the augmentation length.
                     if let Some((lsda, lsda_off)) = fde.lsda {
                         let mut pos = 24;
                         while eh_data[o + pos] & 0x80 != 0 {
@@ -851,31 +846,11 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
                         pos += 1;
                         let size = ctx.cies[fde.cie as usize].lsda_size;
                         let lsda = ctx.resolve_isec(lsda as usize);
-                        match sym_at.get(&(lsda, lsda_off as u64)) {
-                            Some(&lsda_sym) => {
-                                let a = -(pos as i64);
-                                match size {
-                                    8 => eh_data[o + pos..o + pos + 8]
-                                        .copy_from_slice(&a.to_le_bytes()),
-                                    _ => eh_data[o + pos..o + pos + 4]
-                                        .copy_from_slice(&(a as i32).to_le_bytes()),
-                                }
-                                pair(
-                                    &mut eh_relocs,
-                                    off + pos as u32,
-                                    if size == 8 { 3 } else { 2 },
-                                    me,
-                                    lsda_sym,
-                                );
-                            }
-                            None => {
-                                let l = &ctx.isecs[lsda];
-                                let lsda_addr = ctx.chunk_header(l.output_section().unwrap()).addr
-                                    + l.offset as u64
-                                    + lsda_off as u64;
-                                eh_patches.push((off + pos as u32, lsda_addr, size));
-                            }
-                        }
+                        let l = &ctx.isecs[lsda];
+                        let lsda_addr = ctx.chunk_header(l.output_section().unwrap()).addr
+                            + l.offset as u64
+                            + lsda_off as u64;
+                        eh_patches.push((off + pos as u32, lsda_addr, size));
                     }
                 }
             }
@@ -982,10 +957,11 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
     let num_sections = sects.len();
     let seg_cmd_size = size_of::<SegmentCommand>() + num_sections * size_of::<MachSection>();
     let sizeofcmds = seg_cmd_size
-        + size_of::<BuildVersionCommand>()
-        + linker_options.iter().map(|o| linker_option_cmdsize(o)).sum::<usize>()
         + size_of::<SymtabCommand>()
-        + size_of::<DysymtabCommand>();
+        + size_of::<BuildVersionCommand>()
+        + 8
+        + size_of::<LinkEditDataCommand>()
+        + linker_options.iter().map(|o| linker_option_cmdsize(o)).sum::<usize>();
     let mut off = (size_of::<MachHeader>() + sizeofcmds) as u64;
 
     // File offsets mirror addresses, except that the address span of a
@@ -1047,6 +1023,32 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
         extra.reloff = off;
         off += (extra.relocs.len() * size_of::<MachRel>()) as u64;
     }
+    // LC_DATA_IN_CODE: the inputs' entries at their merged offsets,
+    // between the relocations and the symbol table (the command is
+    // present even with no entries, as ld64 writes it).
+    let mut dice: Vec<(u32, u16, u16)> = Vec::new();
+    for obj in &ctx.objs {
+        if !obj.is_alive {
+            continue;
+        }
+        for &(o, len, kind) in &obj.dice {
+            let Some((isec, off_in)) =
+                crate::macho::input_files::find_subsec(&ctx.isecs, &obj.subsecs, o as u64)
+            else {
+                continue;
+            };
+            let isec = &ctx.isecs[ctx.resolve_isec(isec)];
+            if !isec.is_alive() {
+                continue;
+            }
+            let Some(chunk) = isec.output_section() else { continue };
+            let fileoff = ctx.chunk_header(chunk).fileoff + isec.offset as u64 + off_in;
+            dice.push((fileoff as u32, len, kind));
+        }
+    }
+    dice.sort_unstable();
+    let diceoff = off;
+    off += dice.len() as u64 * 8;
     let symoff = off;
     off += (nlists_out.len() * size_of::<NList>()) as u64;
     let stroff = off;
@@ -1062,7 +1064,19 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
         filetype: MH_OBJECT,
         ncmds,
         sizeofcmds: sizeofcmds as u32,
-        flags: MH_SUBSECTIONS_VIA_SYMBOLS,
+        // Only if every input had it: one whole-section object makes
+        // the output whole-section too (ld64).
+        flags: if ctx
+            .objs
+            .iter()
+            .enumerate()
+            .filter(|(i, o)| o.is_alive && !ctx.is_internal(*i))
+            .all(|(_, o)| o.subsections_via_symbols)
+        {
+            MH_SUBSECTIONS_VIA_SYMBOLS
+        } else {
+            0
+        },
         reserved: 0,
     };
     hdr.write_to(&mut buf);
@@ -1129,16 +1143,61 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
         p += size_of::<MachSection>();
     }
 
+    // ld64's order: the symbol table, the build version, data in
+    // code, then the carried auto-link options. A -r output has no
+    // LC_DYSYMTAB (ld-prime writes none).
+    let st = SymtabCommand {
+        cmd: LC_SYMTAB,
+        cmdsize: size_of::<SymtabCommand>() as u32,
+        symoff: symoff as u32,
+        nsyms: nlists_out.len() as u32,
+        stroff: stroff as u32,
+        strsize: strtab.len() as u32,
+    };
+    st.write_to(&mut buf[p..]);
+    p += size_of::<SymtabCommand>();
+
+    // The build version: -platform_version's, else the first object's
+    // (ld64 warns about inputs built for a newer OS than the first,
+    // whose target the output takes), with the linker's tool entry as
+    // in a final image.
+    let (platform, minos, sdk) = if ctx.args.platform_minos != 0 {
+        (ctx.args.platform, ctx.args.platform_minos, ctx.args.platform_sdk)
+    } else {
+        ctx.objs
+            .iter()
+            .filter(|o| o.is_alive)
+            .find_map(|o| o.platform_versions.first())
+            .map_or((ctx.args.platform, 0, 0), |v| (v.platform, v.minos, v.sdk))
+    };
     let bv = BuildVersionCommand {
         cmd: LC_BUILD_VERSION,
-        cmdsize: size_of::<BuildVersionCommand>() as u32,
-        platform: ctx.args.platform,
-        minos: ctx.args.platform_minos,
-        sdk: ctx.args.platform_sdk,
-        ntools: 0,
+        cmdsize: (size_of::<BuildVersionCommand>() + 8) as u32,
+        platform,
+        minos,
+        sdk,
+        ntools: 1,
     };
     bv.write_to(&mut buf[p..]);
     p += size_of::<BuildVersionCommand>();
+    buf[p..p + 4].copy_from_slice(&54321u32.to_le_bytes());
+    buf[p + 4..p + 8].copy_from_slice(&1u32.to_le_bytes());
+    p += 8;
+
+    let dc = LinkEditDataCommand {
+        cmd: LC_DATA_IN_CODE,
+        cmdsize: size_of::<LinkEditDataCommand>() as u32,
+        dataoff: diceoff as u32,
+        datasize: (dice.len() * 8) as u32,
+    };
+    dc.write_to(&mut buf[p..]);
+    p += size_of::<LinkEditDataCommand>();
+    for (i, &(o, len, kind)) in dice.iter().enumerate() {
+        let q = diceoff as usize + i * 8;
+        buf[q..q + 4].copy_from_slice(&o.to_le_bytes());
+        buf[q + 4..q + 6].copy_from_slice(&len.to_le_bytes());
+        buf[q + 6..q + 8].copy_from_slice(&kind.to_le_bytes());
+    }
 
     for opt in &linker_options {
         let cmdsize = linker_option_cmdsize(opt);
@@ -1152,30 +1211,6 @@ pub fn link<E: Arch>(ctx: &mut Context<E>) {
         }
         p += cmdsize;
     }
-
-    let st = SymtabCommand {
-        cmd: LC_SYMTAB,
-        cmdsize: size_of::<SymtabCommand>() as u32,
-        symoff: symoff as u32,
-        nsyms: nlists_out.len() as u32,
-        stroff: stroff as u32,
-        strsize: strtab.len() as u32,
-    };
-    st.write_to(&mut buf[p..]);
-    p += size_of::<SymtabCommand>();
-
-    let dst_cmd = DysymtabCommand {
-        cmd: LC_DYSYMTAB,
-        cmdsize: size_of::<DysymtabCommand>() as u32,
-        ilocalsym: 0,
-        nlocalsym: nlocal,
-        iextdefsym: nlocal,
-        nextdefsym: nextdef,
-        iundefsym: nlocal + nextdef,
-        nundefsym: nundef,
-        ..Default::default()
-    };
-    dst_cmd.write_to(&mut buf[p..]);
 
     // Section contents: raw copies, with non-external targets' embedded
     // addresses rewritten into the merged address space.

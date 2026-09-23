@@ -339,6 +339,7 @@ pub fn collect_fixups<E: Arch>(
                         );
                     }
                     match ctx.reloc_target_sym(isec.file as usize, rel) {
+                        Some(id) if ctx.is_swift_force_load_ref(id) => None,
                         Some(id) if ctx.binds_at_runtime(id) => {
                             Some((addr, Some(id), rel.addend as u64))
                         }
@@ -362,13 +363,6 @@ pub fn collect_fixups<E: Arch>(
                 continue;
             }
             let sym = Some(id).filter(|&id| ctx.binds_at_runtime(id));
-            fixups.push((addr + i as u64 * 8, sym, 0));
-        }
-    }
-    {
-        let addr = ctx.thread_ptrs.hdr.addr;
-        for (i, &id) in ctx.thread_ptrs.symbols.iter().enumerate() {
-            let sym = Some(id).filter(|&id| ctx.symbols[id].is_imported());
             fixups.push((addr + i as u64 * 8, sym, 0));
         }
     }

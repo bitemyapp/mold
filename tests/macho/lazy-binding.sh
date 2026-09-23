@@ -27,7 +27,10 @@ grep -q '__got .* bind .*dyld_stub_binder' $t/fixups
 grep -q '__la_symbol_ptr .* lazy-bind .*_printf' $t/fixups
 grep -q '__la_symbol_ptr .* lazy-bind .*_getpid' $t/fixups
 [ "$(grep -c '__la_symbol_ptr .* rebase' $t/fixups)" = 2 ]
-nm -m $t/exe | grep -q 'undefined.*dyld_stub_binder'
+nm -m $t/exe > $t/nm
+grep -q 'undefined.*dyld_stub_binder' $t/nm
+# The word the stub helper hands dyld_stub_binder has its ld64 name.
+grep -q '(__DATA,__data) non-external __dyld_private' $t/nm
 # The indirect symbol table lists the stubs, the GOT, then the lazy
 # pointers (the stubs' symbols again).
 otool -I $t/exe > $t/isyms
@@ -54,3 +57,10 @@ $CC --ld-path=$mold -o $t/exe_ch $t/a.o -mmacosx-version-min=13.0
 $t/exe_ch | grep -q '^4$'
 otool -l $t/exe_ch > $t/lc_ch
 not grep -q '__la_symbol_ptr' $t/lc_ch
+
+# x86-64 stubs are byte-aligned with classic dyld info, 2-byte aligned
+# with chained fixups.
+if [ $ARCH = x86_64 ]; then
+  grep -A8 'sectname __stubs' $t/lc | grep -q 'align 2^0'
+  grep -A8 'sectname __stubs' $t/lc_ch | grep -q 'align 2^1'
+fi

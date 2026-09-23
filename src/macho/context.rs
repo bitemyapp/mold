@@ -16,7 +16,7 @@ use crate::macho::output_chunks::dyld_info::{
 use crate::macho::output_chunks::eh_frame::EhFrameSection;
 use crate::macho::output_chunks::export_trie::ExportTrieSection;
 use crate::macho::output_chunks::got::{
-    GotSection, LazyPtrsSection, StubHelperSection, StubsSection, ThreadPtrsSection,
+    GotSection, LazyPtrsSection, StubHelperSection, StubsSection,
 };
 use crate::macho::output_chunks::misc::{
     CodeSignatureSection, DataInCodeSection, FunctionStartsSection, InitOffsetsSection,
@@ -73,7 +73,6 @@ pub struct Context<E: Arch> {
     pub stub_helper: StubHelperSection,
     pub lazy_ptrs: LazyPtrsSection,
     pub got: GotSection,
-    pub thread_ptrs: ThreadPtrsSection,
     pub objc_stubs: ObjcStubsSection,
     pub objc_methlist: ObjcMethlistSection,
     pub objc_imageinfo: ObjcImageInfoSection,
@@ -104,6 +103,10 @@ pub struct Context<E: Arch> {
     /// ld64's __OBJC_$_INSTANCE_METHODS_Foo(A|B) on a merged method
     /// list, and the like. (name, subsection).
     pub extra_local_syms: Vec<(&'static str, u32)>,
+    /// The first object (in input order) that claimed a common symbol:
+    /// the synthesized __common section takes its place in the section
+    /// order from it, as ld64's does.
+    pub common_first_obj: Option<u32>,
     /// -alias and selective reexports: (alias, imported target).
     /// Emitted as N_INDR symbols and re-export trie entries.
     pub indirect_aliases: Vec<(SymbolId, SymbolId)>,
@@ -154,7 +157,6 @@ impl<E: Arch> Context<E> {
             stub_helper: StubHelperSection::new(),
             lazy_ptrs: LazyPtrsSection::new(),
             got: GotSection::new(),
-            thread_ptrs: ThreadPtrsSection::new(),
             objc_stubs: ObjcStubsSection::new(),
             objc_methlist: ObjcMethlistSection::new(),
             objc_imageinfo: ObjcImageInfoSection::new(),
@@ -176,6 +178,7 @@ impl<E: Arch> Context<E> {
             code_signature: CodeSignatureSection::new(),
             data_blobs: Vec::new(),
             extra_local_syms: Vec::new(),
+            common_first_obj: None,
             dylib_load_seq: 0,
             indirect_aliases: Vec::new(),
             boundary_syms: Vec::new(),
@@ -198,7 +201,6 @@ impl<E: Arch> Context<E> {
             ChunkId::StubHelper => &self.stub_helper.hdr,
             ChunkId::LazyPtrs => &self.lazy_ptrs.hdr,
             ChunkId::Got => &self.got.hdr,
-            ChunkId::ThreadPtrs => &self.thread_ptrs.hdr,
             ChunkId::ObjcStubs => &self.objc_stubs.hdr,
             ChunkId::ObjcMethlist => &self.objc_methlist.hdr,
             ChunkId::ObjcImageInfo => &self.objc_imageinfo.hdr,
@@ -229,7 +231,6 @@ impl<E: Arch> Context<E> {
             ChunkId::StubHelper => &mut self.stub_helper.hdr,
             ChunkId::LazyPtrs => &mut self.lazy_ptrs.hdr,
             ChunkId::Got => &mut self.got.hdr,
-            ChunkId::ThreadPtrs => &mut self.thread_ptrs.hdr,
             ChunkId::ObjcStubs => &mut self.objc_stubs.hdr,
             ChunkId::ObjcMethlist => &mut self.objc_methlist.hdr,
             ChunkId::ObjcImageInfo => &mut self.objc_imageinfo.hdr,
@@ -357,6 +358,18 @@ impl<E: Arch> Context<E> {
             self.args.platform == crate::macho::format::PLATFORM_MACOS
                 && self.args.platform_minos >= crate::macho::format::encode_version(min, 0, 0)
         })
+    }
+
+    /// Whether initializers default to __TEXT,__init_offsets: the
+    /// deployment targets that default to chained fixups, unless
+    /// -no_fixup_chains asked for the classic layout outright.
+    pub fn init_offsets_by_default(&self) -> bool {
+        if self.args.fixup_chains == Some(false) {
+            return false;
+        }
+        let min = if E::CPUTYPE == crate::macho::format::CPU_TYPE_ARM64 { 12 } else { 13 };
+        self.args.platform == crate::macho::format::PLATFORM_MACOS
+            && self.args.platform_minos >= crate::macho::format::encode_version(min, 0, 0)
     }
 
     /// Whether the file is the internal object holding synthesized
@@ -534,6 +547,15 @@ impl<E: Arch> Context<E> {
             && !sym.is_private_extern()
     }
 
+    /// A weak reference to an overlay's __swift_FORCE_LOAD_$_ marker.
+    /// The Swift compiler emits one per module to keep the overlay
+    /// loaded; ld-prime keeps the dylib as a dependency but writes no
+    /// fixup for the slot (it stays zero), and so do we.
+    pub fn is_swift_force_load_ref(&self, id: SymbolId) -> bool {
+        let sym = &self.symbols[id];
+        sym.is_imported() && sym.is_weak_ref() && sym.name().starts_with("__swift_FORCE_LOAD_$_")
+    }
+
     /// True if dyld fills the references to this symbol: an import, or
     /// a weak definition subject to coalescing.
     pub fn binds_at_runtime(&self, id: SymbolId) -> bool {
@@ -603,11 +625,6 @@ impl<E: Arch> Context<E> {
     /// Returns the address of a symbol's __got slot.
     pub fn sym_got_addr(&self, id: SymbolId) -> u64 {
         self.got.hdr.addr + self.sym_aux(id).got_idx as u64 * 8
-    }
-
-    /// Returns the address of a symbol's __thread_ptrs slot.
-    pub fn sym_tlv_ptr_addr(&self, id: SymbolId) -> u64 {
-        self.thread_ptrs.hdr.addr + self.sym_aux(id).tlv_idx as u64 * 8
     }
 
     /// Returns the symbol a relocation refers to, if it refers to one.

@@ -25,13 +25,16 @@ pub enum FileId {
 pub struct PlatformVersion {
     pub platform: u32,
     pub minos: u32,
+    /// The SDK the object was built against (a -r output without a
+    /// -platform_version takes the first object's).
+    pub sdk: u32,
 }
 
 impl PlatformVersion {
     fn read(cmd: u32, data: &[u8], cputype: u32) -> Self {
         if cmd == LC_BUILD_VERSION {
             let cmd = BuildVersionCommand::read_from(data);
-            return Self { platform: cmd.platform, minos: cmd.minos };
+            return Self { platform: cmd.platform, minos: cmd.minos, sdk: cmd.sdk };
         }
         // Legacy Intel mobile objects target the simulator. Arm64
         // simulators always use LC_BUILD_VERSION.
@@ -46,7 +49,8 @@ impl PlatformVersion {
             LC_VERSION_MIN_WATCHOS => PLATFORM_WATCHOS,
             _ => unreachable!(),
         };
-        Self { platform, minos: VersionMinCommand::read_from(data).version }
+        let vm = VersionMinCommand::read_from(data);
+        Self { platform, minos: vm.version, sdk: vm.sdk }
     }
 }
 
@@ -68,6 +72,10 @@ pub struct ObjectFile {
     /// -hidden-l: this file's external definitions become private
     /// externals.
     pub hidden: bool,
+    /// MH_SUBSECTIONS_VIA_SYMBOLS was set: symbols split the sections
+    /// into atoms. A -r output carries the flag only if every input
+    /// had it.
+    pub subsections_via_symbols: bool,
     /// Section headers in ordinal order (all segments' sections
     /// concatenated in load command order). Borrowed from the mapped
     /// file; the internal object owns its, and grows the list as the
@@ -119,6 +127,7 @@ impl ObjectFile {
             linker_options: Vec::new(),
             platform_versions: Vec::new(),
             hidden: false,
+            subsections_via_symbols: true,
             sect_hdrs: std::borrow::Cow::Owned(Vec::new()),
             relocs: Vec::new(),
             subsecs: Vec::new(),
@@ -249,6 +258,8 @@ pub struct StagedObject {
     pub sect_hdrs: &'static [MachSection],
     pub linker_options: Vec<Vec<String>>,
     pub platform_versions: Vec<PlatformVersion>,
+    /// MH_SUBSECTIONS_VIA_SYMBOLS: symbols split sections into atoms.
+    pub subsections_via_symbols: bool,
     pub isecs: Vec<InputSection>,
     pub relocs: Vec<crate::macho::input_sections::Reloc>,
     pub subsecs: Vec<crate::macho::input_sections::InputSectionId>,
@@ -467,6 +478,42 @@ pub fn stage_object<E: Arch>(
                 && let Some(points) = split_points.get_mut(nlist.n_sect as usize - 1)
             {
                 points.push(nlist.n_value);
+            }
+        }
+    } else {
+        // Without subsections a section is one atom, which ld64 names
+        // after the symbol at its start - and an atom is never weak:
+        // that symbol loses N_WEAK_DEF (later symbols in the section
+        // keep theirs, as aliases into the atom). Measured on
+        // ld-prime: a section holding only a weak _w exports _w as a
+        // plain definition, and a weak _w followed by a strong _pad2
+        // makes both plain.
+        let mut first: Vec<Option<u64>> = vec![None; sect_hdrs.len()];
+        for nlist in nlists.iter() {
+            if !nlist.is_stab()
+                && nlist.n_type() == N_SECT
+                && nlist.n_sect >= 1
+                && let Some(slot) = first.get_mut(nlist.n_sect as usize - 1)
+            {
+                *slot = Some(slot.map_or(nlist.n_value, |v| v.min(nlist.n_value)));
+            }
+        }
+        let strengthen: Vec<usize> = nlists
+            .iter()
+            .enumerate()
+            .filter(|(_, n)| {
+                !n.is_stab()
+                    && n.n_type() == N_SECT
+                    && n.n_desc & N_WEAK_DEF != 0
+                    && n.n_sect >= 1
+                    && first.get(n.n_sect as usize - 1).copied().flatten() == Some(n.n_value)
+            })
+            .map(|(i, _)| i)
+            .collect();
+        if !strengthen.is_empty() {
+            let owned = nlists.to_mut();
+            for i in strengthen {
+                owned[i].n_desc &= !N_WEAK_DEF;
             }
         }
     }
@@ -697,6 +744,7 @@ pub fn stage_object<E: Arch>(
         sect_hdrs,
         linker_options,
         platform_versions,
+        subsections_via_symbols: split_ok,
         isecs,
         relocs: obj_relocs,
         subsecs,
@@ -941,6 +989,7 @@ pub fn integrate_objects<E: Arch>(
             linker_options: st.linker_options,
             platform_versions: st.platform_versions,
             hidden: st.hidden,
+            subsections_via_symbols: st.subsections_via_symbols,
             sect_hdrs: std::borrow::Cow::Borrowed(st.sect_hdrs),
             relocs: st.relocs,
             subsecs: st.subsecs,
@@ -1033,6 +1082,7 @@ pub fn integrate_object_with<E: Arch>(
     ctx.objs.push(ObjectFile {
         mf: staged.mf,
         is_alive: staged.alive,
+        subsections_via_symbols: staged.subsections_via_symbols,
         priority: staged.priority,
         linker_options: staged.linker_options,
         platform_versions: staged.platform_versions,
@@ -1104,6 +1154,7 @@ pub fn parse_bitcode<E: Arch>(ctx: &mut Context<E>, mf: &'static MappedFile, ali
         mf,
         is_alive: alive,
         priority,
+        subsections_via_symbols: true,
         linker_options: Vec::new(),
         platform_versions: Vec::new(),
         hidden: false,
@@ -1755,8 +1806,11 @@ pub fn get_fat_slice<E: Arch>(mf: &'static MappedFile) -> &'static MappedFile {
 /// UIFoundation, private: ld-prime binds NSHomeDirectory to Foundation
 /// and NSAttachmentAttributeName to AppKit).
 fn is_public_location(install_name: &str) -> bool {
+    // /usr/lib and the Swift overlays in /usr/lib/swift: ld-prime binds
+    // to a re-exported libswift_Builtin_float.dylib directly.
     if let Some(rest) = install_name.strip_prefix("/usr/lib/") {
-        return !rest.contains('/');
+        return !rest.contains('/')
+            || rest.strip_prefix("swift/").is_some_and(|rest| !rest.contains('/'));
     }
     if let Some(rest) = install_name.strip_prefix("/System/Library/Frameworks/") {
         // Only a top-level framework: X.framework/... with no further
@@ -1772,17 +1826,25 @@ fn is_public_location(install_name: &str) -> bool {
 /// implicit dylib of its own (its symbols bind to it), recursively
 /// loading what it re-exports in turn; a private one's exports are
 /// merged into `exports`/`tlv_exports` as the re-exporting dylib's,
-/// and its own re-exports are walked the same way.
+/// and its own re-exports are walked the same way. A library may be a
+/// file of its own or a document inlined in a stub (`documents`: the
+/// re-exporting stub's); ld-prime takes the file when one exists (the
+/// SDK's libswift_Builtin_float.tbd over the document inlined in
+/// libswiftDarwin's) and the document otherwise.
 fn load_reexports<E: Arch>(
     ctx: &mut Context<E>,
     reexports: Vec<(String, String, Vec<String>)>,
     parent: &str,
+    documents: &[tapi::TbdFile],
     exports: &mut hashbrown::HashSet<&'static str>,
     tlv_exports: &mut hashbrown::HashSet<&'static str>,
     weak_exports: &mut hashbrown::HashSet<&'static str>,
 ) {
     let mut queue = reexports;
     let mut visited = std::collections::HashSet::new();
+    // The inlined documents a name may resolve to: the parent's, and
+    // those of every stub merged along the way.
+    let mut pool: Vec<tapi::TbdFile> = documents.to_vec();
     while let Some((name, loader_dir, loader_rpaths)) = queue.pop() {
         if !visited.insert(name.clone()) {
             continue;
@@ -1801,17 +1863,58 @@ fn load_reexports<E: Arch>(
             }
             continue;
         }
-        let Some(dep) = resolve_dylib_ref(ctx, &name, &loader_dir, &loader_rpaths) else {
+        let on_disk = resolve_dylib_ref(ctx, &name, &loader_dir, &loader_rpaths);
+        let inline = pool.iter().position(|d| d.install_name == name);
+        if public {
+            let idx = match on_disk
+                .map(|dep| (dep, crate::filetype::get_file_type(std::path::Path::new(""), dep)))
+            {
+                Some((dep, crate::filetype::FileType::Tapi)) => Some(parse_dylib(ctx, dep)),
+                Some((dep, crate::filetype::FileType::MachDylib)) => {
+                    Some(parse_dylib_binary(ctx, dep))
+                }
+                Some((dep, crate::filetype::FileType::Fat)) => {
+                    Some(parse_dylib_binary(ctx, get_fat_slice::<E>(dep)))
+                }
+                Some(_) => {
+                    crate::warn!("{}: unsupported reexported library: {}", parent, name);
+                    None
+                }
+                None => match inline {
+                    Some(i) => {
+                        let doc = pool[i].clone();
+                        Some(register_tbd(ctx, parent, doc, &pool))
+                    }
+                    None => {
+                        crate::warn!("{}: reexported library not found: {}", parent, name);
+                        None
+                    }
+                },
+            };
+            if let Some(idx) = idx {
+                ctx.dylibs[idx].is_implicit = true;
+            }
+            continue;
+        }
+        if let Some(i) = inline {
+            let mut doc = pool[i].clone();
+            interpret_ld_symbols(ctx, &mut doc);
+            tlv_exports.extend(doc.tlv_exports.iter().copied());
+            exports.extend(doc.tlv_exports);
+            exports.extend(doc.exports);
+            weak_exports.extend(doc.weak_exports.iter().copied());
+            exports.extend(doc.weak_exports);
+            for dep_name in doc.reexports {
+                queue.push((dep_name.to_string(), loader_dir.clone(), loader_rpaths.clone()));
+            }
+            continue;
+        }
+        let Some(dep) = on_disk else {
             crate::warn!("{}: reexported library not found: {}", parent, name);
             continue;
         };
         match crate::filetype::get_file_type(std::path::Path::new(""), dep) {
             crate::filetype::FileType::Tapi => {
-                if public {
-                    let idx = parse_dylib(ctx, dep);
-                    ctx.dylibs[idx].is_implicit = true;
-                    continue;
-                }
                 let mut dep_tbd = tapi::parse_cached(dep, E::NAME);
                 interpret_ld_symbols(ctx, &mut dep_tbd);
                 tlv_exports.extend(dep_tbd.tlv_exports.iter().copied());
@@ -1819,16 +1922,12 @@ fn load_reexports<E: Arch>(
                 exports.extend(dep_tbd.exports);
                 weak_exports.extend(dep_tbd.weak_exports.iter().copied());
                 exports.extend(dep_tbd.weak_exports);
-                for dep_name in dep_tbd.external_reexports {
+                pool.extend(dep_tbd.documents.iter().cloned());
+                for dep_name in dep_tbd.reexports {
                     queue.push((dep_name.to_string(), dir_of(dep.name_str()), Vec::new()));
                 }
             }
             crate::filetype::FileType::MachDylib => {
-                if public {
-                    let idx = parse_dylib_binary(ctx, dep);
-                    ctx.dylibs[idx].is_implicit = true;
-                    continue;
-                }
                 check_dylib_versions(ctx, dep);
                 let (dep_exports, dep_tlvs, dep_reexports, dep_rpaths) = dylib_binary_exports(dep);
                 exports.extend(dep_exports);
@@ -1839,11 +1938,6 @@ fn load_reexports<E: Arch>(
             }
             crate::filetype::FileType::Fat => {
                 let slice = get_fat_slice::<E>(dep);
-                if public {
-                    let idx = parse_dylib_binary(ctx, slice);
-                    ctx.dylibs[idx].is_implicit = true;
-                    continue;
-                }
                 check_dylib_versions(ctx, slice);
                 let (dep_exports, dep_tlvs, dep_reexports, dep_rpaths) =
                     dylib_binary_exports(slice);
@@ -2014,6 +2108,7 @@ pub fn parse_dylib_binary<E: Arch>(ctx: &mut Context<E>, mf: &'static MappedFile
         ctx,
         reexports,
         mf.name_str(),
+        &[],
         &mut exports,
         &mut tlv_exports,
         &mut weak_exports,
@@ -2468,7 +2563,20 @@ fn interpret_ld_symbols<E: Arch>(ctx: &Context<E>, tbd: &mut tapi::TbdFile) {
 }
 
 pub fn parse_dylib<E: Arch>(ctx: &mut Context<E>, mf: &'static MappedFile) -> usize {
-    let mut tbd = tapi::parse_cached(mf, E::NAME);
+    let tbd = tapi::parse_cached(mf, E::NAME);
+    let documents = tbd.documents.clone();
+    register_tbd(ctx, mf.name_str(), tbd, &documents)
+}
+
+/// Registers a stub's library - a file's main document, or a
+/// re-exported one inlined in it - as a dylib of the link. `documents`
+/// are the inlined libraries its re-exports may resolve to.
+fn register_tbd<E: Arch>(
+    ctx: &mut Context<E>,
+    path: &str,
+    mut tbd: tapi::TbdFile,
+    documents: &[tapi::TbdFile],
+) -> usize {
     interpret_ld_symbols(ctx, &mut tbd);
     let mut exports: hashbrown::HashSet<&'static str> = tbd.exports.into_iter().collect();
     let mut weak_exports: hashbrown::HashSet<&'static str> =
@@ -2478,14 +2586,15 @@ pub fn parse_dylib<E: Arch>(ctx: &mut Context<E>, mf: &'static MappedFile) -> us
     exports.extend(tlv_exports.iter().copied());
 
     let reexports: Vec<(String, String, Vec<String>)> = tbd
-        .external_reexports
+        .reexports
         .into_iter()
-        .map(|name| (name.to_string(), dir_of(mf.name_str()), Vec::new()))
+        .map(|name| (name.to_string(), dir_of(path), Vec::new()))
         .collect();
     load_reexports(
         ctx,
         reexports,
-        mf.name_str(),
+        path,
+        documents,
         &mut exports,
         &mut tlv_exports,
         &mut weak_exports,
@@ -2495,10 +2604,10 @@ pub fn parse_dylib<E: Arch>(ctx: &mut Context<E>, mf: &'static MappedFile) -> us
     add_dylib(
         ctx,
         DylibFile {
-            path: mf.name_str().to_owned(),
+            path: path.to_owned(),
             install_name: tbd.install_name,
             current_version: tbd.current_version,
-            compatibility_version: encode_version(1, 0, 0),
+            compatibility_version: tbd.compatibility_version,
             dylib_idx: next_dylib_ordinal(ctx),
             is_bundle_loader: false,
             priority,

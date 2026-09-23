@@ -68,7 +68,9 @@ pub struct Args {
     pub framework_paths: Vec<String>,
     pub inputs: Vec<InputArg>,
     pub rpaths: Vec<String>,
-    pub adhoc_codesign: bool,
+    /// -adhoc_codesign / -no_adhoc_codesign; None until the driver
+    /// applies the architecture's default (ld-prime signs arm64 only).
+    pub adhoc_codesign: Option<bool>,
     pub dead_strip: bool,
     /// -S: do not emit debug stab symbols.
     pub strip_debug: bool,
@@ -259,7 +261,7 @@ impl Default for Args {
             framework_paths: Vec::new(),
             inputs: Vec::new(),
             rpaths: Vec::new(),
-            adhoc_codesign: true,
+            adhoc_codesign: None,
             dead_strip: false,
             strip_debug: false,
             all_load: false,
@@ -269,8 +271,10 @@ impl Default for Args {
             no_exported_symbols: false,
             unexported_symbols: Vec::new(),
             reexported_symbols: Vec::new(),
-            current_version: encode_version(1, 0, 0),
-            compatibility_version: encode_version(1, 0, 0),
+            // ld64 leaves both at 0.0.0 unless -current_version /
+            // -compatibility_version say otherwise.
+            current_version: encode_version(0, 0, 0),
+            compatibility_version: encode_version(0, 0, 0),
             map: None,
             dependency_info: None,
             sdk_imports: None,
@@ -501,8 +505,8 @@ pub fn parse_args(cmdline: &[String]) -> Args {
             "-sdk_imports" => args.sdk_imports = Some(next_arg(&mut i).to_string()),
             "-fixup_chains" => args.fixup_chains = Some(true),
             "-no_fixup_chains" => args.fixup_chains = Some(false),
-            "-adhoc_codesign" => args.adhoc_codesign = true,
-            "-no_adhoc_codesign" => args.adhoc_codesign = false,
+            "-adhoc_codesign" => args.adhoc_codesign = Some(true),
+            "-no_adhoc_codesign" => args.adhoc_codesign = Some(false),
             "-dynamic" => args.dynamic = true,
             "-headerpad" => args.headerpad = parse_hex(opt, next_arg(&mut i)),
             "-pagezero_size" => {
@@ -707,11 +711,12 @@ pub fn parse_args(cmdline: &[String]) -> Args {
             // The old pre-LC_BUILD_VERSION way of stating the
             // deployment target, still emitted by clang for older
             // -mmacosx-version-min targets. It fixes the platform to
-            // macOS; the SDK version stays unset, as ld64 records when
-            // it isn't told.
+            // macOS; ld64 records the SDK as the same version (the
+            // flag carries no separate SDK).
             "-macos_version_min" | "-macosx_version_min" => {
                 args.platform = PLATFORM_MACOS;
                 args.platform_minos = parse_version(next_arg(&mut i));
+                args.platform_sdk = args.platform_minos;
             }
 
             // Ignored options. ld64 takes -O<n> as a linker

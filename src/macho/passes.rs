@@ -152,6 +152,18 @@ struct PendingObject {
 /// archive members are queued for parallel staging; bitcode is
 /// registered immediately since libLTO calls are kept on one thread.
 #[allow(clippy::too_many_arguments)]
+/// -needed_library / -needed_framework: the dylibs the option names
+/// survive -dead_strip_dylibs. Only those: the public libraries their
+/// stubs re-export (CoreFoundation's libobjc) load implicitly like
+/// any other and are listed only if something binds to them.
+fn mark_needed<E: Arch>(ctx: &mut Context<E>, before: usize) {
+    for dylib in &mut ctx.dylibs[before..] {
+        if !dylib.is_implicit {
+            dylib.is_needed = true;
+        }
+    }
+}
+
 fn collect_file<E: Arch>(
     ctx: &mut Context<E>,
     mf: &'static MappedFile,
@@ -210,10 +222,18 @@ fn collect_file<E: Arch>(
             // -force_load make every member live up front; -ObjC does
             // so for members with Objective-C metadata, which register
             // classes by their mere presence.
+            // ld64 exempts clang's runtime library (libclang_rt.*.a,
+            // which the compiler driver adds to every link) from
+            // -all_load: its members are wanted only when referenced.
+            let all_load = ctx.args.all_load
+                && !std::path::Path::new(mf.name_str())
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .is_some_and(|n| n.starts_with("libclang_rt"));
             let members = crate::macho::files::read_archive_members(mf);
             for member in members {
                 let alive = force_load
-                    || ctx.args.all_load
+                    || all_load
                     || (ctx.args.load_objc && input_files::has_objc_sections(member));
                 match get_file_type(std::path::Path::new(""), member) {
                     FileType::LlvmBitcode => {
@@ -338,7 +358,10 @@ pub fn read_input_files<E: Arch>(ctx: &mut Context<E>) {
         let wave1 = tapi::prefetch(&stubs, E::NAME);
         let mut deps: Vec<&'static MappedFile> = Vec::new();
         for tbd in &wave1 {
-            for name in &tbd.external_reexports {
+            for name in &tbd.reexports {
+                if tbd.document(name).is_some() {
+                    continue;
+                }
                 if let Some(dep) = crate::macho::input_files::find_reexport_file(ctx, name)
                     && get_file_type(std::path::Path::new(""), dep) == FileType::Tapi
                 {
@@ -372,9 +395,7 @@ pub fn read_input_files<E: Arch>(ctx: &mut Context<E>) {
                 let mf = crate::macho::files::must_open(Path::new(path));
                 let before = ctx.dylibs.len();
                 collect_file(ctx, mf, false, false, false, false, &mut queue);
-                for dylib in &mut ctx.dylibs[before..] {
-                    dylib.is_needed = true;
-                }
+                mark_needed(ctx, before);
             }
             InputArg::ReexportLib(name) => match find_library(ctx, name) {
                 Some(path) => {
@@ -402,9 +423,7 @@ pub fn read_input_files<E: Arch>(ctx: &mut Context<E>) {
                     let mf = crate::macho::files::must_open(&path);
                     let before = ctx.dylibs.len();
                     collect_file(ctx, mf, false, false, false, false, &mut queue);
-                    for dylib in &mut ctx.dylibs[before..] {
-                        dylib.is_needed = true;
-                    }
+                    mark_needed(ctx, before);
                 }
                 None => error!("library not found: -needed-l{name}"),
             },
@@ -413,9 +432,7 @@ pub fn read_input_files<E: Arch>(ctx: &mut Context<E>) {
                     let mf = crate::macho::files::must_open(&path);
                     let before = ctx.dylibs.len();
                     collect_file(ctx, mf, false, false, false, false, &mut queue);
-                    for dylib in &mut ctx.dylibs[before..] {
-                        dylib.is_needed = true;
-                    }
+                    mark_needed(ctx, before);
                 }
                 None => error!("framework not found: {name}"),
             },
@@ -503,6 +520,12 @@ pub fn load_autolink_deps<E: Arch>(ctx: &mut Context<E>) -> Autolinked {
     // framework directory holds headers and a module map but no
     // binary (CotEditor's build printed the warning 317 times).
     let before = (ctx.objs.len(), ctx.dylibs.len());
+    // A library already in the link as a public re-export (Foundation's
+    // stub brings CoreFoundation) that an auto-link option now names
+    // is a hint like any other auto-linked library: listed only if
+    // something binds to it (ld-prime drops CoreFoundation from a
+    // Swift program that never binds to it).
+    let implicit_before: Vec<bool> = ctx.dylibs.iter().map(|d| d.is_implicit).collect();
     let mut queue: Vec<PendingObject> = Vec::new();
     for opt in pending {
         ctx.processed_linker_options.insert(opt.clone());
@@ -523,6 +546,11 @@ pub fn load_autolink_deps<E: Arch>(ctx: &mut Context<E>) -> Autolinked {
     }
     for dylib in &mut ctx.dylibs[dylibs_before..] {
         dylib.is_autolinked = true;
+    }
+    for (i, dylib) in ctx.dylibs[..dylibs_before].iter_mut().enumerate() {
+        if implicit_before[i] && !dylib.is_implicit {
+            dylib.is_autolinked = true;
+        }
     }
     load_pending(ctx, queue);
     if ctx.objs.len() != before.0 {
@@ -898,6 +926,13 @@ fn do_resolve<E: Arch>(ctx: &mut Context<E>, only_alive: bool) {
                 sym.set_is_extern(true);
                 sym.set_input_section(None);
                 sym.set_is_common(false);
+                // -weak_framework / -weak_library / -weak-l: every
+                // import from the library is a weak import (ld64 binds
+                // it weak-import and marks it N_WEAK_REF), whatever the
+                // references say.
+                if dylib.is_weak {
+                    sym.set_is_weak_ref(true);
+                }
                 break;
             }
         }
@@ -984,10 +1019,26 @@ pub fn do_lto<E: Arch>(ctx: &mut Context<E>) -> bool {
         // code references (plus the entry point, and everything under
         // -export_dynamic, which exists exactly to let executables
         // keep their globals for dlsym) must survive; the rest can be
-        // internalized and dead-stripped inside the module.
+        // internalized and dead-stripped inside the module. A reference
+        // from another bitcode module does not count: libLTO resolves
+        // those itself, and ld-prime lets such a function go local
+        // (_times2, called only from a bitcode main, is not exported).
         let executable = ctx.args.output_type == MH_EXECUTE;
+        let mut native_refs: hashbrown::HashSet<crate::macho::symbol::SymbolId> =
+            hashbrown::HashSet::new();
+        for obj in &ctx.objs {
+            if !obj.is_alive || obj.lto_module.is_some() {
+                continue;
+            }
+            let r = obj.global_range();
+            for (nlist, &sym_id) in obj.nlists[r.clone()].iter().zip(&obj.symbols[r]) {
+                if !nlist.is_stab() && nlist.n_type() == N_UNDF && !nlist.is_common() {
+                    native_refs.insert(sym_id);
+                }
+            }
+        }
         let mut preserve: Vec<std::ffi::CString> = Vec::new();
-        for sym in &ctx.symbols.syms {
+        for (i, sym) in ctx.symbols.syms.iter().enumerate() {
             if let Some(FileId::Obj(idx)) = sym.file()
                 && ctx.objs[idx as usize].is_alive
                 && ctx.objs[idx as usize].lto_module.is_some()
@@ -995,7 +1046,7 @@ pub fn do_lto<E: Arch>(ctx: &mut Context<E>) -> bool {
             {
                 if executable
                     && !ctx.args.export_dynamic
-                    && !sym.is_used()
+                    && (!sym.is_used() || !native_refs.contains(&(i as u32)))
                     && sym.name() != ctx.args.entry
                     && !ctx.args.forced_undefined.iter().any(|n| n == sym.name())
                     && !ctx
@@ -1068,12 +1119,39 @@ pub fn do_lto<E: Arch>(ctx: &mut Context<E>) -> bool {
 /// definitions in a synthetic __DATA,__common zero-fill section.
 pub fn convert_common_symbols<E: Arch>(ctx: &mut Context<E>) {
     let internal = ctx.internal_obj.expect("internal object not created yet") as u32;
+    // Where the __common section sorts: with the first object that
+    // claims a common symbol still unresolved by a definition.
+    ctx.common_first_obj = ctx
+        .objs
+        .iter()
+        .position(|obj| {
+            obj.is_alive
+                && obj.nlists.iter().zip(&obj.symbols).any(|(nlist, &id)| {
+                    !nlist.is_stab()
+                        && nlist.is_extern()
+                        && nlist.n_type() == N_UNDF
+                        && nlist.is_common()
+                        && ctx.symbols[id].is_common()
+                        && !ctx.symbols[id].is_defined()
+                })
+        })
+        .map(|i| i as u32);
     for i in 0..ctx.symbols.syms.len() {
         let sym = &ctx.symbols[i];
         if !sym.is_common() || sym.is_defined() {
             continue;
         }
-        let (size, p2align) = (sym.value, sym.common_p2align);
+        let size = sym.value;
+        // An alignment the object gave (.comm's third operand) is kept;
+        // without one, ld64 aligns the symbol to its size rounded up to
+        // a power of two, capped at the page on arm64 (a 100000-byte
+        // array lands 16KB-aligned) and at 16 bytes on x86-64.
+        let p2align = if sym.common_p2align != 0 || size == 0 {
+            sym.common_p2align
+        } else {
+            let cap = if E::CPUTYPE == crate::macho::format::CPU_TYPE_ARM64 { 14 } else { 4 };
+            (size.next_power_of_two().trailing_zeros() as u8).min(cap)
+        };
 
         let (file, shndx) = ctx.add_synthetic_section(MachSection {
             sectname: str_to_name("__common"),
@@ -1114,10 +1192,12 @@ pub fn convert_common_symbols<E: Arch>(ctx: &mut Context<E>) {
 /// __TEXT,__init_offsets section (type S_INIT_FUNC_OFFSETS), which
 /// dyld runs the same way but never has to fix up.
 pub fn convert_init_offsets<E: Arch>(ctx: &mut Context<E>) {
-    // ld64 turns this on implicitly with chained fixups: the point of
-    // chains is a fixup-free __DATA_CONST, and absolute initializer
-    // pointers would drag rebases back in.
-    if !ctx.args.init_offsets && !ctx.use_chained_fixups() {
+    // ld-prime turns this on from the deployment target that brings
+    // chained fixups (a fixup-free __DATA_CONST is the point of both),
+    // even when -undefined dynamic_lookup sends the fixups themselves
+    // back to classic dyld info; an explicit -no_fixup_chains asks for
+    // the classic layout throughout and keeps __mod_init_func.
+    if !ctx.args.init_offsets && !ctx.init_offsets_by_default() {
         return;
     }
     for i in 0..ctx.isecs.len() {
@@ -1393,7 +1473,7 @@ pub fn coalesce_objc_refs<E: Arch>(ctx: &mut Context<E>) {
                 && !rel.is_subtracted
         };
         let key = match h.sectname() {
-            "__objc_classrefs" if !ctx.args.relocatable => continue,
+            "__objc_classrefs" if !ctx.args.relocatable && objc_refs_are_const(ctx) => continue,
             "__objc_selrefs" | "__objc_classrefs" => {
                 if isec.size != 8 || rels.len() != 1 || !plain_ptr(&rels[0]) {
                     continue;
@@ -1556,6 +1636,33 @@ pub fn auto_hide_weak_defs<E: Arch>(ctx: &mut Context<E>) {
             && matches!(sym.file(), Some(FileId::Obj(_)))
             && !exported.is_some_and(|list| list.iter().any(|n| n == sym.name()))
         {
+            sym.set_is_private_extern(true);
+        }
+    });
+}
+
+/// -exported_symbols_list / -unexported_symbols_list: a definition the
+/// lists leave unexported becomes a private external, so the symbol
+/// table shows it as a local ("was a private external") the way ld64
+/// does - _main and __mh_execute_header included when the list omits
+/// them. The export trie applies the same lists itself.
+pub fn apply_export_lists<E: Arch>(ctx: &mut Context<E>) {
+    if ctx.args.relocatable
+        || (ctx.args.exported_symbols.is_none() && ctx.args.unexported_symbols.is_empty())
+    {
+        return;
+    }
+    use rayon::prelude::*;
+    let exported = ctx.args.exported_symbols.clone();
+    let unexported = ctx.args.unexported_symbols.clone();
+    ctx.symbols.syms.par_iter_mut().for_each(|sym| {
+        if !matches!(sym.file(), Some(FileId::Obj(_))) || !sym.is_extern() {
+            return;
+        }
+        let name = sym.name();
+        let hidden = exported.as_ref().is_some_and(|list| !list.iter().any(|p| p == name))
+            || unexported.iter().any(|p| p == name);
+        if hidden {
             sym.set_is_private_extern(true);
         }
     });
@@ -1892,9 +1999,15 @@ pub fn dead_strip_dylibs<E: Arch>(ctx: &mut Context<E>) {
             || dylib.is_implicit
     };
 
+    // libSystem stays whatever binds to it: ld-prime keeps it under
+    // -dead_strip_dylibs in an image that binds nothing from it (dyld
+    // needs it to run anything), so a dylib exporting only its own
+    // functions still lists it.
     let mut used = vec![false; ctx.dylibs.len()];
     for (i, dylib) in ctx.dylibs.iter().enumerate() {
-        used[i] = dylib.is_needed || !strippable(dylib);
+        used[i] = dylib.is_needed
+            || dylib.install_name == "/usr/lib/libSystem.B.dylib"
+            || !strippable(dylib);
     }
     // A dylib every reference to which is a weak import loads weakly
     // (LC_LOAD_WEAK_DYLIB), as ld64 does: the Swift overlays a program
@@ -2026,9 +2139,10 @@ pub fn scan_relocations<E: Arch>(ctx: &mut Context<E>) {
             RelocClass::Got => add_got(ctx, id),
             RelocClass::GotLoad if !ctx.can_relax_got(id) => add_got(ctx, id),
             // A TLV load of a local thread-local relaxes to the
-            // descriptor's address; only imported ones need a
-            // __thread_ptrs slot for dyld to fill.
-            RelocClass::Tlv if sym.is_imported() => add_thread_ptr(ctx, id),
+            // descriptor's address; only imported ones need a slot for
+            // dyld to fill, and ld-prime gives them an ordinary __got
+            // entry (no __thread_ptrs section, chained or classic).
+            RelocClass::Tlv if sym.is_imported() => add_got(ctx, id),
             _ => {}
         }
     }
@@ -2107,13 +2221,6 @@ pub fn scan_unwind_personalities<E: Arch>(ctx: &mut Context<E>) {
     personalities.extend(ctx.fdes.iter().filter_map(|fde| ctx.cies[fde.cie as usize].personality));
     for id in personalities {
         add_got(ctx, id);
-    }
-}
-
-fn add_thread_ptr<E: Arch>(ctx: &mut Context<E>, id: crate::macho::symbol::SymbolId) {
-    if ctx.sym_aux(id).tlv_idx == crate::macho::symbol::NO_IDX {
-        ctx.sym_aux_mut(id).tlv_idx = ctx.thread_ptrs.symbols.len() as u32;
-        ctx.thread_ptrs.symbols.push(id);
     }
 }
 
@@ -2315,8 +2422,12 @@ pub struct ObjcMethList {
 }
 
 fn objc_relative_method_lists<E: Arch>(ctx: &Context<E>) -> bool {
+    // ld-prime converts method lists in every arm64 image, and on
+    // x86-64 in dylibs and bundles only: an x86-64 executable keeps
+    // the compiler's absolute lists at any deployment target.
     ctx.args.objc_relative_method_lists.unwrap_or_else(|| {
-        ctx.args.platform == crate::macho::format::PLATFORM_MACOS
+        (E::CPUTYPE == crate::macho::format::CPU_TYPE_ARM64 || ctx.args.output_type != MH_EXECUTE)
+            && ctx.args.platform == crate::macho::format::PLATFORM_MACOS
             && ctx.args.platform_minos >= crate::macho::format::encode_version(11, 0, 0)
     })
 }
@@ -3093,7 +3204,10 @@ pub fn merge_objc_categories<E: Arch>(ctx: &mut Context<E>) {
                     fields.push(DataField::Ptr(m.types));
                     fields.push(DataField::Ptr(m.imp));
                 }
-                new_blob(ctx, "__objc_const", fields)
+                // ld-prime writes a merged absolute list into
+                // __objc_data (the protocol and property lists stay in
+                // __objc_const).
+                new_blob(ctx, "__objc_data", fields)
             }
         };
         // The class's original lists and the categories' are dropped
@@ -3564,7 +3678,6 @@ fn output_section_rank(segname: &str, sectname: &str) -> u32 {
         ("__TEXT", "__init_offsets") => 4,
         ("__TEXT", "__objc_methlist") => 5,
         ("__TEXT", _) => 10,
-        ("__DATA_CONST", "__got") => 0,
         ("__DATA_CONST", "__mod_init_func") => 1,
         ("__DATA_CONST", "__mod_term_func") => 2,
         ("__DATA_CONST", "__const") => 3,
@@ -3577,6 +3690,10 @@ fn output_section_rank(segname: &str, sectname: &str) -> u32 {
         ("__DATA_CONST", "__objc_imageinfo") => 10,
         ("__DATA_CONST", "__objc_protorefs") => 11,
         ("__DATA_CONST", "__objc_superrefs") => 12,
+        // The GOT closes __DATA_CONST, after every input-derived
+        // section (ld-prime: __cfstring, __objc_classlist,
+        // __objc_imageinfo, then __got).
+        ("__DATA_CONST", "__got") => 25,
         ("__DATA_CONST", _) => 20,
         ("__DATA", "__la_symbol_ptr") => 0,
         ("__DATA", "__got") => 1,
@@ -3594,8 +3711,10 @@ fn output_section_rank(segname: &str, sectname: &str) -> u32 {
         ("__DATA", "__thread_vars") => 30,
         ("__DATA", "__thread_data") => 31,
         ("__DATA", "__thread_bss") => 0,
+        // __bss and __common in first-seen order: the synthesized
+        // __common counts from the first object with a common symbol.
         ("__DATA", "__bss") => 3,
-        ("__DATA", "__common") => 4,
+        ("__DATA", "__common") => 3,
         _ => 10,
     }
 }
@@ -3700,13 +3819,10 @@ fn output_section_for(
 /// compiler's fixed flags in a final image.
 fn output_section_flags(segname: &str, sectname: &str, input: u32, relocatable: bool) -> u32 {
     if segname == "__TEXT" && sectname == "__eh_frame" {
-        // Plain regular in a -r output (ld-prime), the compiler's
-        // fixed flags in a final image.
-        return if relocatable {
-            0
-        } else {
-            S_COALESCED | S_ATTR_NO_TOC | S_ATTR_STRIP_STATIC_SYMS | S_ATTR_LIVE_SUPPORT
-        };
+        // The compiler's fixed flags, in a -r output (ld-prime) as in
+        // a final image.
+        let _ = relocatable;
+        return S_COALESCED | S_ATTR_NO_TOC | S_ATTR_STRIP_STATIC_SYMS | S_ATTR_LIVE_SUPPORT;
     }
     // The two reference lists the runtime may still write keep the
     // flags they came with (coalesced, no-dead-strip) while in __DATA
@@ -3830,6 +3946,73 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
                 & !SECTION_TYPE;
         osec.members.push(i as u32);
         ctx.isecs[i].set_output_section(ChunkId::Output(osec_id));
+    }
+
+    // An input section with no bytes makes no output section (an
+    // assembler's empty .section, an emptied coverage section): ld64
+    // drops it, and its subsections with it.
+    if !relocatable {
+        let dropped: Vec<OutputSectionId> = (0..ctx.output_sections.len())
+            .filter(|&i| {
+                let osec = &ctx.output_sections[i];
+                !osec.members.is_empty()
+                    && osec.members.iter().all(|&m| ctx.isecs[m as usize].size == 0)
+                    && !(osec.hdr.segname == "__TEXT" && osec.hdr.sectname == "__text")
+            })
+            .map(|i| OutputSectionId::new(i as u32))
+            .collect();
+        for id in dropped {
+            for m in std::mem::take(&mut ctx.output_sections[id.index()].members) {
+                ctx.isecs[m as usize].set_alive(false);
+            }
+            ctx.chunks.retain(|&c| c != ChunkId::Output(id));
+            by_out.retain(|_, &mut v| v != id);
+        }
+    }
+
+    // A final image always has a __TEXT,__text section, empty if no
+    // code reached it (a dylib of only data; ld-prime writes one of
+    // size 0, byte-aligned).
+    if !relocatable && !by_out.contains_key(&("__TEXT", "__text")) {
+        let mut osec = OutputSection::new("__TEXT", "__text");
+        osec.hdr.flags = S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS;
+        let id = OutputSectionId::new(ctx.output_sections.len() as u32);
+        ctx.output_sections.push(osec);
+        ctx.chunks.push(ChunkId::Output(id));
+        by_out.insert(("__TEXT", "__text"), id);
+    }
+
+    // The thread-local template (__thread_data followed by
+    // __thread_bss) is one image dyld copies per thread, so ld64 gives
+    // both sections the stricter of their alignments.
+    if let (Some(&data), Some(&bss)) =
+        (by_out.get(&("__DATA", "__thread_data")), by_out.get(&("__DATA", "__thread_bss")))
+    {
+        let p2align = ctx.output_sections[data.index()]
+            .hdr
+            .p2align
+            .max(ctx.output_sections[bss.index()].hdr.p2align);
+        ctx.output_sections[data.index()].hdr.p2align = p2align;
+        ctx.output_sections[bss.index()].hdr.p2align = p2align;
+    }
+
+    // A section cannot be aligned beyond the segment's page: ld64
+    // reduces the alignment with a warning (an x86-64 .align 16 asks
+    // for 64KB).
+    if !relocatable {
+        let max = E::PAGE_SIZE.trailing_zeros();
+        for osec in &mut ctx.output_sections {
+            if osec.hdr.p2align > max {
+                crate::warn!(
+                    "reducing alignment of section {},{} from 0x{:x} to 0x{:x} because it exceeds segment maximum alignment",
+                    osec.hdr.segname,
+                    osec.hdr.sectname,
+                    1u64 << osec.hdr.p2align,
+                    1u64 << max
+                );
+                osec.hdr.p2align = max;
+            }
+        }
     }
 
     // -sectalign overrides an output section's alignment, e.g. to
@@ -3964,6 +4147,15 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
     if !ctx.stubs.symbols.is_empty() {
         ctx.stubs.hdr.reserved2 = E::STUB_SIZE as u32;
         ctx.stubs.hdr.size = ctx.stubs.symbols.len() as u64 * E::STUB_SIZE;
+        // ld-prime's x86-64 stubs are byte-aligned when they go
+        // through the lazy-binding helper and 2-byte aligned otherwise
+        // (chained fixups, -bind_at_load, weak-lookup stubs); arm64's
+        // are instruction-aligned.
+        if E::CPUTYPE == crate::macho::format::CPU_TYPE_X86_64 {
+            let lazy = ctx.lazy_binding()
+                && ctx.stubs.symbols.iter().any(|&id| !ctx.binds_weak_lookup(id));
+            ctx.stubs.hdr.p2align = if lazy { 0 } else { 1 };
+        }
         ctx.chunks.push(ChunkId::Stubs);
     }
     // (A stub bound by weak lookup goes through the GOT; only lazily
@@ -3996,13 +4188,12 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
         ctx.chunks.push(ChunkId::InitOffsets);
     }
 
-    if !ctx.thread_ptrs.symbols.is_empty() {
-        ctx.thread_ptrs.hdr.size = ctx.thread_ptrs.symbols.len() as u64 * 8;
-        ctx.chunks.push(ChunkId::ThreadPtrs);
-    }
-
     if !ctx.objc_stubs.symbols.is_empty() {
         ctx.objc_stubs.hdr.size = ctx.objc_stubs.symbols.len() as u64 * E::OBJC_STUB_SIZE;
+        // 32-byte stubs on arm64; ld-prime leaves x86-64's byte-aligned.
+        if E::CPUTYPE == crate::macho::format::CPU_TYPE_X86_64 {
+            ctx.objc_stubs.hdr.p2align = 0;
+        }
         ctx.chunks.push(ChunkId::ObjcStubs);
     }
     {
@@ -4271,13 +4462,37 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
         ctx.chunks.push(ChunkId::IndirectSymtab);
     }
     ctx.chunks.push(ChunkId::Strtab);
-    if ctx.args.adhoc_codesign {
+    if ctx.args.adhoc_codesign == Some(true) {
         ctx.chunks.push(ChunkId::CodeSignature);
     }
 
     // Sort the chunks into file order: the standard segment order, and
-    // section ranks within a segment (the sort is stable, so chunks of
-    // one rank keep their creation order).
+    // section ranks within a segment. Sections of one rank follow the
+    // order their first input section was seen in - object, then
+    // section ordinal - as ld-prime lays them out (__cstring before
+    // __gcc_except_tab when the object has them that way); a merged
+    // literal section counts from its first input, not from the pass
+    // that merged it. Purely synthetic sections keep their creation
+    // order (the sort is stable).
+    let mut first_seen: Vec<u64> = vec![u64::MAX; ctx.output_sections.len()];
+    for (i, isec) in ctx.isecs.iter().enumerate() {
+        if ctx.is_internal(isec.file as usize) {
+            continue;
+        }
+        let Some(ChunkId::Output(id)) = ctx.isecs[ctx.resolve_isec(i)].output_section() else {
+            continue;
+        };
+        let key = ((isec.file as u64) << 32) | isec.shndx as u64;
+        let slot = &mut first_seen[id.index()];
+        *slot = (*slot).min(key);
+    }
+    if let Some(obj) = ctx.common_first_obj {
+        for (i, osec) in ctx.output_sections.iter().enumerate() {
+            if osec.hdr.segname == "__DATA" && osec.hdr.sectname == "__common" {
+                first_seen[i] = ((obj as u64) << 32) | u32::MAX as u64;
+            }
+        }
+    }
     let mut order = ctx.chunks.clone();
     order.sort_by_key(|&id| {
         let hdr = ctx.chunk_header(id);
@@ -4295,9 +4510,13 @@ pub fn create_output_sections<E: Arch>(ctx: &mut Context<E>) {
             ChunkId::CodeSignature => u32::MAX,
             _ => 1 + output_section_rank(hdr.segname, &hdr.sectname),
         };
+        let seen = match id {
+            ChunkId::Output(osec) => first_seen[osec.index()],
+            _ => u64::MAX,
+        };
         // Zero-fill sections go last in their segment so that they don't
         // occupy file space in the middle of it.
-        (seg_rank, hdr.is_zerofill(), sect_rank)
+        (seg_rank, hdr.is_zerofill(), sect_rank, seen)
     });
 
     // Group them into segments, and number the sections: an nlist's
@@ -4762,6 +4981,61 @@ pub fn create_output_symtab<E: Arch>(
         eprintln!("      symtab-locals {:?}", __t.elapsed());
     }
     let __t = std::time::Instant::now();
+    // An import is listed only while live code or data refers to it:
+    // after -dead_strip, ld-prime drops the imports only stripped
+    // functions used. A reference is a relocation from a live
+    // subsection or a stub or GOT slot (unwind personalities, the
+    // selector stubs' _objc_msgSend and dyld_stub_binder have slots).
+    let live_ref: Vec<std::sync::atomic::AtomicBool> =
+        (0..ctx.symbols.syms.len()).map(|_| std::sync::atomic::AtomicBool::new(false)).collect();
+    {
+        use rayon::prelude::*;
+        use std::sync::atomic::Ordering;
+        ctx.isecs
+            .par_iter()
+            .filter(|isec| {
+                isec.is_alive() && isec.replacement == crate::macho::input_sections::NO_REPLACEMENT
+            })
+            .for_each(|isec| {
+                for rel in crate::macho::input_files::isec_relocs_of(&ctx.objs, isec) {
+                    if let Some(id) = ctx.reloc_target_sym(isec.file as usize, rel) {
+                        live_ref[id as usize].store(true, Ordering::Relaxed);
+                    }
+                }
+            });
+        let slots = ctx
+            .stubs
+            .symbols
+            .iter()
+            .chain(&ctx.got.got_syms)
+            .copied()
+            .chain(ctx.objc_stubs.msgsend_sym)
+            .chain(ctx.stub_helper.dyld_stub_binder);
+        for id in slots {
+            live_ref[id as usize].store(true, Ordering::Relaxed);
+        }
+        // The pointer fields of synthesized records (merged category
+        // lists, the class registrations) refer to symbols too.
+        for blob in &ctx.data_blobs {
+            for field in &blob.fields {
+                if let DataField::Ptr(ObjcRef::Sym(id, _)) = field {
+                    live_ref[*id as usize].store(true, Ordering::Relaxed);
+                }
+            }
+        }
+        // -u names an import the program must keep whether or not
+        // anything refers to it, and an -alias of an import re-exports
+        // it by name (the N_INDR entry points at the import's).
+        for name in &ctx.args.forced_undefined {
+            if let Some(id) = ctx.symbols.get(name) {
+                live_ref[id as usize].store(true, Ordering::Relaxed);
+            }
+        }
+        for &(_, target) in &ctx.indirect_aliases {
+            live_ref[target as usize].store(true, Ordering::Relaxed);
+        }
+    }
+
     // One parallel pass classifies the whole symbol table - private
     // externals (emitted among the locals), defined globals and
     // undefineds - instead of three full scans over millions of
@@ -4779,14 +5053,21 @@ pub fn create_output_symtab<E: Arch>(
             .map(|i| {
                 let sym = &ctx.symbols[i];
                 if matches!(sym.file(), Some(FileId::Dylib(_))) {
-                    return Class::Undef;
+                    return if live_ref[i].load(std::sync::atomic::Ordering::Relaxed) {
+                        Class::Undef
+                    } else {
+                        Class::No
+                    };
                 }
+                // A private external in a live object: a definition in
+                // a live subsection, or an absolute one (N_ABS), which
+                // ld64 keeps as a local too.
                 if sym.is_extern()
                     && sym.is_private_extern()
-                    && matches!(sym.file(), Some(FileId::Obj(_)))
+                    && matches!(sym.file(), Some(FileId::Obj(o)) if ctx.objs[o as usize].is_alive)
                     && sym
                         .input_section()
-                        .is_some_and(|isec| ctx.isecs[ctx.resolve_isec(isec as usize)].is_alive())
+                        .is_none_or(|isec| ctx.isecs[ctx.resolve_isec(isec as usize)].is_alive())
                 {
                     // A private external becomes a local, and a label
                     // is not emitted (ld-prime keeps clang's
@@ -4809,16 +5090,39 @@ pub fn create_output_symtab<E: Arch>(
             continue;
         }
         let sym = &ctx.symbols[i];
-        let isec = ctx.resolve_isec(sym.input_section().unwrap() as usize);
         names.push(sym.name());
-        let ent = NList {
-            n_strx: 0,
-            n_type: N_SECT | N_PEXT,
-            n_sect: ctx.isec_n_sect(&ctx.isecs[isec]),
-            n_desc: 0,
-            n_value: 0,
+        let ent = match (sym.file(), sym.input_section()) {
+            (_, Some(isec)) => {
+                let isec = ctx.resolve_isec(isec as usize);
+                (
+                    NList {
+                        n_strx: 0,
+                        n_type: N_SECT | N_PEXT,
+                        n_sect: ctx.isec_n_sect(&ctx.isecs[isec]),
+                        n_desc: 0,
+                        n_value: 0,
+                    },
+                    Some(i as u32),
+                )
+            }
+            // A demoted __mh_execute_header (an export list that omits
+            // it) sits in the first section, the mach header.
+            (Some(FileId::Obj(o)), None) if ctx.is_internal(o as usize) => (
+                NList { n_strx: 0, n_type: N_SECT | N_PEXT, n_sect: 1, n_desc: 0, n_value: 0 },
+                Some(i as u32),
+            ),
+            (_, None) => (
+                NList {
+                    n_strx: 0,
+                    n_type: N_ABS | N_PEXT,
+                    n_sect: 0,
+                    n_desc: 0,
+                    n_value: sym.value,
+                },
+                None,
+            ),
         };
-        data.entries.push((ent, Some(i as u32)));
+        data.entries.push(ent);
     }
     data.nlocal = data.entries.len() as u32;
 
@@ -5479,6 +5783,7 @@ fn ensure_stub_binder<E: Arch>(ctx: &mut Context<E>) {
         fields: vec![DataField::Bytes(vec![0; 8])],
     });
     ctx.stub_helper.dyld_private_isec = isec;
+    ctx.extra_local_syms.push(("__dyld_private", isec));
 }
 
 /// Copies all chunks to the output buffer and applies relocations. The
@@ -5569,7 +5874,7 @@ pub fn copy_chunks<E: Arch>(
     // only, not on the signature blob (whose identifier is the output's
     // basename); unsigned output hashes its pages the same way.
     let mut hashes: Vec<[u8; 32]> = Vec::new();
-    if ctx.args.uuid || ctx.args.adhoc_codesign {
+    if ctx.args.uuid || ctx.args.adhoc_codesign == Some(true) {
         t!("page-hashes", hashes = output_chunks::misc::page_hashes(&buf[..sig_start]));
     }
     if ctx.args.uuid {
@@ -5587,7 +5892,7 @@ pub fn copy_chunks<E: Arch>(
     }
     out.queue(0, hdr_end);
 
-    if ctx.args.adhoc_codesign {
+    if ctx.args.adhoc_codesign == Some(true) {
         t!("codesign", output_chunks::misc::write_code_signature(ctx, buf, &hashes));
     }
     out.queue(sig_start, buf.len() - sig_start);

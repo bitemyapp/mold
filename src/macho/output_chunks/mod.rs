@@ -112,7 +112,6 @@ pub enum ChunkId {
     StubHelper,
     LazyPtrs,
     Got,
-    ThreadPtrs,
     ObjcStubs,
     ObjcMethlist,
     ObjcImageInfo,
@@ -140,13 +139,12 @@ pub enum ChunkId {
 impl ChunkId {
     /// The chunks that exist at most once, in the order `pack` numbers
     /// them.
-    const UNITS: [ChunkId; 24] = [
+    const UNITS: [ChunkId; 23] = [
         ChunkId::MachHeader,
         ChunkId::Stubs,
         ChunkId::StubHelper,
         ChunkId::LazyPtrs,
         ChunkId::Got,
-        ChunkId::ThreadPtrs,
         ChunkId::ObjcStubs,
         ChunkId::ObjcMethlist,
         ChunkId::ObjcImageInfo,
@@ -253,7 +251,6 @@ pub fn copy_buf<E: Arch>(ctx: &Context<E>, id: ChunkId, buf: &mut [u8]) {
         ChunkId::StubHelper => got::stub_helper::copy_buf(ctx, buf),
         ChunkId::LazyPtrs => got::lazy_ptrs::copy_buf(ctx, buf),
         ChunkId::Got => got::copy_buf(ctx, buf),
-        ChunkId::ThreadPtrs => got::thread_ptrs::copy_buf(ctx, buf),
         ChunkId::ObjcStubs => objc::objc_stubs::copy_buf(ctx, buf),
         ChunkId::ObjcMethlist => objc::objc_methlist::copy_buf(ctx, buf),
         ChunkId::ObjcImageInfo => objc::objc_imageinfo::copy_buf(ctx, buf),
@@ -301,6 +298,26 @@ fn create_segment_cmd<E: Arch>(ctx: &Context<E>, seg: &OutputSegment) -> Vec<u8>
     // dyld makes __DATA_CONST read-only once binds are applied.
     if seg.name == "__DATA_CONST" {
         cmd.flags = SG_READ_ONLY;
+    }
+    // A segment of nothing but -add_empty_section anchors has nothing
+    // to relocate; ld-prime flags it SG_NORELOC. Only that option, not
+    // an empty section a `section$start$` boundary symbol conjured, and
+    // not an empty segment such as __PAGEZERO (no sections at all).
+    if !seg.chunks.is_empty()
+        && seg.chunks.iter().all(|&id| match id {
+            ChunkId::SectCreate(i) => {
+                let h = &ctx.sectcreate_sections[i as usize].hdr;
+                h.size == 0
+                    && ctx
+                        .args
+                        .add_empty_section
+                        .iter()
+                        .any(|(seg, sect)| seg == h.segname && sect == &h.sectname)
+            }
+            _ => false,
+        })
+    {
+        cmd.flags |= SG_NORELOC;
     }
 
     let mut buf = to_vec(&cmd);
@@ -544,21 +561,15 @@ pub fn create_load_commands<E: Arch>(ctx: &Context<E>) -> Vec<Vec<u8>> {
 
     if ctx.args.output_type == MH_DYLIB {
         vec.push(create_id_dylib_cmd(ctx));
-        if let Some(name) = &ctx.args.umbrella {
-            vec.push(create_string_cmd(LC_SUB_FRAMEWORK, name));
-        }
-        for client in &ctx.args.allowable_clients {
-            vec.push(create_string_cmd(LC_SUB_CLIENT, client));
-        }
     }
 
     // Chained fixups replace the classic dyld info; the export trie
     // then gets a load command of its own.
     if ctx.chained_fixups.hdr.size > 0 {
         vec.push(create_linkedit_data_cmd(LC_DYLD_CHAINED_FIXUPS, &ctx.chained_fixups.hdr));
-        if ctx.export_trie.hdr.size > 0 {
-            vec.push(create_linkedit_data_cmd(LC_DYLD_EXPORTS_TRIE, &ctx.export_trie.hdr));
-        }
+        // Present even with nothing exported (an 8-byte empty trie),
+        // as ld-prime writes it.
+        vec.push(create_linkedit_data_cmd(LC_DYLD_EXPORTS_TRIE, &ctx.export_trie.hdr));
     } else {
         vec.push(create_dyld_info_cmd(ctx));
     }
@@ -583,10 +594,23 @@ pub fn create_load_commands<E: Arch>(ctx: &Context<E>) -> Vec<Vec<u8>> {
         vec.push(create_load_dylib_cmd(dylib));
     }
 
+    // The umbrella commands follow the libraries, clients first, as
+    // ld-prime orders them.
+    if ctx.args.output_type == MH_DYLIB {
+        for client in &ctx.args.allowable_clients {
+            vec.push(create_string_cmd(LC_SUB_CLIENT, client));
+        }
+        if let Some(name) = &ctx.args.umbrella {
+            vec.push(create_string_cmd(LC_SUB_FRAMEWORK, name));
+        }
+    }
+
     for rpath in &ctx.args.rpaths {
         vec.push(create_string_cmd(LC_RPATH, rpath));
     }
 
+    // Also present with no functions at all (an 8-byte empty table),
+    // as ld-prime writes it; -no_function_starts drops it.
     if ctx.function_starts.hdr.size > 0 {
         vec.push(create_function_starts_cmd(ctx));
     }
@@ -620,8 +644,10 @@ pub fn copy_mach_header<E: Arch>(ctx: &Context<E>, buf: &mut [u8]) {
         filetype: ctx.args.output_type,
         ncmds: cmds.len() as u32,
         sizeofcmds: cmds.iter().map(Vec::len).sum::<usize>() as u32,
+        // Under -flat_namespace every import is a flat lookup that
+        // dyld resolves at load, so ld64 does not claim MH_NOUNDEFS.
         flags: if ctx.args.flat_namespace {
-            MH_NOUNDEFS | MH_DYLDLINK
+            MH_DYLDLINK
         } else {
             MH_NOUNDEFS | MH_DYLDLINK | MH_TWOLEVEL
         },
@@ -661,7 +687,11 @@ pub fn copy_mach_header<E: Arch>(ctx: &Context<E>, buf: &mut [u8]) {
     // MH_WEAK_DEFINES advertises exported weak symbols (auto-hidden and
     // private-extern weak definitions don't count, since no other
     // image can coalesce against them) and strong definitions that
-    // override a dylib's weak export, which dyld must let win.
+    // override a dylib's weak export, which dyld must let win. An
+    // exported weak definition also makes the image bind to weak in
+    // ld-prime's eyes, referenced from within the image or not (a
+    // dylib whose only weak definition nothing calls still gets
+    // 0x118085), since another image's copy may replace it.
     if ctx.symbols.syms.iter().any(|sym| {
         sym.is_weak_def()
             && sym.is_extern()
@@ -670,8 +700,10 @@ pub fn copy_mach_header<E: Arch>(ctx: &Context<E>, buf: &mut [u8]) {
                 .input_section()
                 .map(|i| i as usize)
                 .is_some_and(|isec| ctx.isecs[isec].is_alive())
-    }) || (0..ctx.symbols.syms.len()).any(|i| ctx.overrides_weak_export(i as u32))
-    {
+    }) {
+        hdr.flags |= MH_WEAK_DEFINES | MH_BINDS_TO_WEAK;
+    }
+    if (0..ctx.symbols.syms.len()).any(|i| ctx.overrides_weak_export(i as u32)) {
         hdr.flags |= MH_WEAK_DEFINES;
     }
     // -bind_at_load makes the stubs bind through the GOT instead of

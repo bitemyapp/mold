@@ -52,3 +52,37 @@ EOF
 $CC --ld-path=$mold -o $t/exe $t/a.o -F$t/libs -Wl,-framework,SomeFramework
 
 otool -L $t/exe | grep -q '/usr/frameworks/SomeFramework.framework/SomeFramework'
+
+# The re-exported /usr/lib/libbar.dylib lives in a public location, so
+# ld-prime binds _bar to it directly and gives it a load command of its
+# own - weak, since every reference to it is a weak import - after the
+# libraries named on the command line.
+otool -L $t/exe > $t/deps
+grep -q '/usr/lib/libbar.dylib.*weak' $t/deps
+dyld_info -fixups $t/exe | grep -q 'libbar/_bar \[weak-import\]'
+dyld_info -fixups $t/exe | grep -q 'SomeFramework/_foo'
+nm -m $t/exe | grep -q 'weak external _bar (from libbar)'
+
+# A strong reference loads it strongly.
+cat <<EOF2 | $CC -o $t/b.o -c -xc -
+extern void foo();
+extern void bar();
+int main() { foo(); bar(); }
+EOF2
+$CC --ld-path=$mold -o $t/exe2 $t/b.o -F$t/libs -Wl,-framework,SomeFramework
+otool -L $t/exe2 > $t/deps2
+grep '/usr/lib/libbar.dylib' $t/deps2 | not grep -q weak
+dyld_info -fixups $t/exe2 | grep -q 'libbar/_bar$'
+
+# A re-exported library in a private location binds through the
+# umbrella and gets no load command.
+mkdir -p $t/priv/Priv.framework
+sed 's|/usr/lib/libbar.dylib|/usr/lib/foo/libbar.dylib|; s|SomeFramework|Priv|g' \
+  $t/libs/SomeFramework.framework/SomeFramework.tbd > $t/priv/Priv.framework/Priv.tbd
+$CC --ld-path=$mold -o $t/exe3 $t/b.o -F$t/priv -Wl,-framework,Priv
+otool -L $t/exe3 > $t/deps3
+not grep -q libbar $t/deps3
+dyld_info -fixups $t/exe3 | grep -q 'Priv/_bar'
+
+# The load command carries the stub's compatibility version.
+otool -L $t/exe | grep SomeFramework | grep -q 'compatibility version 150.0.0'

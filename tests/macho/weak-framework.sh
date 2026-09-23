@@ -9,3 +9,7 @@ EOF2
 $CC --ld-path=$mold -weak_framework CoreFoundation -o $t/exe $t/a.o
 $t/exe
 otool -l $t/exe | grep -q LC_LOAD_WEAK_DYLIB
+# Every import from a weak-linked framework is a weak import.
+dyld_info -fixups $t/exe | grep 'CoreFoundation/_CFStringGetLength' | grep -q 'weak-import'
+nm -m $t/exe | grep -q 'undefined) weak external _CFStringGetLength'
+nm -m $t/exe | grep -q 'undefined) weak external ___CFConstantStringClassReference'

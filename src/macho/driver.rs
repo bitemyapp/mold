@@ -65,7 +65,10 @@ fn host_target() -> &'static str {
 /// actually for.
 pub fn link<E: Arch>(cmdline: &[String]) -> Result<i32, String> {
     let cmdline = cmdline::expand_response_files(cmdline);
-    let args = cmdline::parse_args(&cmdline);
+    let mut args = cmdline::parse_args(&cmdline);
+    // ld-prime ad-hoc signs arm64 output and leaves x86-64 unsigned
+    // (Rosetta and Intel Macs run unsigned code).
+    args.adhoc_codesign.get_or_insert(E::CPUTYPE == crate::macho::format::CPU_TYPE_ARM64);
 
     if let Some(arch) = &args.arch
         && arch != E::NAME
@@ -175,6 +178,7 @@ pub fn link<E: Arch>(cmdline: &[String]) -> Result<i32, String> {
     tp!("create_objc_msgsend_stubs", passes::create_objc_msgsend_stubs(&mut ctx));
     tp!("auto_hide_weak_defs", passes::auto_hide_weak_defs(&mut ctx));
     tp!("hide_all_exports", passes::hide_all_exports(&mut ctx));
+    tp!("apply_export_lists", passes::apply_export_lists(&mut ctx));
     tp!("create_symbol_reexports", passes::create_symbol_reexports(&mut ctx));
     tp!("coalesce_weak_defs", passes::coalesce_weak_defs(&mut ctx));
     passes::print_dependencies(&ctx);
