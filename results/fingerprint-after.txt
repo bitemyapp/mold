@@ -1,0 +1,28 @@
+2026-10-06T16:15:29-05:00
+ 16:15:29 up 25 days,  2:40, 23 users,  load average: 8.82, 42.07, 36.57
+    PID %CPU COMMAND
+2715084 75.1 .qemu-system-x8
+2663402  2.0 respin-tools
+   2543  1.2 warp-svc
+1555934  0.6 omp
+   3850  0.6 dockerd
+   3185  0.5 containerd
+   5178  0.3 gitea
+   4550  0.2 containerd-shim
+   4553  0.2 containerd-shim
+1753584  0.1 kworker/32:0-mm_percpu_wq
+1738308  0.1 kworker/53:1-mm_percpu_wq
+ 340279  0.1 kworker/42:0-mm_percpu_wq
+ 264474  0.1 kworker/38:2-mm_percpu_wq
+   5098  0.1 gitlab-runner
+1862784  0.1 kworker/48:2-mm_percpu_wq
+1477882  0.1 kworker/54:0-events
+1462839  0.1 kworker/46:0-mm_percpu_wq
+ 508812  0.1 kworker/60:2-events
+ 177362  0.1 kworker/55:1-mm_percpu_wq
+c18dc8cc64bb7069128b6633fab26524528a1117d73f6fd36fd250b45d3db29a  bin/base
+b06f910a172c121f18eae2d4919a61ddc6e9fefc1d98e857f465773f9bd1535c  bin/original-idle
+60d2fa4bd4460e40d342994fbeeb6e03c3292e2cfbd13a194f2718e140b4d251  bin/original-startup
+ac88dcd81486704a4f5ea00f1f4a5a1021939e8a638b7faf8e6fe31f6a146d2b  bin/rayon-idle
+0edbb1edfc4ca5a8fef6a5936e86d17d57f3da3d1c8a6106de348c1e5086b6fa  bin/rayon-idle-v1
+4d4670f795a0e3fb6f25ecfeb0183c6233fa2d17cb91d7e97b5a5c5408d2c508  bin/rayon-startup

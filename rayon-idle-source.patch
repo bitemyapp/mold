@@ -1,0 +1,256 @@
+diff --git a/rayon-core/src/lib.rs b/rayon-core/src/lib.rs
+index 37450763..45355c54 100644
+--- a/rayon-core/src/lib.rs
++++ b/rayon-core/src/lib.rs
+@@ -199,6 +199,9 @@ pub struct ThreadPoolBuilder<S = DefaultSpawn> {
+     /// "depth-first" fashion. If true, they will do a "breadth-first"
+     /// fashion. Depth-first is the default.
+     breadth_first: bool,
++
++    /// How long idle workers yield and search before they may sleep.
++    idle_timeout: std::time::Duration,
+ }
+ 
+ /// Contains the rayon thread pool configuration. Use [`ThreadPoolBuilder`] instead.
+@@ -235,6 +238,7 @@ impl Default for ThreadPoolBuilder {
+             exit_handler: None,
+             spawn_handler: DefaultSpawn,
+             breadth_first: false,
++            idle_timeout: std::time::Duration::ZERO,
+         }
+     }
+ }
+@@ -445,9 +449,24 @@ impl<S> ThreadPoolBuilder<S> {
+             start_handler: self.start_handler,
+             exit_handler: self.exit_handler,
+             breadth_first: self.breadth_first,
++            idle_timeout: self.idle_timeout,
+         }
+     }
+ 
++    /// After a worker has executed a job, delays parking it between jobs by
++    /// this duration while it searches for work and yields the processor.
++    /// Initial startup and nested join/scope waits retain the normal policy.
++    /// This can reduce wake-up
++    /// latency between short bursts of parallel work, at the cost of CPU time.
++    ///
++    /// Zero (the default) retains Rayon's normal round-based sleep policy.
++    /// This is a minimum idle period before parking, not a scheduling deadline;
++    /// a worker may take longer to park if it is descheduled or new work arrives.
++    pub fn idle_timeout(mut self, timeout: std::time::Duration) -> Self {
++        self.idle_timeout = timeout;
++        self
++    }
++
+     /// Returns a reference to the current spawn handler.
+     fn get_spawn_handler(&mut self) -> &mut S {
+         &mut self.spawn_handler
+@@ -800,6 +819,7 @@ impl<S> fmt::Debug for ThreadPoolBuilder<S> {
+             ref exit_handler,
+             spawn_handler: _,
+             ref breadth_first,
++            ref idle_timeout,
+         } = *self;
+ 
+         // Just print `Some(<closure>)` or `None` to the debug
+@@ -816,6 +836,7 @@ impl<S> fmt::Debug for ThreadPoolBuilder<S> {
+         let exit_handler = exit_handler.as_ref().map(|_| ClosurePlaceholder);
+ 
+         f.debug_struct("ThreadPoolBuilder")
++            .field("idle_timeout", idle_timeout)
+             .field("num_threads", num_threads)
+             .field("use_current_thread", use_current_thread)
+             .field("get_thread_name", &get_thread_name)
+diff --git a/rayon-core/src/registry.rs b/rayon-core/src/registry.rs
+index 809976a0..6d9f7932 100644
+--- a/rayon-core/src/registry.rs
++++ b/rayon-core/src/registry.rs
+@@ -270,7 +270,7 @@ impl Registry {
+ 
+         let registry = Arc::new(Registry {
+             thread_infos: stealers.into_iter().map(ThreadInfo::new).collect(),
+-            sleep: Sleep::new(n_threads),
++            sleep: Sleep::new(n_threads, builder.idle_timeout),
+             injected_jobs: Injector::new(),
+             broadcasts: Mutex::new(broadcasts),
+             terminate_count: AtomicUsize::new(1),
+@@ -785,19 +785,35 @@ impl WorkerThread {
+         // accesses, which would be *very bad*
+         let abort_guard = unwind::AbortIfPanic;
+ 
++        // Extend idle search only between top-level jobs. Threads waiting for
++        // a join/scope still use the normal parking policy, and a new worker
++        // does not spin before it has ever participated in the workload.
++        let between_jobs = ptr::eq(
++            latch,
++            self.registry.thread_infos[self.index]
++                .terminate
++                .as_core_latch(),
++        );
++        let mut did_work = false;
++
+         'outer: while !latch.probe() {
+             // Check for local work *before* we start marking ourself idle,
+             // especially to avoid modifying shared sleep state.
+             if let Some(job) = self.take_local_job() {
+                 self.execute(job);
++                did_work = true;
+                 continue;
+             }
+ 
+-            let mut idle_state = self.registry.sleep.start_looking(self.index);
++            let mut idle_state = self
++                .registry
++                .sleep
++                .start_looking(self.index, between_jobs && did_work);
+             while !latch.probe() {
+                 if let Some(job) = self.find_work() {
+                     self.registry.sleep.work_found();
+                     self.execute(job);
++                    did_work = true;
+                     // The job might have injected local work, so go back to the outer loop.
+                     continue 'outer;
+                 } else {
+diff --git a/rayon-core/src/sleep/mod.rs b/rayon-core/src/sleep/mod.rs
+index 9b02b39b..9678808b 100644
+--- a/rayon-core/src/sleep/mod.rs
++++ b/rayon-core/src/sleep/mod.rs
+@@ -6,6 +6,7 @@ use crate::sync::{Condvar, Mutex};
+ use crossbeam_utils::CachePadded;
+ use std::sync::atomic::Ordering;
+ use std::thread;
++use std::time::{Duration, Instant};
+ 
+ mod counters;
+ pub(crate) use self::counters::THREADS_MAX;
+@@ -24,6 +25,7 @@ pub(super) struct Sleep {
+     worker_sleep_states: Vec<CachePadded<WorkerSleepState>>,
+ 
+     counters: AtomicCounters,
++    idle_timeout: Duration,
+ }
+ 
+ /// An instance of this struct is created when a thread becomes idle.
+@@ -38,6 +40,9 @@ pub(super) struct IdleState {
+     /// How many rounds have we been circling without sleeping?
+     rounds: u32,
+ 
++    /// Avoid clock reads altogether when the idle timeout is disabled.
++    idle_since: Option<Instant>,
++
+     /// Once we become sleepy, what was the sleepy counter value?
+     /// Set to `INVALID_SLEEPY_COUNTER` otherwise.
+     jobs_counter: JobsEventCounter,
+@@ -57,21 +62,23 @@ const ROUNDS_UNTIL_SLEEPY: u32 = 32;
+ const ROUNDS_UNTIL_SLEEPING: u32 = ROUNDS_UNTIL_SLEEPY + 1;
+ 
+ impl Sleep {
+-    pub(super) fn new(n_threads: usize) -> Sleep {
++    pub(super) fn new(n_threads: usize, idle_timeout: Duration) -> Sleep {
+         assert!(n_threads <= THREADS_MAX);
+         Sleep {
+             worker_sleep_states: (0..n_threads).map(|_| Default::default()).collect(),
+             counters: AtomicCounters::new(),
++            idle_timeout,
+         }
+     }
+ 
+     #[inline]
+-    pub(super) fn start_looking(&self, worker_index: usize) -> IdleState {
++    pub(super) fn start_looking(&self, worker_index: usize, poll_idle: bool) -> IdleState {
+         self.counters.add_inactive_thread();
+ 
+         IdleState {
+             worker_index,
+             rounds: 0,
++            idle_since: (poll_idle && !self.idle_timeout.is_zero()).then(Instant::now),
+             jobs_counter: JobsEventCounter::DUMMY,
+         }
+     }
+@@ -91,6 +98,16 @@ impl Sleep {
+         latch: &CoreLatch,
+         has_injected_jobs: impl FnOnce() -> bool,
+     ) {
++        // Extend only the pre-sleep search. The existing sleepy announcement,
++        // job-event counter, latch and condition-variable protocol is unchanged.
++        if idle_state.rounds == ROUNDS_UNTIL_SLEEPY
++            && idle_state
++                .idle_since
++                .is_some_and(|since| since.elapsed() < self.idle_timeout)
++        {
++            thread::yield_now();
++            return;
++        }
+         if idle_state.rounds < ROUNDS_UNTIL_SLEEPY {
+             thread::yield_now();
+             idle_state.rounds += 1;
+@@ -314,6 +331,9 @@ impl Sleep {
+ impl IdleState {
+     fn wake_fully(&mut self) {
+         self.rounds = 0;
++        if self.idle_since.is_some() {
++            self.idle_since = Some(Instant::now());
++        }
+         self.jobs_counter = JobsEventCounter::DUMMY;
+     }
+ 
+diff --git a/rayon-core/tests/idle_timeout.rs b/rayon-core/tests/idle_timeout.rs
+new file mode 100644
+index 00000000..43824801
+--- /dev/null
++++ b/rayon-core/tests/idle_timeout.rs
+@@ -0,0 +1,54 @@
++use rayon_core::{broadcast, join, scope, ThreadPoolBuilder};
++use std::sync::{mpsc, Arc, Barrier};
++use std::time::Duration;
++
++#[test]
++fn bursts_nested_work_broadcast_and_shutdown() {
++    for threads in [1, 2, 4] {
++        for timeout in [Duration::ZERO, Duration::from_millis(2)] {
++            let (finished, receive) = mpsc::channel();
++            std::thread::spawn(move || {
++                let (exited, exits) = mpsc::channel();
++                let pool = ThreadPoolBuilder::new()
++                    .num_threads(threads)
++                    .idle_timeout(timeout)
++                    .exit_handler(move |_| {
++                        exited.send(()).unwrap();
++                    })
++                    .build()
++                    .unwrap();
++                for _ in 0..8 {
++                    let barrier = Arc::new(Barrier::new(threads));
++                    let values = pool.install(|| {
++                        broadcast(|ctx| {
++                            barrier.wait();
++                            {
++                                let index = ctx.index();
++                                join(move || index + 1, || 7)
++                            }
++                        })
++                    });
++                    assert_eq!(values.len(), threads);
++                    assert_eq!(
++                        values.iter().map(|x| x.0).sum::<usize>(),
++                        threads * (threads + 1) / 2
++                    );
++                    pool.install(|| {
++                        scope(|s| {
++                            let values = &values;
++                            s.spawn(move |_| assert!(values.iter().all(|x| x.1 == 7)));
++                        })
++                    });
++                    // Exercise both the polling period and wake-up after parking.
++                    std::thread::sleep(Duration::from_millis(8));
++                }
++                drop(pool);
++                for _ in 0..threads {
++                    exits.recv_timeout(Duration::from_secs(5)).unwrap();
++                }
++                finished.send(()).unwrap();
++            });
++            receive.recv_timeout(Duration::from_secs(10)).unwrap();
++        }
++    }
++}

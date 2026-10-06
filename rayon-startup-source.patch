@@ -1,0 +1,202 @@
+diff --git a/rayon-core/src/lib.rs b/rayon-core/src/lib.rs
+index 37450763..e907a1cc 100644
+--- a/rayon-core/src/lib.rs
++++ b/rayon-core/src/lib.rs
+@@ -282,6 +282,48 @@ where
+ }
+ 
+ impl ThreadPoolBuilder {
++    /// Initializes the global pool while a helper starts the worker threads.
++    ///
++    /// Unlike `build_global`, this returns without waiting for every worker to
++    /// be spawned or primed. Work may be submitted immediately; it is queued
++    /// until a worker can execute it. With `use_current_thread`, the caller can
++    /// also execute work immediately. All other global-pool semantics, thread
++    /// names, stack sizes and start/exit handlers are retained.
++    ///
++    /// Creating the helper can fail synchronously. A later worker creation
++    /// failure aborts the process: after publishing the registry, Rayon cannot
++    /// safely remove an unstarted worker that may already have broadcast jobs
++    /// queued for it. Use `build_global` if recoverable spawn errors are needed.
++    /// This experimental API is available only with the default spawn handler.
++    pub fn build_global_async(self) -> Result<(), ThreadPoolBuildError> {
++        // There are no workers to defer when the caller is the sole worker.
++        if self.use_current_thread && self.get_num_threads() == 1 {
++            return self.build_global();
++        }
++
++        let (sender, receiver) = std::sync::mpsc::channel::<ThreadBuilder>();
++        std::thread::Builder::new()
++            .name("rayon-startup".into())
++            .spawn(move || {
++                let abort = unwind::AbortIfPanic;
++                for worker in receiver {
++                    if let Err(error) = DefaultSpawn.spawn(worker) {
++                        panic!("Rayon: failed to start a worker: {error}");
++                    }
++                }
++                std::mem::forget(abort);
++            })
++            .map_err(|error| ThreadPoolBuildError::new(ErrorKind::IOError(error)))?;
++
++        let builder = self.spawn_handler(move |worker| {
++            sender
++                .send(worker)
++                .map_err(|_| io::Error::other("Rayon startup helper exited"))
++        });
++        registry::init_global_registry(builder)?;
++        Ok(())
++    }
++
+     /// Creates a scoped `ThreadPool` initialized using this configuration.
+     ///
+     /// This is a convenience function for building a pool using [`std::thread::scope`]
+diff --git a/rayon-core/tests/async_global.rs b/rayon-core/tests/async_global.rs
+new file mode 100644
+index 00000000..c682e2ec
+--- /dev/null
++++ b/rayon-core/tests/async_global.rs
+@@ -0,0 +1,47 @@
++use rayon_core::{
++    broadcast, current_num_threads, current_thread_index, join, spawn, ThreadPoolBuilder,
++};
++use std::sync::{mpsc, Arc, Barrier};
++use std::time::Duration;
++
++#[test]
++fn returns_before_workers_start_and_publishes_the_global_registry() {
++    let (done, receive) = mpsc::channel();
++    std::thread::spawn(move || {
++        let release = Arc::new(Barrier::new(4));
++        let worker_release = release.clone();
++        ThreadPoolBuilder::new()
++            .num_threads(4)
++            .use_current_thread()
++            .thread_name(|i| format!("async-worker-{i}"))
++            .stack_size(2 * 1024 * 1024)
++            .start_handler(move |i| {
++                assert!(i > 0);
++                assert_eq!(
++                    std::thread::current().name(),
++                    Some(format!("async-worker-{i}").as_str())
++                );
++                worker_release.wait();
++            })
++            .build_global_async()
++            .unwrap();
++        assert_eq!(current_thread_index(), Some(0));
++        assert_eq!(current_num_threads(), 4);
++        // All other workers are still blocked. The caller can do parallel work.
++        assert_eq!(join(|| 17, || 25), (17, 25));
++        let (sent, received) = mpsc::channel();
++        std::thread::spawn(move || {
++            assert_eq!(current_thread_index(), None);
++            assert_eq!(current_num_threads(), 4);
++            spawn(move || sent.send(current_thread_index().unwrap()).unwrap());
++        })
++        .join()
++        .unwrap();
++        release.wait();
++        assert!(received.recv_timeout(Duration::from_secs(5)).unwrap() < 4);
++        assert_eq!(broadcast(|ctx| ctx.index()), vec![0, 1, 2, 3]);
++        assert!(ThreadPoolBuilder::new().build_global_async().is_err());
++        done.send(()).unwrap();
++    });
++    receive.recv_timeout(Duration::from_secs(10)).unwrap();
++}
+diff --git a/rayon-core/tests/async_global_external.rs b/rayon-core/tests/async_global_external.rs
+new file mode 100644
+index 00000000..ef99f2c1
+--- /dev/null
++++ b/rayon-core/tests/async_global_external.rs
+@@ -0,0 +1,25 @@
++use rayon_core::{broadcast, current_num_threads, join, ThreadPoolBuilder};
++use std::sync::{mpsc, Arc, Barrier};
++use std::time::Duration;
++
++#[test]
++fn caller_outside_pool_can_submit_work_after_async_initialization() {
++    let (done, receive) = mpsc::channel();
++    std::thread::spawn(move || {
++        let release = Arc::new(Barrier::new(3));
++        let workers = release.clone();
++        ThreadPoolBuilder::new()
++            .num_threads(2)
++            .start_handler(move |_| {
++                workers.wait();
++            })
++            .build_global_async()
++            .unwrap();
++        assert_eq!(current_num_threads(), 2);
++        release.wait();
++        assert_eq!(join(|| 19, || 23), (19, 23));
++        assert_eq!(broadcast(|ctx| ctx.index()), vec![0, 1]);
++        done.send(()).unwrap();
++    });
++    receive.recv_timeout(Duration::from_secs(10)).unwrap();
++}
+diff --git a/rayon-core/tests/async_global_failure.rs b/rayon-core/tests/async_global_failure.rs
+new file mode 100644
+index 00000000..93d912f0
+--- /dev/null
++++ b/rayon-core/tests/async_global_failure.rs
+@@ -0,0 +1,36 @@
++#[cfg(unix)]
++#[test]
++fn late_spawn_failure_aborts() {
++    use rayon_core::ThreadPoolBuilder;
++    use std::os::unix::process::ExitStatusExt;
++    use std::process::Command;
++    use std::time::{Duration, Instant};
++    const CHILD: &str = "RAYON_ASYNC_FAILURE_CHILD";
++    if std::env::var_os(CHILD).is_some() {
++        ThreadPoolBuilder::new()
++            .num_threads(2)
++            .stack_size(usize::MAX)
++            .build_global_async()
++            .unwrap();
++        std::thread::sleep(Duration::from_secs(5));
++        panic!("worker creation failure was not fail-stop");
++    }
++    let mut child = Command::new(std::env::current_exe().unwrap())
++        .args(["--exact", "late_spawn_failure_aborts", "--nocapture"])
++        .env(CHILD, "1")
++        .spawn()
++        .unwrap();
++    let deadline = Instant::now() + Duration::from_secs(10);
++    loop {
++        if let Some(status) = child.try_wait().unwrap() {
++            assert_eq!(status.signal(), Some(libc::SIGABRT));
++            break;
++        }
++        if Instant::now() >= deadline {
++            child.kill().unwrap();
++            child.wait().unwrap();
++            panic!("failed startup hung instead of aborting");
++        }
++        std::thread::sleep(Duration::from_millis(10));
++    }
++}
+diff --git a/rayon-core/tests/async_global_one.rs b/rayon-core/tests/async_global_one.rs
+new file mode 100644
+index 00000000..17f5e68e
+--- /dev/null
++++ b/rayon-core/tests/async_global_one.rs
+@@ -0,0 +1,17 @@
++use rayon_core::{broadcast, current_num_threads, join, ThreadPoolBuilder};
++
++#[test]
++fn sole_current_worker_needs_no_helper() {
++    std::thread::spawn(|| {
++        ThreadPoolBuilder::new()
++            .num_threads(1)
++            .use_current_thread()
++            .build_global_async()
++            .unwrap();
++        assert_eq!(current_num_threads(), 1);
++        assert_eq!(join(|| 3, || 4), (3, 4));
++        assert_eq!(broadcast(|ctx| ctx.index()), vec![0]);
++    })
++    .join()
++    .unwrap();
++}

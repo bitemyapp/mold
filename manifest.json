@@ -1,0 +1,23 @@
+{
+  "baseline": "99d79c429bda8630330c806b33ca724a770ac637",
+  "original-idle": "28d46ec70515269e1fff4aa39d178e8c07e260e4",
+  "original-startup": "6920f80dc4e2488b78b32dcf6ace9c32969dfd1a",
+  "rayon-idle-v1": "b8d655a82622c24ae6f8d41c815dcb35b99c68e6",
+  "rayon-startup": "bcf50b97220adbe47f510a97969c18429857b1f3",
+  "rayon-version": "1.13.0",
+  "rayon-upstream-commit": "7af20d7692d5decbcb4adcaa079cd607e3e50814",
+  "remote": "wx-workstation:/home/callen/work/mold-rayon-20261006",
+  "worktrees": {
+    "idle": "/Users/callen/.codex/worktrees/mold-rayon-idle/mold",
+    "startup": "/Users/callen/.codex/worktrees/mold-rayon-startup/mold"
+  },
+  "branches": {
+    "idle": "codex/rayon-idle-polling",
+    "startup": "codex/rayon-async-startup"
+  },
+  "rayon-idle": "e28a30fcc0acba52bb110cc8508d85deb1dacac6",
+  "branch_tips": {
+    "idle": "6ba504d87c330d919e5ed8b886a60ffe46256721",
+    "startup": "617e3e27eae7efbe977050c004c3a394129e61c5"
+  }
+}

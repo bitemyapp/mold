@@ -1,0 +1,43 @@
+Rayon runtime experiments, 2026-10-06
+
+Pinned baseline: 99d79c429bda8630330c806b33ca724a770ac637
+Original #1694: 28d46ec70515269e1fff4aa39d178e8c07e260e4
+Original #1695: 6920f80dc4e2488b78b32dcf6ace9c32969dfd1a
+Each candidate descends from its original PR and replaces its workaround.
+Rayon dependency: crates.io rayon-core 1.13.0, vendored with licenses.
+No rebase or unrelated upstream changes.
+
+Build/test/benchmark host: ssh wx-workstation.
+Build: mold-upstream-ci container; x86_64 target; release with line tables,
+frame pointers and LLVM addrsig; frozen Cargo.lock; explicit clean of mold,
+mold-cli, mold-target-x86_64, rayon-core and rayon before every build.
+Same Cargo cache and toolchain for every arm.
+
+Timing: CPUs 32-63 (one hardware thread per physical core), --threads=32,
+--no-fork, warm caches, ext4 output. 3 warmups per arm/case; 40 samples per
+arm/case in cyclic interleaved order. Report p50, p95, p10, CPU user+sys,
+peak per-process RSS, raw samples and source/binary hashes. p95 is descriptive;
+40 samples do not support precise extreme-tail claims.
+Eight cases: C hello, Rust hello, LLVM tablegen, lld, clang full/stripped,
+rust-analyzer full/stripped. Separate throughput batches include oversubscription.
+Shared workstation lock with previous mold tasks: builds/tests shared lock,
+benchmarks exclusive. Do not tune the kernel or stop unrelated jobs.
+
+Hypotheses from original PR evidence:
+1. Short bursts lose time to sleeping-worker wake-up cascades. Replacing
+   mold's broadcast polling jobs with a 2 ms Rayon idle timeout should retain
+   much of the latency benefit. Impact 4, confidence 4, effort 2: score 8.
+2. Sequential thread creation and readiness wait add fixed startup latency.
+   Native asynchronous global construction should match #1695's local-pool
+   workaround. Impact 4 (small links), confidence 4, effort 2: score 8.
+The original PRs already profile these runtime costs; this experiment tests
+runtime ownership and compares measured end-to-end performance.
+
+Behavior argument: neither change alters linker data, ordering, tie breaking,
+floating point, or RNG. Idle timeout extends only pre-sleep search; job-event
+counter/latch/condition-variable protocol is preserved. Async startup queues
+valid worker descriptors before publishing the same global registry; pool
+size and per-worker queues are fixed, and jobs may execute as workers start.
+Late spawn failure is fail-stop to avoid stranding broadcast jobs. Golden
+outputs must match all arms apart from an ELF producer/version identification
+if source version recording makes that differ; any exception must be inspected.

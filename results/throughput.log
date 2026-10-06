@@ -1,0 +1,22 @@
+hello 0 
+hello 1 original-idle: 0.313s/rayon-idle: 0.342s/original-startup: 0.297s/rayon-startup: 0.306s/base: 0.336s
+hello 2 original-idle: 0.312s/rayon-idle: 0.323s/original-startup: 0.331s/rayon-startup: 0.302s/base: 0.340s
+hello 3 original-idle: 0.340s/rayon-idle: 0.327s/original-startup: 0.298s/rayon-startup: 0.322s/base: 0.430s
+hello 4 original-idle: 0.322s/rayon-idle: 0.322s/original-startup: 0.299s/rayon-startup: 0.296s/base: 0.338s
+hello 5 original-idle: 0.315s/rayon-idle: 0.321s/original-startup: 0.298s/rayon-startup: 0.304s/base: 0.335s
+hello 6 original-idle: 0.318s/rayon-idle: 0.327s/original-startup: 0.300s/rayon-startup: 0.303s/base: 0.335s
+hello 7 original-idle: 0.363s/rayon-idle: 0.324s/original-startup: 0.405s/rayon-startup: 0.319s/base: 0.339s
+hello 8 original-idle: 0.317s/rayon-idle: 0.350s/original-startup: 0.312s/rayon-startup: 0.414s/base: 0.416s
+hello 9 original-idle: 0.318s/rayon-idle: 0.321s/original-startup: 0.320s/rayon-startup: 0.375s/base: 0.346s
+hello 10 original-idle: 0.314s/rayon-idle: 0.336s/original-startup: 0.308s/rayon-startup: 0.320s/base: 0.341s
+clang-s 0 
+clang-s 1 original-idle: 1.534s/rayon-idle: 1.556s/original-startup: 1.509s/rayon-startup: 1.540s/base: 1.542s
+clang-s 2 original-idle: 1.518s/rayon-idle: 1.578s/original-startup: 1.538s/rayon-startup: 1.527s/base: 1.541s
+clang-s 3 original-idle: 1.517s/rayon-idle: 1.511s/original-startup: 1.517s/rayon-startup: 1.531s/base: 1.540s
+clang-s 4 original-idle: 1.539s/rayon-idle: 1.565s/original-startup: 1.527s/rayon-startup: 1.508s/base: 1.530s
+clang-s 5 original-idle: 1.506s/rayon-idle: 1.571s/original-startup: 1.553s/rayon-startup: 1.545s/base: 1.517s
+clang-s 6 original-idle: 1.545s/rayon-idle: 1.565s/original-startup: 1.510s/rayon-startup: 1.529s/base: 1.522s
+clang-s 7 original-idle: 1.490s/rayon-idle: 1.538s/original-startup: 1.531s/rayon-startup: 1.529s/base: 1.531s
+clang-s 8 original-idle: 1.533s/rayon-idle: 1.567s/original-startup: 1.501s/rayon-startup: 1.537s/base: 1.531s
+clang-s 9 original-idle: 1.532s/rayon-idle: 1.606s/original-startup: 1.584s/rayon-startup: 1.522s/base: 1.523s
+clang-s 10 original-idle: 1.580s/rayon-idle: 1.591s/original-startup: 1.737s/rayon-startup: 2.108s/base: 1.584s

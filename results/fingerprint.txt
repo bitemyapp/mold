@@ -1,0 +1,91 @@
+2026-10-06T16:05:57-05:00
+Linux callen 6.17.0-1032-oem #32-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 24 05:46:26 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+Architecture:                            x86_64
+CPU op-mode(s):                          32-bit, 64-bit
+Address sizes:                           52 bits physical, 57 bits virtual
+Byte Order:                              Little Endian
+CPU(s):                                  128
+On-line CPU(s) list:                     0-127
+Vendor ID:                               AuthenticAMD
+Model name:                              AMD Ryzen Threadripper PRO 9985WX 64-Cores
+CPU family:                              26
+Model:                                   8
+Thread(s) per core:                      2
+Core(s) per socket:                      64
+Socket(s):                               1
+Stepping:                                1
+Frequency boost:                         enabled
+CPU(s) scaling MHz:                      30%
+CPU max MHz:                             5476.2891
+CPU min MHz:                             1220.6190
+BogoMIPS:                                6389.90
+Flags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd amd_ppin cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq la57 rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d debug_swap amd_lbr_pmc_freeze
+Virtualization:                          AMD-V
+L1d cache:                               3 MiB (64 instances)
+L1i cache:                               2 MiB (64 instances)
+L2 cache:                                64 MiB (64 instances)
+L3 cache:                                256 MiB (8 instances)
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-127
+Vulnerability Gather data sampling:      Not affected
+Vulnerability Ghostwrite:                Not affected
+Vulnerability Indirect target selection: Not affected
+Vulnerability Itlb multihit:             Not affected
+Vulnerability L1tf:                      Not affected
+Vulnerability Mds:                       Not affected
+Vulnerability Meltdown:                  Not affected
+Vulnerability Mmio stale data:           Not affected
+Vulnerability Old microcode:             Not affected
+Vulnerability Reg file data sampling:    Not affected
+Vulnerability Retbleed:                  Not affected
+Vulnerability Spec rstack overflow:      Mitigation; Reduced Speculation
+Vulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl
+Vulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditional; STIBP always-on; PBRSB-eIBRS Not affected; BHI Not affected
+Vulnerability Srbds:                     Not affected
+Vulnerability Tsa:                       Not affected
+Vulnerability Tsx async abort:           Not affected
+Vulnerability Vmscape:                   Mitigation; IBPB before exit to userspace
+               total        used        free      shared  buff/cache   available
+Mem:           250Gi        21Gi        16Gi       302Mi       214Gi       229Gi
+Swap:          8.0Gi       1.3Gi       6.7Gi
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme0n1p2  3.7T  3.2T  301G  92% /
+TARGET SOURCE         FSTYPE OPTIONS
+/      /dev/nvme0n1p2 ext4   rw,relatime
+performance
+sha256:bc5a91bfcb20e09abc38755c823b36a93734a9dc6ab0ec24dea2a8656cbb4b91
+rustc 1.98.1 (48a229cea 2026-09-01)
+binary: rustc
+commit-hash: 48a229ceaefd4985c50990b14116b6d856af0985
+commit-date: 2026-09-01
+host: x86_64-unknown-linux-gnu
+release: 1.98.1
+LLVM version: 22.1.8
+cargo 1.98.1 (797e8a9bc 2026-08-05)
+    PID %CPU COMMAND
+1461676 97.4 qemu-system-x86
+1429531 80.8 nix
+1414413 48.3 .qemu-system-x8
+1431399  8.2 nix-daemon
+1429654  6.8 nix-daemon
+1461668  1.4 .nixos-test-dri
+   2543  1.2 warp-svc
+1555934  0.6 omp
+   3850  0.6 dockerd
+   3185  0.5 containerd
+1461692  0.3 virtiofsd
+   5178  0.3 gitea
+   4550  0.2 containerd-shim
+   4553  0.2 containerd-shim
+ 340279  0.1 kworker/42:0-events
+ 264474  0.1 kworker/38:2-events
+1461629  0.1 bash
+   5098  0.1 gitlab-runner
+ 508812  0.0 kworker/60:2-events
+c18dc8cc64bb7069128b6633fab26524528a1117d73f6fd36fd250b45d3db29a  bin/base
+b06f910a172c121f18eae2d4919a61ddc6e9fefc1d98e857f465773f9bd1535c  bin/original-idle
+60d2fa4bd4460e40d342994fbeeb6e03c3292e2cfbd13a194f2718e140b4d251  bin/original-startup
+ac88dcd81486704a4f5ea00f1f4a5a1021939e8a638b7faf8e6fe31f6a146d2b  bin/rayon-idle
+0edbb1edfc4ca5a8fef6a5936e86d17d57f3da3d1c8a6106de348c1e5086b6fa  bin/rayon-idle-v1
+4d4670f795a0e3fb6f25ecfeb0183c6233fa2d17cb91d7e97b5a5c5408d2c508  bin/rayon-startup

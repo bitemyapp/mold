@@ -1,0 +1,27 @@
+2026-10-06T16:04:15-05:00
+ 16:04:15 up 25 days,  2:28, 23 users,  load average: 15.63, 39.43, 26.56
+    PID %CPU COMMAND
+1423291 5665 mksquashfs
+1413701 76.0 nix
+1414413 59.7 .qemu-system-x8
+1413734 33.8 nix-daemon
+1413731  8.0 nix-daemon
+1422948  1.6 bash
+   2543  1.2 warp-svc
+1555934  0.6 omp
+   3850  0.6 dockerd
+   3185  0.5 containerd
+   5178  0.3 gitea
+   4550  0.2 containerd-shim
+   4553  0.2 containerd-shim
+ 340279  0.1 kworker/42:0-mm_percpu_wq
+ 264474  0.1 kworker/38:2-mm_percpu_wq
+1415109  0.1 kworker/u512:1-atlantic
+ 508812  0.1 kworker/60:2-mm_percpu_wq
+   5098  0.1 gitlab-runner
+ 176499  0.1 kworker/32:1-events
+c18dc8cc64bb7069128b6633fab26524528a1117d73f6fd36fd250b45d3db29a  bin/base
+b06f910a172c121f18eae2d4919a61ddc6e9fefc1d98e857f465773f9bd1535c  bin/original-idle
+60d2fa4bd4460e40d342994fbeeb6e03c3292e2cfbd13a194f2718e140b4d251  bin/original-startup
+0edbb1edfc4ca5a8fef6a5936e86d17d57f3da3d1c8a6106de348c1e5086b6fa  bin/rayon-idle
+4d4670f795a0e3fb6f25ecfeb0183c6233fa2d17cb91d7e97b5a5c5408d2c508  bin/rayon-startup
