@@ -1,0 +1,49 @@
+1:  28d46ec7 ! 1:  5cf9fa86 Keep idle worker threads polling for work between passes
+    @@ src/context.rs: impl<E: Target> Context<E> {
+      }
+     
+      ## src/driver.rs ##
+    -@@ src/driver.rs: pub fn link<E: Target>(cmdline: Arc<[Cow<'static, OsStr>]>) -> Result<i32, &'sta
+    +@@ src/driver.rs: pub fn link<E: Target>(cmdline: Cmdline) -> LinkResult {
+              }
+          }
+      
+2:  4666d9d7 ! 2:  80958488 Vendor rayon-core 1.13.0 for an isolated runtime experiment
+    @@ Cargo.toml: autotests = false
+      members = ["cli", "arch/*", "tests"]
+      default-members = [".", "cli", "arch/*", "tests"]
+      
+    -@@ Cargo.toml: cc = "1"
+    - 
+    - [profile.release]
+    - panic = "abort"
+    +@@ Cargo.toml: panic = "abort"
+    + # Copying generic and inline functions once per crate instead of once per
+    + # codegen unit makes the executable about a quarter smaller.
+    + codegen-units = 1
+     +
+     +[patch.crates-io]
+     +rayon-core = { path = "vendor/rayon-core" }
+3:  b8d655a8 ! 3:  6256f0d3 Move bounded idle polling into Rayon
+    @@ src/context.rs: impl<E: Target> Context<E> {
+      }
+     
+      ## src/driver.rs ##
+    -@@ src/driver.rs: pub fn link<E: Target>(cmdline: Arc<[Cow<'static, OsStr>]>) -> Result<i32, &'sta
+    +@@ src/driver.rs: pub fn link<E: Target>(cmdline: Cmdline) -> LinkResult {
+          let threads = thread_count(&ctx.args);
+          rayon::ThreadPoolBuilder::new()
+              .num_threads(threads)
+     +        .idle_timeout(std::time::Duration::from_millis(2))
+              .use_current_thread()
+              .build_global()
+    -         .expect("failed to build linker thread pool");
+    -@@ src/driver.rs: pub fn link<E: Target>(cmdline: Arc<[Cow<'static, OsStr>]>) -> Result<i32, &'sta
+    +         .unwrap_or_else(|err| fatal!("failed to build linker thread pool: {err}"));
+    +@@ src/driver.rs: pub fn link<E: Target>(cmdline: Cmdline) -> LinkResult {
+              }
+          }
+      
+4:  e28a30fc = 4:  fef745ca Limit idle polling to workers between completed jobs
+5:  6ba504d8 = 5:  8b352266 Record workstation comparison with PR #1694
+6:  6abe73a5 = 6:  a29aa3e0 Link published Rayon benchmark evidence

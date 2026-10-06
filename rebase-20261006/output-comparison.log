@@ -1,0 +1,25 @@
+hello 1 byte-identical
+rhello 1 byte-identical
+tblgen 1 byte-identical
+lld 1 byte-identical
+clang 1 byte-identical
+clang-s 1 byte-identical
+ra 1 byte-identical
+ra-s 1 byte-identical
+hello 8 byte-identical
+rhello 8 byte-identical
+tblgen 8 byte-identical
+lld 8 byte-identical
+clang 8 byte-identical
+clang-s 8 byte-identical
+ra 8 byte-identical
+ra-s 8 byte-identical
+hello 32 byte-identical
+rhello 32 byte-identical
+tblgen 32 byte-identical
+lld 32 byte-identical
+clang 32 byte-identical
+clang-s 32 byte-identical
+ra 32 byte-identical
+ra-s 32 byte-identical
+All 24 workload/worker-count combinations match current upstream.

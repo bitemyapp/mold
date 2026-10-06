@@ -1,0 +1,10 @@
+    Updating git repository `https://github.com/rui314/mimalloc_rust`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+     Removed 81 files, 188.0MiB total
+   Compiling rayon-core v1.13.0 (/work/vendor/rayon-core)
+   Compiling mold v3.0.0 (/work)
+   Compiling mold-cli v3.0.0 (/work/cli)
+   Compiling rayon v1.12.0
+   Compiling mold-arch-x86_64 v3.0.0 (/work/arch/x86_64)
+    Finished `release` profile [optimized + debuginfo] target(s) in 23.83s

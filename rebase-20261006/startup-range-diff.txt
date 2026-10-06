@@ -1,0 +1,78 @@
+1:  6920f80d ! 1:  38f99f73 Start the worker threads without waiting for them
+    @@ src/driver.rs: fn thread_count(args: &Args) -> usize {
+     +            sender.send(worker).map_err(|_| std::io::Error::other("thread spawner exited"))
+     +        })
+     +        .build()
+    -+        .expect("failed to build linker thread pool");
+    ++        .unwrap_or_else(|err| fatal!("failed to build linker thread pool: {err}"));
+     +
+     +    // Parallel iterators and rayon::spawn on this thread use the pool it
+     +    // belongs to. Keep the pool for the rest of the process, as a global
+    @@ src/driver.rs: fn thread_count(args: &Args) -> usize {
+     +
+      /// Links for the target `E`, or reports the target the inputs are actually
+      /// for.
+    - pub fn link<E: Target>(cmdline: Arc<[Cow<'static, OsStr>]>) -> Result<i32, &'static str> {
+    -@@ src/driver.rs: pub fn link<E: Target>(cmdline: Arc<[Cow<'static, OsStr>]>) -> Result<i32, &'sta
+    + pub fn link<E: Target>(cmdline: Cmdline) -> LinkResult {
+    +@@ src/driver.rs: pub fn link<E: Target>(cmdline: Cmdline) -> LinkResult {
+          crate::jobs::acquire_global_lock();
+      
+          let threads = thread_count(&ctx.args);
+    @@ src/driver.rs: pub fn link<E: Target>(cmdline: Arc<[Cow<'static, OsStr>]>) -> Re
+     -        .num_threads(threads)
+     -        .use_current_thread()
+     -        .build_global()
+    --        .expect("failed to build linker thread pool");
+    +-        .unwrap_or_else(|err| fatal!("failed to build linker thread pool: {err}"));
+     +    start_thread_pool(threads);
+      
+          // Handle --wrap options if any.
+2:  10b01269 ! 2:  fb2a99eb Vendor rayon-core 1.13.0 for an isolated runtime experiment
+    @@ Cargo.toml: autotests = false
+      members = ["cli", "arch/*", "tests"]
+      default-members = [".", "cli", "arch/*", "tests"]
+      
+    -@@ Cargo.toml: cc = "1"
+    - 
+    - [profile.release]
+    - panic = "abort"
+    +@@ Cargo.toml: panic = "abort"
+    + # Copying generic and inline functions once per crate instead of once per
+    + # codegen unit makes the executable about a quarter smaller.
+    + codegen-units = 1
+     +
+     +[patch.crates-io]
+     +rayon-core = { path = "vendor/rayon-core" }
+3:  bcf50b97 ! 3:  b68af98b Move asynchronous global pool startup into Rayon
+    @@ src/driver.rs: fn thread_count(args: &Args) -> usize {
+     -            sender.send(worker).map_err(|_| std::io::Error::other("thread spawner exited"))
+     -        })
+     -        .build()
+    --        .expect("failed to build linker thread pool");
+    +-        .unwrap_or_else(|err| fatal!("failed to build linker thread pool: {err}"));
+     -
+     -    // Parallel iterators and rayon::spawn on this thread use the pool it
+     -    // belongs to. Keep the pool for the rest of the process, as a global
+    @@ src/driver.rs: fn thread_count(args: &Args) -> usize {
+     -
+      /// Links for the target `E`, or reports the target the inputs are actually
+      /// for.
+    - pub fn link<E: Target>(cmdline: Arc<[Cow<'static, OsStr>]>) -> Result<i32, &'static str> {
+    -@@ src/driver.rs: pub fn link<E: Target>(cmdline: Arc<[Cow<'static, OsStr>]>) -> Result<i32, &'sta
+    + pub fn link<E: Target>(cmdline: Cmdline) -> LinkResult {
+    +@@ src/driver.rs: pub fn link<E: Target>(cmdline: Cmdline) -> LinkResult {
+          crate::jobs::acquire_global_lock();
+      
+          let threads = thread_count(&ctx.args);
+    @@ src/driver.rs: pub fn link<E: Target>(cmdline: Arc<[Cow<'static, OsStr>]>) -> Re
+     +        .num_threads(threads)
+     +        .use_current_thread()
+     +        .build_global_async()
+    -+        .expect("failed to build linker thread pool");
+    ++        .unwrap_or_else(|err| fatal!("failed to build linker thread pool: {err}"));
+      
+          // Handle --wrap options if any.
+          for name in &ctx.args.wrap {
+4:  617e3e27 = 4:  6ebfbcd8 Record workstation comparison with PR #1695
+5:  434f2c25 = 5:  7f43be9a Link published Rayon benchmark evidence

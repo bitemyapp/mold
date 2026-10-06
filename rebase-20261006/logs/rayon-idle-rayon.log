@@ -1,0 +1,215 @@
+   Compiling libc v0.2.174
+   Compiling getrandom v0.3.3
+   Compiling crossbeam-utils v0.8.21
+   Compiling cfg-if v1.0.1
+   Compiling zerocopy v0.8.26
+   Compiling rayon-core v1.13.0 (/work/vendor/rayon-core)
+   Compiling scoped-tls v1.0.1
+   Compiling crossbeam-epoch v0.9.18
+   Compiling crossbeam-deque v0.8.6
+   Compiling rand_core v0.9.3
+   Compiling rand_xorshift v0.4.0
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.9.0
+   Compiling rand v0.9.2
+    Finished `test` profile [unoptimized] target(s) in 1.97s
+     Running unittests src/lib.rs (/target/debug/deps/rayon_core-fd276af38479ed0b)
+
+running 101 tests
+test broadcast::test::broadcast_panic_one ... ok
+test broadcast::test::broadcast_mutual ... ok
+test broadcast::test::broadcast_pool ... ok
+test broadcast::test::broadcast_self ... ok
+test broadcast::test::spawn_broadcast_panic_many ... ok
+test join::test::join_context_neither ... ok
+test join::test::join_context_both ... ok
+test broadcast::test::broadcast_panic_many ... ok
+test broadcast::test::spawn_broadcast_panic_one ... ok
+test join::test::panic_propagate_a - should panic ... ok
+test join::test::join_context_second ... ok
+test broadcast::test::spawn_broadcast_pool ... ok
+test join::test::panic_b_still_executes ... ok
+test broadcast::test::spawn_broadcast_mutual ... ok
+test join::test::panic_propagate_b - should panic ... ok
+test broadcast::test::spawn_broadcast_self ... ok
+test broadcast::test::spawn_broadcast_global ... ok
+test broadcast::test::broadcast_after_spawn ... ok
+test broadcast::test::broadcast_after_spawn_broadcast ... ok
+test broadcast::test::broadcast_global ... ok
+test join::test::panic_propagate_both - should panic ... ok
+test scope::test::lifo_order ... ok
+test scope::test::mixed_fifo_lifo_order ... ok
+test scope::test::fifo_order ... ok
+test scope::test::mixed_fifo_order ... ok
+test scope::test::mixed_lifo_fifo_order ... ok
+test scope::test::linear_stack_growth ... ok
+test scope::test::mixed_lifetime_scope_fifo ... ok
+test scope::test::panic_propagate_nested_spawn - should panic ... ok
+test scope::test::nested_lifo_fifo_order ... ok
+test scope::test::nested_lifo_order ... ok
+test scope::test::nested_fifo_lifo_order ... ok
+test scope::test::mixed_lifetime_scope ... ok
+test scope::test::nested_fifo_order ... ok
+test scope::test::panic_propagate_nested_scope_spawn - should panic ... ok
+test scope::test::mixed_lifo_order ... ok
+test scope::test::panic_propagate_scope - should panic ... ok
+test scope::test::panic_propagate_spawn - should panic ... ok
+test scope::test::scope_empty ... ok
+test scope::test::scope_result ... ok
+test scope::test::panic_propagate_still_execute_2 ... ok
+test scope::test::panic_propagate_still_execute_3 ... ok
+test scope::test::panic_propagate_still_execute_4 ... ok
+test scope::test::scope_divide_and_conquer ... ok
+test scope::test::scope_fifo_spawn_broadcast ... ok
+test scope::test::panic_propagate_still_execute_1 ... ok
+test scope::test::scope_spawn_broadcast ... ok
+test scope::test::scope_spawn_broadcast_barrier ... ok
+test scope::test::static_scope ... ok
+test scope::test::static_scope_fifo ... ok
+test scope::test::update_tree ... ok
+test scope::test::scope_two ... ok
+test scope::test::scope_spawn_broadcast_nested ... ok
+test spawn::test::fifo_lifo_order ... ok
+test join::test::sort ... ok
+test scope::test::scope_spawn_broadcast_panic_one ... ok
+test spawn::test::fifo_order ... ok
+test spawn::test::custom_panic_handler_and_spawn ... ok
+test spawn::test::mixed_fifo_lifo_order ... ok
+test test::check_error_send_sync ... ok
+test scope::test::scope_spawn_broadcast_panic_many ... ok
+test spawn::test::mixed_lifo_fifo_order ... ok
+test spawn::test::spawn_then_join_in_worker ... ok
+test spawn::test::spawn_then_join_outside_worker ... ok
+test spawn::test::lifo_order ... ok
+test spawn::test::lifo_fifo_order ... ok
+test spawn::test::custom_panic_handler_and_nested_spawn ... ok
+test test::cleared_current_thread ... ok
+test spawn::test::panic_fwd ... ok
+test join::test::sort_in_pool ... ok
+test thread_pool::test::failed_thread_stack ... ok
+test thread_pool::test::in_place_scope_fifo_no_deadlock ... ok
+test test::configuration ... ok
+test test::check_config_build ... ok
+test spawn::test::termination_while_things_are_executing ... ok
+test thread_pool::test::in_place_scope_no_deadlock ... ok
+test test::default_pool ... ok
+test test::handler_panics_handled_correctly ... ok
+test thread_pool::test::scope_fifo_order ... ok
+test test::worker_thread_index ... ok
+test thread_pool::test::scope_lifo_order ... ok
+test thread_pool::test::mutual_install ... ok
+test test::exit_callback_called ... ok
+test thread_pool::test::nested_fifo_scopes ... ok
+test test::start_callback_called ... ok
+test thread_pool::test::self_install ... ok
+test thread_pool::test::spawn_fifo_order ... ok
+test thread_pool::test::spawn_lifo_order ... ok
+test thread_pool::test::yield_now_to_spawn ... ok
+test thread_pool::test::panic_propagate - should panic ... ok
+test thread_pool::test::check_thread_pool_new ... ok
+test thread_pool::test::nested_scopes ... ok
+test thread_pool::test::yield_local_to_spawn ... ok
+test thread_pool::test::workers_stop ... ok
+test join::test::join_counter_overflow ... ok
+test broadcast::test::broadcast_sleep_race ... ok
+test thread_pool::test::panic_thread_name ... ok
+test thread_pool::test::sleeper_stop ... ok
+test thread_pool::test::mutual_install_sleepy ... ok
+test broadcast::test::broadcast_mutual_sleepy ... ok
+test broadcast::test::spawn_broadcast_mutual_sleepy ... ok
+
+test result: ok. 101 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.70s
+
+     Running tests/double_init_fail.rs (/target/debug/deps/double_init_fail-d91b21e029be0a9a)
+
+running 1 test
+test double_init_fail ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/idle_timeout.rs (/target/debug/deps/idle_timeout-a3592e1efd4f9712)
+
+running 1 test
+test bursts_nested_work_broadcast_and_shutdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+     Running tests/init_zero_threads.rs (/target/debug/deps/init_zero_threads-9a6daa75b01348fe)
+
+running 1 test
+test init_zero_threads ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/scope_join.rs (/target/debug/deps/scope_join-f0327a9e5d292f8b)
+
+running 1 test
+test scope_join ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/scoped_threadpool.rs (/target/debug/deps/scoped_threadpool-9820280510eb62be)
+
+running 3 tests
+test missing_scoped_tls ... ok
+test build_scoped_tls_threadpool ... ok
+test spawn_scoped_tls_threadpool ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/simple_panic.rs (/target/debug/deps/simple_panic-7d5dd3a13e32a050)
+
+running 1 test
+test simple_panic - should panic ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/stack_overflow_crash.rs (/target/debug/deps/stack_overflow_crash-b63b0f21ef1b3d96)
+
+running 3 tests
+test run_with_large_stack ... ignored
+test run_with_small_stack ... ignored
+test stack_overflow_crash ... ok
+
+test result: ok. 1 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests/use_current_thread.rs (/target/debug/deps/use_current_thread-30b831c8ae3649f9)
+
+running 1 test
+test use_current_thread_basic ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests rayon_core
+
+running 27 tests
+test src/compile_fail/quicksort_race3.rs - compile_fail::quicksort_race3 (line 1) - compile fail ... ok
+test src/compile_fail/quicksort_race1.rs - compile_fail::quicksort_race1 (line 1) - compile fail ... ok
+test src/compile_fail/quicksort_race2.rs - compile_fail::quicksort_race2 (line 1) - compile fail ... ok
+test src/compile_fail/rc_return.rs - compile_fail::rc_return::left (line 1) - compile fail ... ok
+test src/compile_fail/rc_upvar.rs - compile_fail::rc_upvar (line 1) - compile fail ... ok
+test src/compile_fail/scope_join_bad.rs - compile_fail::scope_join_bad (line 1) - compile fail ... ok
+test src/compile_fail/rc_return.rs - compile_fail::rc_return::right (line 10) - compile fail ... ok
+test src/lib.rs - ThreadPoolBuilder (line 157) ... ok
+test src/lib.rs - ThreadPoolBuilder (line 164) ... ok
+test src/scope/mod.rs - scope::scope (line 117) ... ok
+test src/scope/mod.rs - scope::Scope<'scope>::spawn (line 489) ... ok
+test src/lib.rs - ThreadPoolBuilder<S>::spawn_handler (line 382) ... ok
+test src/scope/mod.rs - scope::scope (line 76) ... ok
+test src/lib.rs - ThreadPoolBuilder::build_scoped (line 302) ... ok
+test src/lib.rs - ThreadPoolBuilder<S>::spawn_handler (line 364) ... ok
+test src/join/mod.rs - join::join (line 43) ... ok
+test src/spawn/mod.rs - spawn::spawn (line 48) ... ok
+test src/lib.rs - ThreadPoolBuilder<S>::spawn_handler (line 411) ... ok
+test src/scope/mod.rs - scope::scope (line 207) ... ok
+test src/scope/mod.rs - scope::scope (line 183) ... ok
+test src/scope/mod.rs - scope::scope (line 250) ... ok
+test src/thread_pool/mod.rs - thread_pool::ThreadPool (line 29) ... ok
+test src/scope/mod.rs - scope::scope_fifo (line 300) ... ok
+test src/scope/mod.rs - scope::scope (line 228) ... ok
+test src/thread_pool/mod.rs - thread_pool::ThreadPool::broadcast (line 170) ... ok
+test src/thread_pool/mod.rs - thread_pool::ThreadPool::install (line 86) ... ok
+test src/thread_pool/mod.rs - thread_pool::ThreadPool::install (line 121) ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+

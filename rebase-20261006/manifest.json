@@ -1,0 +1,9 @@
+{
+  "base": "b2e5a7084f7391fca5c13631d20d36f64f72fe3a",
+  "rayon-idle": "a29aa3e063f6490ec1b98f138970e253347635d3",
+  "rayon-startup": "7f43be9a6fc6df841738aae3c283b1e35489aed2",
+  "pre-rebase-idle": "6abe73a56cf83b37ad961e54103cc3778471ef7d",
+  "pre-rebase-startup": "434f2c25ed708572d50e4f285af9afa8933d727a",
+  "remote_root": "wx-workstation:/home/callen/work/mold-rayon-rebase-20261006",
+  "scope": "Rebase validation; existing performance numbers remain pre-rebase measurements."
+}

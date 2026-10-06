@@ -1,0 +1,48 @@
+    Updating git repository `https://github.com/rui314/mimalloc_rust`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+     Removed 0 files
+   Compiling libc v0.2.189
+   Compiling find-msvc-tools v0.1.11
+   Compiling shlex v2.0.1
+   Compiling crossbeam-utils v0.8.22
+   Compiling pkg-config v0.3.34
+   Compiling crossbeam-epoch v0.9.20
+   Compiling cfg-if v1.0.4
+   Compiling crossbeam-deque v0.8.7
+   Compiling rayon-core v1.13.0
+   Compiling zstd-safe v7.2.4
+   Compiling getrandom v0.4.3
+   Compiling zlib-rs v0.6.8
+   Compiling portable-atomic v1.15.0
+   Compiling crc32fast v1.5.1
+   Compiling cpp_demangle v0.5.1
+   Compiling foldhash v0.2.0
+   Compiling memchr v2.8.3
+   Compiling cpufeatures v0.3.1
+   Compiling equivalent v1.0.2
+   Compiling either v1.18.0
+   Compiling allocator-api2 v0.2.21
+   Compiling regex-automata v0.4.18
+   Compiling arrayvec v0.7.8
+   Compiling constant_time_eq v0.4.2
+   Compiling rustc-demangle v0.1.28
+   Compiling xxhash-rust v0.8.18
+   Compiling mold-cli v3.0.0 (/work/cli)
+   Compiling hashbrown v0.17.1
+   Compiling jobserver v0.1.35
+   Compiling memmap2 v0.9.11
+   Compiling bstr v1.13.1
+   Compiling uuid v1.27.0
+   Compiling cc v1.4.4
+   Compiling rayon v1.12.0
+   Compiling zstd-sys v2.0.16+zstd.1.5.7
+   Compiling blake3 v1.8.7
+   Compiling mold v3.0.0 (/work)
+   Compiling libmimalloc-sys v0.1.49 (https://github.com/rui314/mimalloc_rust?rev=3979460494f1cd1e7f936cb8e10f41e927c9f698#39794604)
+   Compiling libz-rs-sys v0.6.8
+   Compiling flate2 v1.1.10
+   Compiling mimalloc v0.1.52 (https://github.com/rui314/mimalloc_rust?rev=3979460494f1cd1e7f936cb8e10f41e927c9f698#39794604)
+   Compiling zstd v0.13.3
+   Compiling mold-arch-x86_64 v3.0.0 (/work/arch/x86_64)
+    Finished `release` profile [optimized + debuginfo] target(s) in 30.32s
