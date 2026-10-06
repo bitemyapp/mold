@@ -1,0 +1,8 @@
+hello {"s2_handoff_sections": 4, "s2_handoff_fragments": 7, "s2_same_worker_fragments": 7, "s2_same_cpu_fragments": 7, "s2_same_l3_fragments": 7}
+rhello {"s2_cross_l3_fragments": 6, "s2_handoff_sections": 73, "s2_same_worker_fragments": 18805, "s2_same_cpu_fragments": 18805, "s2_same_l3_fragments": 18805, "s2_handoff_fragments": 18811}
+tblgen {"s2_resolve_endpoint_migrations": 1, "s2_handoff_sections": 371, "s2_same_worker_fragments": 32151, "s2_same_cpu_fragments": 32151, "s2_same_l3_fragments": 49951, "s2_cross_l3_fragments": 188655, "s2_handoff_fragments": 238606}
+lld {"s2_resolve_endpoint_migrations": 1, "s2_handoff_sections": 6763, "s2_same_cpu_fragments": 443367, "s2_same_worker_fragments": 443528, "s2_same_l3_fragments": 2479374, "s2_cross_l3_fragments": 6895594, "s2_handoff_fragments": 9374968}
+clang {"s2_resolve_endpoint_migrations": 1, "s2_split_endpoint_migrations": 2, "s2_handoff_sections": 9298, "s2_same_cpu_fragments": 212449, "s2_same_worker_fragments": 249998, "s2_same_l3_fragments": 4235371, "s2_cross_l3_fragments": 12098316, "s2_handoff_fragments": 16333687}
+clang-s {"s2_same_worker_fragments": 1580, "s2_same_cpu_fragments": 1848, "s2_handoff_sections": 5206, "s2_same_l3_fragments": 52626, "s2_cross_l3_fragments": 129606, "s2_handoff_fragments": 182232}
+ra {"s2_handoff_sections": 17576, "s2_same_worker_fragments": 64916, "s2_same_cpu_fragments": 64931, "s2_same_l3_fragments": 261484, "s2_cross_l3_fragments": 909918, "s2_handoff_fragments": 1171402}
+ra-s {"s2_same_worker_fragments": 821, "s2_same_cpu_fragments": 821, "s2_same_l3_fragments": 7819, "s2_handoff_sections": 11921, "s2_cross_l3_fragments": 24752, "s2_handoff_fragments": 32571}

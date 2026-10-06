@@ -1,0 +1,8 @@
+[ perf record: Woken up 174 times to write data ]
+Warning:
+1 out of order events recorded.
+[ perf record: Captured and wrote 47.014 MB /home/callen/work/mold-next-20261006/results/lld-baseline-cycles.data (152265 samples) ]
+Warning:
+1 out of order events recorded.
+[ perf record: Woken up 154 times to write data ]
+[ perf record: Captured and wrote 41.637 MB /home/callen/work/mold-next-20261006/results/lld-h1-cycles.data (134045 samples) ]

@@ -1,0 +1,52 @@
+    Updating git repository `https://github.com/rui314/mimalloc_rust`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+   Compiling mold v3.0.0 (/work)
+    Finished `release` profile [optimized + debuginfo] target(s) in 11.11s
+     Running unittests src/lib.rs (/target/release/deps/mold-ffbb33a03898dee6)
+
+running 33 tests
+test cmdline::tests::cursor_borrows_non_utf8_separate_and_attached_values ... ok
+test chunks::reloc::tests::discarded_section_does_not_read_implicit_addend ... ok
+test cmdline::tests::cursor_preserves_gnu_option_boundaries_and_values ... ok
+test cmdline::tests::numeric_options_use_c_integer_syntax ... ok
+test input_files::tests::crel_addend_wraps ... ok
+test input_sections::tests::fragment_hint_handles_sequential_repeated_and_backward_offsets ... ok
+test symbol::tests::accepts_long_symbol_name ... ok
+test symbol::tests::input_section_origin_roundtrip ... ok
+test chunks::gnu_hash::tests::matches_bytewise_hash_including_overflow_and_tails ... ok
+test symbol::tests::comdat_ownership_uses_lowest_priority ... ok
+test util::demangle::tests::rust_legacy_length_overflow ... ok
+test input_files::tests::parallel_file_iteration_preserves_live_order_and_stable_storage ... ok
+test chunks::got::tests::got_ranges_preserve_order_and_ifunc_width ... ok
+test util::demangle::tests::rust_legacy_with_suffix ... ok
+test symbol::tests::shard_hash_distributes_buckets_and_lookup_tags ... ok
+test util::concurrent_map::tests::insert_and_lookup ... ok
+test util::glob::tests::complex ... ok
+test util::glob::tests::default_has_no_matches ... ok
+test symbol::tests::auxiliary_records_follow_first_use_and_preserve_existing_data ... ok
+test util::glob::tests::literals ... ok
+test util::parallel::tests::background_job_joins_on_one_worker ... ok
+test util::glob::tests::many_patterns_use_nfa ... ok
+test util::glob::tests::shared_priorities_preserve_highest_match ... ok
+test output_file::tests::initializes_output_buffer_and_tracks_its_addresses ... ok
+test util::hyperloglog::tests::estimates_within_a_few_percent ... ok
+test util::perf::tests::implicit_timer_parents_follow_completed_intervals ... ok
+test util::tests::clean_paths ... ok
+test util::tests::leb128_roundtrip ... ok
+test util::tests::sign_extension ... ok
+test util::perf::tests::optional_recording_includes_nested_and_background_timers ... ok
+test util::worker_local::tests::reuses_worker_storage_and_keeps_an_outside_slot ... ok
+test util::siphash::tests::word_updates_match_bytes_with_partial_buffers_and_length_wraparound ... ok
+test util::parallel::tests::preserves_both_groups_across_blocks ... ok
+
+test result: ok. 33 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests lib.rs (/target/release/deps/mold_tests-c93b8ef073c336da)
+
+running 2 tests
+test tests::canonicalizes_machine_names ... ok
+test tests::selects_generic_and_target_tests ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

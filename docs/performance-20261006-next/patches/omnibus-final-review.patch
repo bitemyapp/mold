@@ -1,0 +1,61 @@
+diff --git a/src/passes.rs b/src/passes.rs
+index 8335a037316f6dcae349523f50ff417c1e1e2f7e..f68380c1ceef831e8c59308df6ea4140795c068b 100644
+--- a/src/passes.rs
++++ b/src/passes.rs
+@@ -4095,10 +4095,8 @@ pub fn write_build_id<E: Target>(ctx: &mut Context<E>, buf: &mut [u8], is_mmappe
+         BuildId::Hex(value) => value.clone(),
+         BuildId::Hash(size) => {
+             const SHARD: usize = 4 * 1024 * 1024; // 4 MiB
+-            let hashes: Vec<[u8; 32]> = buf
+-                .par_chunks_mut(SHARD)
+-                .map(|shard| *blake3::hash(shard).as_bytes())
+-                .collect();
++            let hashes: Vec<[u8; 32]> =
++                buf.par_chunks_mut(SHARD).map(|shard| *blake3::hash(shard).as_bytes()).collect();
+             // All shards are finalized and hashed. Drop the mapping's page
+             // table entries in one operation, keeping the first shard mapped
+             // for the build-id write below.
+diff --git a/tests/build-id-large-mmap.sh b/tests/build-id-large-mmap.sh
+new file mode 100755
+index 0000000000000000000000000000000000000000..eec4e15e732a5e52bb7137e36ee8f76259fc83a6
+--- /dev/null
++++ b/tests/build-id-large-mmap.sh
+@@ -0,0 +1,38 @@
++#!/usr/bin/env bash
++. $(dirname $0)/common.inc
++
++# Exercise several complete build-id hash shards and a partial final shard.
++# The in-memory output path is an oracle for mapped-page advice: both paths
++# must preserve every output byte, including the final build-id write.
++cat <<EOF | $CC -c -o $t/a.o -xc -
++const unsigned char payload[12 * 1024 * 1024 + 257] = {
++  [0] = 0x12,
++  [4 * 1024 * 1024] = 0x34,
++  [8 * 1024 * 1024] = 0x56,
++  [12 * 1024 * 1024 + 256] = 0x78,
++};
++const unsigned char *volatile data = payload;
++
++int main(void) {
++  return data[0] != 0x12 || data[4 * 1024 * 1024] != 0x34 ||
++         data[8 * 1024 * 1024] != 0x56 ||
++         data[12 * 1024 * 1024 + 256] != 0x78;
++}
++EOF
++
++shard=$((4 * 1024 * 1024))
++for hash in fast sha1 sha256; do
++  for threads in 1 8; do
++    $CC -B. -o $t/memory$threads $t/a.o \
++      -Wl,--build-id=$hash,--threads=$threads,--no-mmap-output-file
++    $CC -B. -o $t/mapped$threads $t/a.o \
++      -Wl,--build-id=$hash,--threads=$threads,--mmap-output-file
++    cmp $t/memory$threads $t/mapped$threads
++  done
++
++  size=$(wc -c < $t/memory1)
++  test "$size" -gt "$((3 * shard))"
++  test "$((size % shard))" -ne 0
++  cmp $t/memory1 $t/memory8
++  $QEMU $t/mapped8
++done

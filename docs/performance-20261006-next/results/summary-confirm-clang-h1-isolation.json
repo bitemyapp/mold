@@ -1,0 +1,78 @@
+[
+  {
+    "file": "confirm-clang-latest.json",
+    "case": "clang",
+    "topic": "latest-control",
+    "baseline": "latest-p1",
+    "samples": 80,
+    "binary": "7bbec3c1526448e4e5426c2dada974e9c2017bfb531ca91de7b70dd6769b06ef",
+    "wall": {
+      "baseline": 0.2941749549936503,
+      "candidate": 0.2938914489932358,
+      "delta_pct": -0.09637326210201191,
+      "ci95": [
+        -0.631163412873518,
+        0.7343121657001156
+      ]
+    },
+    "cpu": {
+      "baseline": 7.6285785,
+      "candidate": 7.268798500000001,
+      "delta_pct": -4.7162128566940575,
+      "ci95": [
+        -12.553709561272056,
+        10.029899172035762
+      ]
+    },
+    "rss": {
+      "baseline": 4819338.0,
+      "candidate": 4818406.0,
+      "delta_pct": -0.019338755654818574,
+      "ci95": [
+        -0.11395659195533314,
+        0.0831281441760195
+      ]
+    },
+    "baseline_p95_ms": 306.44696298986673,
+    "candidate_p95_ms": 303.8356862962246,
+    "hash_match": true
+  },
+  {
+    "file": "confirm-clang-latest.json",
+    "case": "clang",
+    "topic": "latest-omnibus",
+    "baseline": "latest-p1",
+    "samples": 80,
+    "binary": "0257d93ddd1a92d5990d92294b8ae6d252bacff30dcb492f8755a8905d90d60b",
+    "wall": {
+      "baseline": 0.2941749549936503,
+      "candidate": 0.2719906985294074,
+      "delta_pct": -7.541177822130296,
+      "ci95": [
+        -8.101452020717325,
+        -6.980189242684085
+      ]
+    },
+    "cpu": {
+      "baseline": 7.6285785,
+      "candidate": 6.091374999999999,
+      "delta_pct": -20.150588998985864,
+      "ci95": [
+        -29.054745278011936,
+        -9.23492105751662
+      ]
+    },
+    "rss": {
+      "baseline": 4819338.0,
+      "candidate": 4817712.0,
+      "delta_pct": -0.03373907370680662,
+      "ci95": [
+        -0.14730785648667227,
+        0.12896783329917727
+      ]
+    },
+    "baseline_p95_ms": 306.44696298986673,
+    "candidate_p95_ms": 283.72902516275644,
+    "hash_match": true
+  }
+]

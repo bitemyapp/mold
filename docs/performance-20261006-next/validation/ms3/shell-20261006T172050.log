@@ -1,0 +1,13 @@
+    Updating git repository `https://github.com/rui314/mimalloc_rust`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+   Compiling mold v3.0.0 (/work/counts-baseline)
+   Compiling mold-arch-x86_64 v3.0.0 (/work/counts-baseline/arch/x86_64)
+   Compiling mold-cli v3.0.0 (/work/counts-baseline/cli)
+    Finished `release` profile [optimized + debuginfo] target(s) in 25.93s
+2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e  /work/counts-baseline/mold-counts
+   Compiling mold v3.0.0 (/work/counts-candidate)
+   Compiling mold-cli v3.0.0 (/work/counts-candidate/cli)
+   Compiling mold-arch-x86_64 v3.0.0 (/work/counts-candidate/arch/x86_64)
+    Finished `release` profile [optimized + debuginfo] target(s) in 22.45s
+5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8  /work/counts-candidate/mold-counts

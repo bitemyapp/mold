@@ -1,0 +1,39 @@
+--- src/input_sections.rs
++++ src/input_sections.rs
+@@ -1504,7 +1504,7 @@
+     input_index: u32,
+     // indices into parent.map.entries
+     pub fragments: Vec<EntryId>,
+-    frag_offsets: Vec<u32>,
++    pub(crate) frag_offsets: Vec<u32>,
+     hashes: Vec<u64>,
+ }
+ 
+--- src/driver.rs
++++ src/driver.rs
+@@ -167,6 +167,7 @@
+     crate::jobs::acquire_global_lock();
+ 
+     let threads = thread_count(&ctx.args);
++    eprintln!("S2_WORKERS {threads}");
+     rayon::ThreadPoolBuilder::new()
+         .num_threads(threads)
+         .use_current_thread()
+--- src/chunks/merged.rs
++++ src/chunks/merged.rs
+@@ -497,6 +497,15 @@
+             })
+             .collect::<Vec<_>>()
+     });
++    let profile: Vec<_> = jobs.iter().enumerate().flat_map(|(worker, slot)| {
++        let jobs = slot.lock().unwrap();
++        jobs.iter().map(|(id, members)| [
++            worker, *id, members.iter().map(|m| m.data.len()).sum::<usize>(),
++            members.iter().map(|m| m.merge_info.frag_offsets.len()).sum::<usize>(),
++            members.len(),
++        ]).collect::<Vec<_>>()
++    }).collect();
++    eprintln!("S2_ASSIGN {:?}", profile);
+     for (id, sketch) in parts.into_iter().flatten() {
+         let estimate = estimates[id].take().unwrap();
+         estimates[id] = Some(estimate.merged(&sketch));

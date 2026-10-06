@@ -1,0 +1,24 @@
+{
+  "campaign": "next-20261006",
+  "summary_rows": 423,
+  "sample_rows": 12296,
+  "completed_unprofiled_samples": 11912,
+  "completed_profiled_samples": 384,
+  "unknown_binary_provenance": [],
+  "warnings": [],
+  "definitions": {
+    "summary_identity": "(campaign, result_file, case, label); result_file distinguishes screens and confirmations",
+    "sample_identity": "(campaign, result_file, case, label, round); sample_index is also preserved",
+    "wall_p50": "sample median; even N averages the two middle observations",
+    "p95_p99": "nearest rank; sparse upper tails are descriptive, not stable production guarantees",
+    "total_cpu": "user+system per sample before median",
+    "rss": "per-link process peak RSS, not an average resident working set; MiB=KiB/1024",
+    "environment": "label-specific overrides only; inherited host environment is not captured",
+    "phase_workers": "for original-baseline descendants with default threads on CPUs32-63, observed per-case worker count comes from separate instrumentation; effective phase cap is inferred from S1 wrapper semantics, not counted during timings. TableGen default12 means cap16 is inactive",
+    "output_mode": "fresh means only the harness output was unlinked before each link outside link timing; reused means the harness output pathname was retained. Neither mode flushes input caches",
+    "output_hash": "harness verifies last measured output per case/label; copied to sample rows as group provenance",
+    "profiled": "timed --perf phase runs kept separate by flag; untimed counters and perf-record kernel samples are not link timing rows",
+    "source": "explicit frozen binary hash mapping; never inferred from current branch heads. Original f8638be9 topic baseline, prior1347ca95 rebased stage, and latest75200f10 stage have distinct source lineage and anchors",
+    "complete": "requested sample count and final binary/output digests are all present"
+  }
+}

@@ -1,0 +1,6 @@
+topic,version,source_commit,binary_sha256,remote_release,remote_units,native_pass,native_skip,native_fail,corpus_goldens,decision,coverage_and_limits,unit_linker_pass,unit_runner_pass
+ms1,v1,f8bb8d521df7f478c453e8a4d79c41a7c8dd8832,930881d2798b67c8c87b3dcf9bd21b2a6033bf6105a35235144635e41bae7c42,pass,pass,550,14,0,8,rejected,Independent source review; no sanitizer/Windows runtime claim,35,2
+ms2,v1,10fcda6c688f474571b79c63f6c23c16e7d89269,9204becb1de90c9d8d5c0871cb350050282b10bc5aa4b9d3b459d18f24cc780e,pass,pass,550,14,0,8,rejected,Upper-bound scratch reservation; generic fallback/wrap order tested,34,2
+ms2,v2,3ef1d72da621bebe186476692b5570b83c2a163b,b563006f96559de44ba351ad51c80b46fa84f7e1709cfc7e78a072cbfa517db7,pass,pass,551,14,0,8,rejected,Exact per-fold counts; added unique-winner and late-comment coverage,35,2
+ms3,v1,8db6b72248d04d4feefc0d788fea9f9c0cfbab0f,c906164968f14eb8db38c6c713f5d94f4a25d2974074a3555cab52baf5a20871,pass,pass,551,14,0,8,rejected,Density reversal/wide strings/thread equality; separate48untimed counter links,33,2
+ms4,v1,d33ea5505f71adb604f660174bed64a3cb68c682,01563d19f361d3bdedd870da6f32226a11d47e7392dddfe8908c6a6c9a47c5b1,pass,pass,550,14,0,8,rejected,Independent publication/drop/order review; no sanitizer/Windows runtime claim,36,2

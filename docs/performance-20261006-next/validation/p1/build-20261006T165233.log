@@ -1,0 +1,8 @@
+    Updating git repository `https://github.com/rui314/mimalloc_rust`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+     Removed 68 files, 184.2MiB total
+   Compiling mold v3.0.0 (/work)
+   Compiling mold-cli v3.0.0 (/work/cli)
+   Compiling mold-arch-x86_64 v3.0.0 (/work/arch/x86_64)
+    Finished `release` profile [optimized + debuginfo] target(s) in 21.37s

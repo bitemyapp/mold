@@ -1,0 +1,626 @@
+{
+  "hello": {
+    "baseline": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 8,
+        "median": 8,
+        "max": 8
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 192,
+        "median": 192,
+        "max": 192
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 84,
+        "median": 84,
+        "max": 84
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "ms3_vec_reallocations": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "ms3_vec_sections": {
+        "min": 4,
+        "median": 4,
+        "max": 4
+      }
+    },
+    "candidate": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 8,
+        "median": 8,
+        "max": 8
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 192,
+        "median": 192,
+        "max": 192
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 84,
+        "median": 84,
+        "max": 84
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "ms3_vec_reallocations": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "ms3_vec_sections": {
+        "min": 4,
+        "median": 4,
+        "max": 4
+      }
+    }
+  },
+  "rhello": {
+    "baseline": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 304,
+        "median": 304,
+        "max": 304
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 291720,
+        "median": 291720,
+        "max": 291720
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 225732,
+        "median": 225732,
+        "max": 225732
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 283488,
+        "median": 283488,
+        "max": 283488
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 158,
+        "median": 158,
+        "max": 158
+      },
+      "ms3_vec_reallocations": {
+        "min": 158,
+        "median": 158,
+        "max": 158
+      },
+      "ms3_vec_sections": {
+        "min": 73,
+        "median": 73,
+        "max": 73
+      }
+    },
+    "candidate": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 268,
+        "median": 268,
+        "max": 268
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 655860,
+        "median": 655860,
+        "max": 655860
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 225732,
+        "median": 225732,
+        "max": 225732
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 13152,
+        "median": 13152,
+        "max": 13152
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 122,
+        "median": 122,
+        "max": 122
+      },
+      "ms3_vec_reallocations": {
+        "min": 122,
+        "median": 122,
+        "max": 122
+      },
+      "ms3_vec_sections": {
+        "min": 73,
+        "median": 73,
+        "max": 73
+      }
+    }
+  },
+  "tblgen": {
+    "baseline": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 3472,
+        "median": 3472,
+        "max": 3472
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 4301940,
+        "median": 4301940,
+        "max": 4301940
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 2863272,
+        "median": 2863272,
+        "max": 2863272
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 4282656,
+        "median": 4282656,
+        "max": 4282656
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 2730,
+        "median": 2730,
+        "max": 2730
+      },
+      "ms3_vec_reallocations": {
+        "min": 2730,
+        "median": 2730,
+        "max": 2730
+      },
+      "ms3_vec_sections": {
+        "min": 371,
+        "median": 371,
+        "max": 371
+      }
+    },
+    "candidate": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 2820,
+        "median": 2820,
+        "max": 2820
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 9800820,
+        "median": 9800820,
+        "max": 9800820
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 2863272,
+        "median": 2863272,
+        "max": 2863272
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 353376,
+        "median": 353376,
+        "max": 353376
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 2078,
+        "median": 2078,
+        "max": 2078
+      },
+      "ms3_vec_reallocations": {
+        "min": 2078,
+        "median": 2078,
+        "max": 2078
+      },
+      "ms3_vec_sections": {
+        "min": 371,
+        "median": 371,
+        "max": 371
+      }
+    }
+  },
+  "lld": {
+    "baseline": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 65314,
+        "median": 65314,
+        "max": 65314
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 159999912,
+        "median": 159999912,
+        "max": 159999912
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 112499616,
+        "median": 112499616,
+        "max": 112499616
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 159604848,
+        "median": 159604848,
+        "max": 159604848
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 51788,
+        "median": 51788,
+        "max": 51788
+      },
+      "ms3_vec_reallocations": {
+        "min": 51788,
+        "median": 51788,
+        "max": 51788
+      },
+      "ms3_vec_sections": {
+        "min": 6763,
+        "median": 6763,
+        "max": 6763
+      }
+    },
+    "candidate": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 49918,
+        "median": 49918,
+        "max": 49918
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 308416236,
+        "median": 308416236,
+        "max": 308416236
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 112499616,
+        "median": 112499616,
+        "max": 112499616
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 10582476,
+        "median": 10582476,
+        "max": 10582476
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 36392,
+        "median": 36392,
+        "max": 36392
+      },
+      "ms3_vec_reallocations": {
+        "min": 36392,
+        "median": 36392,
+        "max": 36392
+      },
+      "ms3_vec_sections": {
+        "min": 6763,
+        "median": 6763,
+        "max": 6763
+      }
+    }
+  },
+  "clang": {
+    "baseline": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 93188,
+        "median": 93188,
+        "max": 93188
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 279648648,
+        "median": 279648648,
+        "max": 279648648
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 196004244,
+        "median": 196004244,
+        "max": 196004244
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 279096480,
+        "median": 279096480,
+        "max": 279096480
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 74592,
+        "median": 74592,
+        "max": 74592
+      },
+      "ms3_vec_reallocations": {
+        "min": 74592,
+        "median": 74592,
+        "max": 74592
+      },
+      "ms3_vec_sections": {
+        "min": 9298,
+        "median": 9298,
+        "max": 9298
+      }
+    },
+    "candidate": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 69828,
+        "median": 69828,
+        "max": 69828
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 517783116,
+        "median": 517783116,
+        "max": 517783116
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 196004244,
+        "median": 196004244,
+        "max": 196004244
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 14627916,
+        "median": 14627916,
+        "max": 14627916
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 51232,
+        "median": 51232,
+        "max": 51232
+      },
+      "ms3_vec_reallocations": {
+        "min": 51232,
+        "median": 51232,
+        "max": 51232
+      },
+      "ms3_vec_sections": {
+        "min": 9298,
+        "median": 9298,
+        "max": 9298
+      }
+    }
+  },
+  "clang-s": {
+    "baseline": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 19124,
+        "median": 19124,
+        "max": 19124
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 3052920,
+        "median": 3052920,
+        "max": 3052920
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 2186784,
+        "median": 2186784,
+        "max": 2186784
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 2697168,
+        "median": 2697168,
+        "max": 2697168
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 8712,
+        "median": 8712,
+        "max": 8712
+      },
+      "ms3_vec_reallocations": {
+        "min": 8712,
+        "median": 8712,
+        "max": 8712
+      },
+      "ms3_vec_sections": {
+        "min": 5206,
+        "median": 5206,
+        "max": 5206
+      }
+    },
+    "candidate": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 18534,
+        "median": 18534,
+        "max": 18534
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 4044252,
+        "median": 4044252,
+        "max": 4044252
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 2186784,
+        "median": 2186784,
+        "max": 2186784
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 901536,
+        "median": 901536,
+        "max": 901536
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 8122,
+        "median": 8122,
+        "max": 8122
+      },
+      "ms3_vec_reallocations": {
+        "min": 8122,
+        "median": 8122,
+        "max": 8122
+      },
+      "ms3_vec_sections": {
+        "min": 5206,
+        "median": 5206,
+        "max": 5206
+      }
+    }
+  },
+  "ra": {
+    "baseline": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 85920,
+        "median": 85920,
+        "max": 85920
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 20425044,
+        "median": 20425044,
+        "max": 20425044
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 14056824,
+        "median": 14056824,
+        "max": 14056824
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 19531392,
+        "median": 19531392,
+        "max": 19531392
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 50768,
+        "median": 50768,
+        "max": 50768
+      },
+      "ms3_vec_reallocations": {
+        "min": 50768,
+        "median": 50768,
+        "max": 50768
+      },
+      "ms3_vec_sections": {
+        "min": 17576,
+        "median": 17576,
+        "max": 17576
+      }
+    },
+    "candidate": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 79938,
+        "median": 79938,
+        "max": 79938
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 32057700,
+        "median": 32057700,
+        "max": 32057700
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 14056824,
+        "median": 14056824,
+        "max": 14056824
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 5791944,
+        "median": 5791944,
+        "max": 5791944
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 44786,
+        "median": 44786,
+        "max": 44786
+      },
+      "ms3_vec_reallocations": {
+        "min": 44786,
+        "median": 44786,
+        "max": 44786
+      },
+      "ms3_vec_sections": {
+        "min": 17576,
+        "median": 17576,
+        "max": 17576
+      }
+    }
+  },
+  "ra-s": {
+    "baseline": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 25986,
+        "median": 25986,
+        "max": 25986
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 712692,
+        "median": 712692,
+        "max": 712692
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 390852,
+        "median": 390852,
+        "max": 390852
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 90480,
+        "median": 90480,
+        "max": 90480
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 2144,
+        "median": 2144,
+        "max": 2144
+      },
+      "ms3_vec_reallocations": {
+        "min": 2144,
+        "median": 2144,
+        "max": 2144
+      },
+      "ms3_vec_sections": {
+        "min": 11921,
+        "median": 11921,
+        "max": 11921
+      }
+    },
+    "candidate": {
+      "n": 3,
+      "ms3_vec_allocations": {
+        "min": 25986,
+        "median": 25986,
+        "max": 25986
+      },
+      "ms3_vec_final_capacity_bytes": {
+        "min": 711108,
+        "median": 711108,
+        "max": 711108
+      },
+      "ms3_vec_final_live_bytes": {
+        "min": 390852,
+        "median": 390852,
+        "max": 390852
+      },
+      "ms3_vec_live_bytes_moved": {
+        "min": 90480,
+        "median": 90480,
+        "max": 90480
+      },
+      "ms3_vec_moving_reallocations": {
+        "min": 2144,
+        "median": 2144,
+        "max": 2144
+      },
+      "ms3_vec_reallocations": {
+        "min": 2144,
+        "median": 2144,
+        "max": 2144
+      },
+      "ms3_vec_sections": {
+        "min": 11921,
+        "median": 11921,
+        "max": 11921
+      }
+    }
+  }
+}

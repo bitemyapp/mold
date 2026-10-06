@@ -1,0 +1,8 @@
+    Updating git repository `https://github.com/rui314/mimalloc_rust`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+   Compiling mold v3.0.0 (/work)
+   Compiling mold-arch-x86_64 v3.0.0 (/work/arch/x86_64)
+   Compiling mold-cli v3.0.0 (/work/cli)
+    Finished `release` profile [optimized + debuginfo] target(s) in 1m 14s
+b563006f96559de44ba351ad51c80b46fa84f7e1709cfc7e78a072cbfa517db7  /work/mold-ms2-v2

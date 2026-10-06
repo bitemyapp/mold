@@ -1,0 +1,257 @@
+{
+  "529467bd57e056195fb71065d51881e0265e4bfabd6d879b2563a2ec9172f184": {
+    "source_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+    "source_tree_sha1": "006bcd0f9f50ce2c1d0660c43cf9b03f51534970",
+    "evidence": "parent frozen baseline",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "930881d2798b67c8c87b3dcf9bd21b2a6033bf6105a35235144635e41bae7c42": {
+    "source_commit": "f8bb8d521df7f478c453e8a4d79c41a7c8dd8832",
+    "source_tree_sha1": "7cb4cd46a1135d505a34e95e6f95a06cbb6195f1",
+    "evidence": "MS1 owner build",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "9204becb1de90c9d8d5c0871cb350050282b10bc5aa4b9d3b459d18f24cc780e": {
+    "source_commit": "10fcda6c688f474571b79c63f6c23c16e7d89269",
+    "source_tree_sha1": "7fbd4618037a012422eb044f2704d78818cc7779",
+    "evidence": "MS2 v1 owner build",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "c906164968f14eb8db38c6c713f5d94f4a25d2974074a3555cab52baf5a20871": {
+    "source_commit": "8db6b72248d04d4feefc0d788fea9f9c0cfbab0f",
+    "source_tree_sha1": "4b5b5c23c6c78a518a1e0422ee105e655491c48c",
+    "evidence": "MS3 owner build",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "01563d19f361d3bdedd870da6f32226a11d47e7392dddfe8908c6a6c9a47c5b1": {
+    "source_commit": "d33ea5505f71adb604f660174bed64a3cb68c682",
+    "source_tree_sha1": "45da7d446ada4ab56f2b65270584e16b0dd8e21a",
+    "evidence": "MS4 owner build",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "b5728f858fcea4d121c1400817d5fa738c61181e22256fb932d9ecf9fb5b27b7": {
+    "source_commit": "871cfa702559c162bd7ff9ee50a6b16610416d9f",
+    "source_tree_sha1": "f4190d753f899c9435a22eb3eae3187651b7637c",
+    "evidence": "topics/p1.md v1",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "be6e3fab81c17a0fc5234823845a45418ab9f2cb64e7d11acfe43f539fd82cc4": {
+    "source_commit": "e0f2d3e942fc9985b202f8d2f9327d79acd90e78",
+    "source_tree_sha1": "d5c11653b174fb1a42dab3b725c2cb08b2b2828e",
+    "evidence": "parent message P1 v2",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "63323bbb928fc45b6b090c9f6e2e3aad23170c9401f239ca289e37d9c5614d6b": {
+    "source_commit": "e3347c30bc6d4827a62357599fb9ac5ae528d08f",
+    "source_tree_sha1": "7077d37395f4314f588452ee4bbe6798f287dbad",
+    "evidence": "topics/h1.md",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "50c2ca9372565b00411f352f1053f1e2227984a9a53b9cd83713edb37d23d370": {
+    "source_commit": "2790a9882afd3f580249d727c910f382a9900b3f",
+    "source_tree_sha1": "adf4a6c91068b2a9acc7b8bb036890b3c6bd0856",
+    "evidence": "topics/h2.md",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "83c8aa3650b328a8e8c44fbc07d08d7d73452ca20a166b04196c0a7ba1f0a57d": {
+    "source_commit": "25c7f28ff8360e5aeba3c1a8880eb318dbf39d5c",
+    "source_tree_sha1": "5d19bcb07e6292da267d829d8037e8e439b7a1bc",
+    "evidence": "topics/g1.md",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "bdfa8b02e0ee324575cbf8ef5c2ea4aee63fa4f2791eddc7dc592b2b7e01fd6b": {
+    "source_commit": "62fa0761f75dc7a1f273749b640b6f48cfb28ca6",
+    "source_tree_sha1": "15041453bc9b54f1cdd2714aeb3a00024164f91a",
+    "evidence": "CR owner message v1",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "78ed4a2db7d8b0fe21c00dbab63a5db24ef8869a908ccd1641de3a334e07cdf8": {
+    "source_commit": "7f9e54cee5c55fb729107a7827d80aa84158868a",
+    "source_tree_sha1": "c1f5323cafa824e51ce869ebe92320ad35f9da8a",
+    "evidence": "CR owner message clean production",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "65922b71ffec0cc17fbb22438433176ea3403a1f84cb00203bb13ebb80edc591": {
+    "source_commit": "f760835736645b1ba7e3d24a1e48b301376ef7a6",
+    "source_tree_sha1": "b40627654b65718adb11e60418d8e7af9818bb67",
+    "evidence": "CR owner message",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "e7c08c342d0cfdd2174a302c7c6603c32345ff54563adcca68a2f18046f356bd": {
+    "source_commit": "168ca9f55e530d841adce2d89e25682b84391a3a",
+    "source_tree_sha1": "72508050735c9f5ae61d0c9ce7cba92be0690bbe",
+    "evidence": "CR owner message code commit; a14c236e corrects test only",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "1624bcf787c69f7f18892497037b23b7f29b0738e28fd37c346edc0f45fc99b2": {
+    "source_commit": "6789e6c53fa9a82e27bc8295d88f212575a030e0",
+    "source_tree_sha1": "5917c1d16c8e16bd92b31446111d547b1116b556",
+    "evidence": "CR5 owner message",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "a9101dcbe9eb6e336f06c6fbb3e2439a0ef345c82889186559e9aa98962f521f": {
+    "source_commit": "b6c6c09f58f9c7d83a5257b573df57dc6ea6f0e3",
+    "source_tree_sha1": "b33d9ed7d55037be06f277f961fa189ae63b4ba2",
+    "evidence": "CR2 owner message instrumented, untimed only",
+    "instrumented": true,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "261750bd3f2be8a590150bac3c5426a502d927405e1765e9c202ea0852f910de": {
+    "source_commit": "24be8a795e466c363d05b6d86bd3537371be3efb",
+    "source_tree_sha1": "5007455b47750ed7545dcc7018d4fa9dac24d010",
+    "evidence": "CR1 owner message v2",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "66e147addb1201a8f94e13e183dc88ea2f109cdae56b4570f8338f7d9813c7b8": {
+    "source_commit": "70291748b5ce53e366d93ecfb4102df9e71eb0a0",
+    "source_tree_sha1": "50d0578de82177bc9288fd2c902b9e0c45fcab53",
+    "evidence": "S1 owner message; environment distinguishes phase caps",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "1d42f1118e4fe4551406da5e6fcea0e96835fea50ae6a42c5f202522d80d6bd1": {
+    "source_commit": "412974f6cb927e2a35c2827b28ac371f4d5c9b5b",
+    "source_tree_sha1": "c622927a77495658bb2ec977a16f283a9ace3925",
+    "evidence": "S2 owner message",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "b563006f96559de44ba351ad51c80b46fa84f7e1709cfc7e78a072cbfa517db7": {
+    "source_commit": "3ef1d72da621bebe186476692b5570b83c2a163b",
+    "source_tree_sha1": "f86b31d32fef611be78d0e0e798451f9231e7539",
+    "evidence": "MS2 owner v2 build; frozen bin/ms2-v2, v1 unchanged",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "a1c023acfe43a21a24f38f225beaca6b9502a9b0b6f2096b93696454b12f36e0": {
+    "source_commit": "6d24b45ab5604dae0f59ef9a937cd603ebb9d9d9",
+    "source_tree_sha1": "2d620f8723cff42a42d0520c1c297219486f0b2f",
+    "evidence": "K1 parent frozen screen candidate",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "0fd060bfbb6d88038ba977feb142dc3682243b7eebb78e5a7377774ae969878e": {
+    "source_commit": "c35c2fbbb6de046c41df90a3d03464fb1e0619b1",
+    "source_tree_sha1": "9e09ba9a0edbb137145e04a41041317149894d48",
+    "evidence": "H1 cleaned parent frozen candidate",
+    "instrumented": false,
+    "lineage": "original_topic_baseline",
+    "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b"
+  },
+  "11b05349574ccca4347d85b24540d5e0b7f11066b9768d971994088f3c14d0da": {
+    "source_commit": "d5f03691582bc6e425d122c5592d0b33448ff7eb",
+    "source_tree_sha1": "787d8f02f48dcf63d4b2373c501b938d2c045c89",
+    "evidence": "parent final control rebased onto upstream1347ca95",
+    "instrumented": false,
+    "lineage": "upstream_rebased_control",
+    "base_anchor": "1347ca95c906db060ecfbf838a792c5739970294"
+  },
+  "4422ead1df414794d40e4a4aee1e5af3696d2fcec6d118bf965fe36f465f41b7": {
+    "source_commit": "80f062238e88d941a6b16e175477dff42e2ace4c",
+    "source_tree_sha1": "0adae45861f04d5571a37ec3f357f6891a3d14d8",
+    "evidence": "parent provisional omnibus rebased onto upstream1347ca95",
+    "instrumented": false,
+    "lineage": "upstream_rebased_candidate",
+    "base_anchor": "1347ca95c906db060ecfbf838a792c5739970294"
+  },
+  "c93e0ce3a99f4de74d0bb2c16465286b4a0d89b288bbd5813376320d622b7c52": {
+    "source_commit": "d048c042adb4131449fb4462e724d5b7b0fa6f40",
+    "source_tree_sha1": "5cfc4f2fef2d0f2ad7a9e09f4041425850e48d8d",
+    "evidence": "Coordinator frozen final phase diagnostic binary; separate interval/input-cleanup instrumentation commit",
+    "instrumented": true,
+    "lineage": "upstream_rebased_control_instrumented",
+    "base_anchor": "1347ca95c906db060ecfbf838a792c5739970294",
+    "production_source_commit": "d5f03691582bc6e425d122c5592d0b33448ff7eb"
+  },
+  "90661b040627894ee5e112b2b12b302460222df3bdde49a9f3dd3e677c86eb16": {
+    "source_commit": "88b76de5f7c0f649179ae9997f9c3ae955309e2a",
+    "source_tree_sha1": "733479e5099a97800ab09ef46317f9212f191d43",
+    "evidence": "Coordinator frozen final phase diagnostic binary; separate interval/input-cleanup instrumentation commit",
+    "instrumented": true,
+    "lineage": "upstream_rebased_candidate_instrumented",
+    "base_anchor": "1347ca95c906db060ecfbf838a792c5739970294",
+    "production_source_commit": "80f062238e88d941a6b16e175477dff42e2ace4c"
+  },
+  "7bbec3c1526448e4e5426c2dada974e9c2017bfb531ca91de7b70dd6769b06ef": {
+    "source_commit": "f1dec0f067198959a1339e761f27f27ccc4179d1",
+    "source_tree_sha1": "477ec9dc04c08e57857d990b550b9e582cd1103b",
+    "evidence": "Build agent frozen binary; validation/latest-control/ logs; original binaries untouched",
+    "instrumented": false,
+    "lineage": "latest_upstream_75200_control",
+    "base_anchor": "75200f107ee958227e87a96e67ad491567a4854a",
+    "cargo_lock_sha256": "e11293521c6cf5adbb4abf011f2f1fc03686687e44563fff60fd3ce295d12763"
+  },
+  "0257d93ddd1a92d5990d92294b8ae6d252bacff30dcb492f8755a8905d90d60b": {
+    "source_commit": "8e522e5217adea17329e8e2eeb753fc482de4b16",
+    "source_tree_sha1": "685c311da42ed34e451e851da1e1170fcedadf07",
+    "evidence": "Build agent frozen binary; validation/latest-omnibus/ logs; original binaries untouched",
+    "instrumented": false,
+    "lineage": "latest_upstream_75200_candidate",
+    "base_anchor": "75200f107ee958227e87a96e67ad491567a4854a",
+    "cargo_lock_sha256": "e11293521c6cf5adbb4abf011f2f1fc03686687e44563fff60fd3ce295d12763"
+  },
+  "d15be68a45325b7a1708ff14b87c0ec4ac7b8e1a143c232832b19076606fe12e": {
+    "source_commit": "9acc87021b8923bb8562178ee3410d62852f0e62",
+    "source_tree_sha1": "bf4aa22d83f5a55f893ae8833fd9fcff1a7e82f8",
+    "evidence": "Profiling agent frozen manifest-latest.json; interval instrumentation matches prior patch identity",
+    "instrumented": true,
+    "lineage": "latest_upstream_75200_control_instrumented",
+    "base_anchor": "75200f107ee958227e87a96e67ad491567a4854a",
+    "production_source_commit": "f1dec0f067198959a1339e761f27f27ccc4179d1"
+  },
+  "077b9de49b3ef25e46128bc78da9c9977efc9ba6e0a131389d6474ee37881155": {
+    "source_commit": "5edabcfadbd9ff94ff4d9c778882e200f185a34a",
+    "source_tree_sha1": "66daf46aea5df8da242e5b380d4003a38424ba2b",
+    "evidence": "Profiling agent frozen manifest-latest.json; interval instrumentation matches prior patch identity",
+    "instrumented": true,
+    "lineage": "latest_upstream_75200_candidate_instrumented",
+    "base_anchor": "75200f107ee958227e87a96e67ad491567a4854a",
+    "production_source_commit": "8e522e5217adea17329e8e2eeb753fc482de4b16"
+  },
+  "8179754f5ed1dbdea1b6310fea377e78faafc3098bd15b6a95824596962d9a5e": {
+    "source_commit": "e41a4bd5ecfd23d318d4ce4a0a089f2e35a60e95",
+    "source_tree_sha1": "764bd5b40739e1abb08adef1b841a1341a52b801",
+    "evidence": "Build agent separately frozen latest-p1 isolation binary; same Cargo.lock and build flags as latest control/combined",
+    "instrumented": false,
+    "lineage": "latest_upstream_75200_p1_only",
+    "base_anchor": "75200f107ee958227e87a96e67ad491567a4854a",
+    "cargo_lock_sha256": "e11293521c6cf5adbb4abf011f2f1fc03686687e44563fff60fd3ce295d12763"
+  }
+}

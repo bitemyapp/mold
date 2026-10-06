@@ -1,0 +1,13 @@
+    Updating git repository `https://github.com/rui314/mimalloc_rust`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+    Finished `release` profile [optimized + debuginfo] target(s) in 5.67s
+     Running integration.rs (/target/release/deps/integration-ab4a631a85b09c7b)
+completed 100/564
+completed 200/564
+completed 300/564
+completed 400/564
+completed 500/564
+completed 564/564
+x86_64: pass=550 skip=14 fail=0
+pass=550 skip=14 fail=0

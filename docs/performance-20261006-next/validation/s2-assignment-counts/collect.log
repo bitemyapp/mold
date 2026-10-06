@@ -1,0 +1,8 @@
+hello workers [1] assignment_groups 0
+rhello workers [2] assignment_groups 0
+tblgen workers [12] assignment_groups 1
+lld workers [32] assignment_groups 1
+clang workers [32] assignment_groups 1
+clang-s workers [32] assignment_groups 0
+ra workers [32] assignment_groups 1
+ra-s workers [32] assignment_groups 0

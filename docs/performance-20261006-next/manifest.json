@@ -1,0 +1,3805 @@
+{
+  "schema_version": 2,
+  "refreshed_utc": "2026-10-06T23:54:46.600827+00:00",
+  "baseline": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+  "scope": "Second campaign: 15 requested ideas plus K1 profile-driven follow-up. Historical first-campaign M/C topics remain in radical-20261006.",
+  "authority": "Raw result files and validation logs are primary. This is a coordinator-approved evidence index; pending outcomes are not inferred.",
+  "baseline_lineage": {
+    "original_topic_baseline": {
+      "commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "frozen_binaries": [
+        {
+          "binary_sha256": "529467bd57e056195fb71065d51881e0265e4bfabd6d879b2563a2ec9172f184",
+          "source_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "source_tree_sha1": "006bcd0f9f50ce2c1d0660c43cf9b03f51534970",
+          "evidence": "parent frozen baseline",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "confirm-g1-h1.json",
+              "case": "lld",
+              "label": "baseline",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "confirm-g1-h1.json",
+              "case": "clang",
+              "label": "baseline",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "confirm-g1-h1.json",
+              "case": "ra",
+              "label": "baseline",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "confirm-g1-h1.json",
+              "case": "ra-s",
+              "label": "baseline",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "tblgen",
+              "label": "baseline",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "lld",
+              "label": "baseline",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "clang",
+              "label": "baseline",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "ra",
+              "label": "baseline",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-cr1.json",
+              "case": "hello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-cr1.json",
+              "case": "rhello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-cr1.json",
+              "case": "tblgen",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-cr1.json",
+              "case": "lld",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-cr1.json",
+              "case": "clang",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-cr1.json",
+              "case": "clang-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-cr1.json",
+              "case": "ra",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-cr1.json",
+              "case": "ra-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "hello",
+              "label": "baseline",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "rhello",
+              "label": "baseline",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "tblgen",
+              "label": "baseline",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "lld",
+              "label": "baseline",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang",
+              "label": "baseline",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang-s",
+              "label": "baseline",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra",
+              "label": "baseline",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra-s",
+              "label": "baseline",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "hello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "rhello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "tblgen",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "lld",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "clang",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "clang-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "ra",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "ra-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "hello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "rhello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "tblgen",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "lld",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "clang",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "clang-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "ra",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "ra-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "hello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "rhello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "tblgen",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "lld",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "clang",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "clang-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "ra",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "ra-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-ms1.json",
+              "case": "hello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-ms1.json",
+              "case": "rhello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-ms1.json",
+              "case": "tblgen",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-ms1.json",
+              "case": "lld",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-ms1.json",
+              "case": "clang",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-ms1.json",
+              "case": "clang-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-ms1.json",
+              "case": "ra",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-ms1.json",
+              "case": "ra-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-p1.json",
+              "case": "hello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-p1.json",
+              "case": "rhello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-p1.json",
+              "case": "tblgen",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-p1.json",
+              "case": "lld",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-p1.json",
+              "case": "clang",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-p1.json",
+              "case": "clang-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-p1.json",
+              "case": "ra",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-p1.json",
+              "case": "ra-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "hello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "rhello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "tblgen",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "lld",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "clang",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "clang-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "ra",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "ra-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "hello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "rhello",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "tblgen",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "lld",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "clang",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "clang-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "ra",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "ra-s",
+              "label": "baseline",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "prior_1347_upstream_main": {
+      "commit": "1347ca95c906db060ecfbf838a792c5739970294"
+    },
+    "updated_upstream_main": {
+      "commit": "75200f107ee958227e87a96e67ad491567a4854a",
+      "fork_main_fast_forward": "pushed, reported by coordinator"
+    },
+    "rebased_control": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-next-baseline/mold",
+      "branch": "codex/mold-next-baseline",
+      "commit": "d5f03691582bc6e425d122c5592d0b33448ff7eb",
+      "dirty": false,
+      "frozen_binaries": [
+        {
+          "binary_sha256": "11b05349574ccca4347d85b24540d5e0b7f11066b9768d971994088f3c14d0da",
+          "source_commit": "d5f03691582bc6e425d122c5592d0b33448ff7eb",
+          "source_tree_sha1": "787d8f02f48dcf63d4b2373c501b938d2c045c89",
+          "evidence": "parent final control rebased onto upstream1347ca95",
+          "instrumented": false,
+          "lineage": "upstream_rebased_control",
+          "base_anchor": "1347ca95c906db060ecfbf838a792c5739970294",
+          "measurement_groups": [
+            {
+              "result_file": "omnibus-fresh.json",
+              "case": "hello",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus-fresh.json",
+              "case": "rhello",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus-fresh.json",
+              "case": "tblgen",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus-fresh.json",
+              "case": "lld",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus-fresh.json",
+              "case": "clang",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus-fresh.json",
+              "case": "clang-s",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus-fresh.json",
+              "case": "ra",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus-fresh.json",
+              "case": "ra-s",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus.json",
+              "case": "hello",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "omnibus.json",
+              "case": "rhello",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "omnibus.json",
+              "case": "tblgen",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "omnibus.json",
+              "case": "lld",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "omnibus.json",
+              "case": "clang",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "omnibus.json",
+              "case": "clang-s",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "omnibus.json",
+              "case": "ra",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "omnibus.json",
+              "case": "ra-s",
+              "label": "current",
+              "sample_count": 50,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ],
+      "upstream_anchor": "1347ca95c906db060ecfbf838a792c5739970294",
+      "purpose": "Prior 1347-stage control retaining the earlier PR1696 thread/GOT work, excluding the new P1/H1 additions; compare only with its same-file candidate."
+    },
+    "latest_rebased_control": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-next-latest-control/mold",
+      "branch": "codex/mold-next-latest-control",
+      "commit": "f1dec0f067198959a1339e761f27f27ccc4179d1",
+      "dirty": false,
+      "frozen_binaries": [
+        {
+          "binary_sha256": "7bbec3c1526448e4e5426c2dada974e9c2017bfb531ca91de7b70dd6769b06ef",
+          "source_commit": "f1dec0f067198959a1339e761f27f27ccc4179d1",
+          "source_tree_sha1": "477ec9dc04c08e57857d990b550b9e582cd1103b",
+          "evidence": "Build agent frozen binary; validation/latest-control/ logs; original binaries untouched",
+          "instrumented": false,
+          "lineage": "latest_upstream_75200_control",
+          "base_anchor": "75200f107ee958227e87a96e67ad491567a4854a",
+          "cargo_lock_sha256": "e11293521c6cf5adbb4abf011f2f1fc03686687e44563fff60fd3ce295d12763",
+          "measurement_groups": [
+            {
+              "result_file": "confirm-clang-latest.json",
+              "case": "clang",
+              "label": "latest-control",
+              "sample_count": 80,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "omnibus-latest-fresh.json",
+              "case": "hello",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus-latest-fresh.json",
+              "case": "rhello",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus-latest-fresh.json",
+              "case": "tblgen",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus-latest-fresh.json",
+              "case": "lld",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus-latest-fresh.json",
+              "case": "clang",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus-latest-fresh.json",
+              "case": "clang-s",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus-latest-fresh.json",
+              "case": "ra",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus-latest-fresh.json",
+              "case": "ra-s",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "omnibus-latest.json",
+              "case": "hello",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "omnibus-latest.json",
+              "case": "rhello",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "omnibus-latest.json",
+              "case": "tblgen",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "omnibus-latest.json",
+              "case": "lld",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "omnibus-latest.json",
+              "case": "clang",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "omnibus-latest.json",
+              "case": "clang-s",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "omnibus-latest.json",
+              "case": "ra",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "omnibus-latest.json",
+              "case": "ra-s",
+              "label": "latest-control",
+              "sample_count": 50,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ],
+      "upstream_anchor": "75200f107ee958227e87a96e67ad491567a4854a",
+      "purpose": "Latest 75200f10 control retaining the earlier PR1696 thread/GOT work, excluding the new P1/H1 additions; separate from both older baselines."
+    }
+  },
+  "protocol": {
+    "host": "wx-workstation",
+    "remote_root": "/home/callen/work/mold-next-20261006",
+    "gate": "/home/callen/work/mold-radical-20261006/workstation.lock",
+    "validation": "shared gate; bounded CPU/memory; unrelated GPU workload left alone",
+    "timing": "coordinator-exclusive gate; compare same result file/output mode/environment"
+  },
+  "topics": {
+    "ms1": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-ms1-compact-probes/mold",
+      "branch": "codex/mold-ms1-compact-probes",
+      "commit": "f8bb8d521df7f478c453e8a4d79c41a7c8dd8832",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "rejected",
+      "notes": [
+        "topics/ms1.md"
+      ],
+      "validation": "Release; unit 35+2; full native 550/14/0; eight goldens.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "930881d2798b67c8c87b3dcf9bd21b2a6033bf6105a35235144635e41bae7c42",
+          "source_commit": "f8bb8d521df7f478c453e8a4d79c41a7c8dd8832",
+          "source_tree_sha1": "7cb4cd46a1135d505a34e95e6f95a06cbb6195f1",
+          "evidence": "MS1 owner build",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-ms1.json",
+              "case": "hello",
+              "label": "ms1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-ms1.json",
+              "case": "rhello",
+              "label": "ms1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-ms1.json",
+              "case": "tblgen",
+              "label": "ms1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-ms1.json",
+              "case": "lld",
+              "label": "ms1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-ms1.json",
+              "case": "clang",
+              "label": "ms1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-ms1.json",
+              "case": "clang-s",
+              "label": "ms1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-ms1.json",
+              "case": "ra",
+              "label": "ms1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-ms1.json",
+              "case": "ra-s",
+              "label": "ms1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "ms2": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-ms2-single-pass-layout/mold",
+      "branch": "codex/mold-ms2-single-pass-layout",
+      "commit": "3ef1d72da621bebe186476692b5570b83c2a163b",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "rejected",
+      "notes": [
+        "topics/ms2.md"
+      ],
+      "validation": "v1: release, unit34+2, full native550/14/0. v2: release, unit35+2, full native551/14/0. Both eight goldens.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "9204becb1de90c9d8d5c0871cb350050282b10bc5aa4b9d3b459d18f24cc780e",
+          "source_commit": "10fcda6c688f474571b79c63f6c23c16e7d89269",
+          "source_tree_sha1": "7fbd4618037a012422eb044f2704d78818cc7779",
+          "evidence": "MS2 v1 owner build",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-second.json",
+              "case": "hello",
+              "label": "ms2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "rhello",
+              "label": "ms2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "tblgen",
+              "label": "ms2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "lld",
+              "label": "ms2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "clang",
+              "label": "ms2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "clang-s",
+              "label": "ms2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "ra",
+              "label": "ms2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "ra-s",
+              "label": "ms2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        },
+        {
+          "binary_sha256": "b563006f96559de44ba351ad51c80b46fa84f7e1709cfc7e78a072cbfa517db7",
+          "source_commit": "3ef1d72da621bebe186476692b5570b83c2a163b",
+          "source_tree_sha1": "f86b31d32fef611be78d0e0e798451f9231e7539",
+          "evidence": "MS2 owner v2 build; frozen bin/ms2-v2, v1 unchanged",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-fifth.json",
+              "case": "hello",
+              "label": "ms2-v2",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "rhello",
+              "label": "ms2-v2",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "tblgen",
+              "label": "ms2-v2",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "lld",
+              "label": "ms2-v2",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang",
+              "label": "ms2-v2",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang-s",
+              "label": "ms2-v2",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra",
+              "label": "ms2-v2",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra-s",
+              "label": "ms2-v2",
+              "sample_count": 32,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "ms3": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-ms3-fragment-reservations/mold",
+      "branch": "codex/mold-ms3-fragment-reservations",
+      "commit": "8db6b72248d04d4feefc0d788fea9f9c0cfbab0f",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "rejected",
+      "notes": [
+        "topics/ms3.md"
+      ],
+      "validation": "Release; unit33+2; full native551/14/0; eight goldens; separate48 untimed counter links all matched.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "c906164968f14eb8db38c6c713f5d94f4a25d2974074a3555cab52baf5a20871",
+          "source_commit": "8db6b72248d04d4feefc0d788fea9f9c0cfbab0f",
+          "source_tree_sha1": "4b5b5c23c6c78a518a1e0422ee105e655491c48c",
+          "evidence": "MS3 owner build",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-third.json",
+              "case": "hello",
+              "label": "ms3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "rhello",
+              "label": "ms3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "tblgen",
+              "label": "ms3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "lld",
+              "label": "ms3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "clang",
+              "label": "ms3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "clang-s",
+              "label": "ms3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "ra",
+              "label": "ms3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "ra-s",
+              "label": "ms3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "ms4": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-ms4-dense-fragments/mold",
+      "branch": "codex/mold-ms4-dense-fragments",
+      "commit": "d33ea5505f71adb604f660174bed64a3cb68c682",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "rejected",
+      "notes": [
+        "topics/ms4.md"
+      ],
+      "validation": "Release; unit36+2; full native550/14/0; eight goldens; independent source review.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "01563d19f361d3bdedd870da6f32226a11d47e7392dddfe8908c6a6c9a47c5b1",
+          "source_commit": "d33ea5505f71adb604f660174bed64a3cb68c682",
+          "source_tree_sha1": "45da7d446ada4ab56f2b65270584e16b0dd8e21a",
+          "evidence": "MS4 owner build",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-fourth.json",
+              "case": "hello",
+              "label": "ms4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "rhello",
+              "label": "ms4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "tblgen",
+              "label": "ms4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "lld",
+              "label": "ms4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "clang",
+              "label": "ms4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "clang-s",
+              "label": "ms4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "ra",
+              "label": "ms4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "ra-s",
+              "label": "ms4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "cr1": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-cr1-compact-offsets/mold",
+      "branch": "codex/mold-cr1-compact-offsets",
+      "commit": "24be8a795e466c363d05b6d86bd3537371be3efb",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "rejected",
+      "notes": [
+        "notes/cr1.md"
+      ],
+      "validation": "Both versions release/unit/full native550/14/0 and eight goldens; v2 unit34+2.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "bdfa8b02e0ee324575cbf8ef5c2ea4aee63fa4f2791eddc7dc592b2b7e01fd6b",
+          "source_commit": "62fa0761f75dc7a1f273749b640b6f48cfb28ca6",
+          "source_tree_sha1": "15041453bc9b54f1cdd2714aeb3a00024164f91a",
+          "evidence": "CR owner message v1",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-cr1.json",
+              "case": "hello",
+              "label": "cr1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-cr1.json",
+              "case": "rhello",
+              "label": "cr1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-cr1.json",
+              "case": "tblgen",
+              "label": "cr1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-cr1.json",
+              "case": "lld",
+              "label": "cr1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-cr1.json",
+              "case": "clang",
+              "label": "cr1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-cr1.json",
+              "case": "clang-s",
+              "label": "cr1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-cr1.json",
+              "case": "ra",
+              "label": "cr1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-cr1.json",
+              "case": "ra-s",
+              "label": "cr1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        },
+        {
+          "binary_sha256": "261750bd3f2be8a590150bac3c5426a502d927405e1765e9c202ea0852f910de",
+          "source_commit": "24be8a795e466c363d05b6d86bd3537371be3efb",
+          "source_tree_sha1": "5007455b47750ed7545dcc7018d4fa9dac24d010",
+          "evidence": "CR1 owner message v2",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-fourth.json",
+              "case": "hello",
+              "label": "cr1-v2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "rhello",
+              "label": "cr1-v2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "tblgen",
+              "label": "cr1-v2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "lld",
+              "label": "cr1-v2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "clang",
+              "label": "cr1-v2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "clang-s",
+              "label": "cr1-v2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "ra",
+              "label": "cr1-v2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "ra-s",
+              "label": "cr1-v2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "cr2": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-cr2-fragment-hints/mold",
+      "branch": "codex/mold-cr2-fragment-hints",
+      "commit": "7f9e54cee5c55fb729107a7827d80aa84158868a",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "rejected",
+      "notes": [
+        "notes/cr2.md"
+      ],
+      "validation": "Instrumented version full native550/14/0; clean rebuild and unit33+2 passed; clean eight goldens; separate untimed hint counts.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "a9101dcbe9eb6e336f06c6fbb3e2439a0ef345c82889186559e9aa98962f521f",
+          "source_commit": "b6c6c09f58f9c7d83a5257b573df57dc6ea6f0e3",
+          "source_tree_sha1": "b33d9ed7d55037be06f277f961fa189ae63b4ba2",
+          "evidence": "CR2 owner message instrumented, untimed only",
+          "instrumented": true,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": []
+        },
+        {
+          "binary_sha256": "78ed4a2db7d8b0fe21c00dbab63a5db24ef8869a908ccd1641de3a334e07cdf8",
+          "source_commit": "7f9e54cee5c55fb729107a7827d80aa84158868a",
+          "source_tree_sha1": "c1f5323cafa824e51ce869ebe92320ad35f9da8a",
+          "evidence": "CR owner message clean production",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-second.json",
+              "case": "hello",
+              "label": "cr2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "rhello",
+              "label": "cr2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "tblgen",
+              "label": "cr2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "lld",
+              "label": "cr2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "clang",
+              "label": "cr2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "clang-s",
+              "label": "cr2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "ra",
+              "label": "cr2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "ra-s",
+              "label": "cr2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "cr3": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-cr3-reloc-prefetch/mold",
+      "branch": "codex/mold-cr3-reloc-prefetch",
+      "commit": "f760835736645b1ba7e3d24a1e48b301376ef7a6",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "rejected",
+      "notes": [
+        "notes/cr3.md"
+      ],
+      "validation": "Release; unit33+2; full native551/14/0; eight goldens.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "65922b71ffec0cc17fbb22438433176ea3403a1f84cb00203bb13ebb80edc591",
+          "source_commit": "f760835736645b1ba7e3d24a1e48b301376ef7a6",
+          "source_tree_sha1": "b40627654b65718adb11e60418d8e7af9818bb67",
+          "evidence": "CR owner message",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-third.json",
+              "case": "hello",
+              "label": "cr3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "rhello",
+              "label": "cr3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "tblgen",
+              "label": "cr3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "lld",
+              "label": "cr3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "clang",
+              "label": "cr3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "clang-s",
+              "label": "cr3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "ra",
+              "label": "cr3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-third.json",
+              "case": "ra-s",
+              "label": "cr3",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "cr4": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-cr4-input-offsets/mold",
+      "branch": "codex/mold-cr4-input-offsets",
+      "commit": "a14c236e2bdc2d19eaf16f87361cde2282953ef0",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "rejected",
+      "notes": [
+        "notes/cr4.md"
+      ],
+      "validation": "Release; unit33+2; full native551/14/0; eight goldens. Current a14c236e corrects only a test; measured binary remains code commit168ca9f5.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "e7c08c342d0cfdd2174a302c7c6603c32345ff54563adcca68a2f18046f356bd",
+          "source_commit": "168ca9f55e530d841adce2d89e25682b84391a3a",
+          "source_tree_sha1": "72508050735c9f5ae61d0c9ce7cba92be0690bbe",
+          "evidence": "CR owner message code commit; a14c236e corrects test only",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-fourth.json",
+              "case": "hello",
+              "label": "cr4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "rhello",
+              "label": "cr4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "tblgen",
+              "label": "cr4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "lld",
+              "label": "cr4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "clang",
+              "label": "cr4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "clang-s",
+              "label": "cr4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "ra",
+              "label": "cr4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "ra-s",
+              "label": "cr4",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "cr5": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-cr5-cross-section-batches/mold",
+      "branch": "codex/mold-cr5-cross-section-batches",
+      "commit": "6789e6c53fa9a82e27bc8295d88f212575a030e0",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "rejected",
+      "notes": [
+        "topics/cr5.md"
+      ],
+      "validation": "Release; targeted native13/0/0; eight goldens and separate eligibility counts; no full-suite claim.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "1624bcf787c69f7f18892497037b23b7f29b0738e28fd37c346edc0f45fc99b2",
+          "source_commit": "6789e6c53fa9a82e27bc8295d88f212575a030e0",
+          "source_tree_sha1": "5917c1d16c8e16bd92b31446111d547b1116b556",
+          "evidence": "CR5 owner message",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-fourth.json",
+              "case": "hello",
+              "label": "cr5",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "rhello",
+              "label": "cr5",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "tblgen",
+              "label": "cr5",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "lld",
+              "label": "cr5",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "clang",
+              "label": "cr5",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "clang-s",
+              "label": "cr5",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "ra",
+              "label": "cr5",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "ra-s",
+              "label": "cr5",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "s1": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-s1-phase-concurrency/mold",
+      "branch": "codex/mold-s1-phase-concurrency",
+      "commit": "70291748b5ce53e366d93ecfb4102df9e71eb0a0",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "tradeoff_not_general_default",
+      "notes": [
+        "topics/s1.md",
+        "topics/s1-env.json"
+      ],
+      "validation": "Release; targeted native15/0/0; same binary across phase caps. Twenty-pair four-case sweep plus32-pair eight-case copy-cap confirmation; goldens matched.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "66e147addb1201a8f94e13e183dc88ea2f109cdae56b4570f8338f7d9813c7b8",
+          "source_commit": "70291748b5ce53e366d93ecfb4102df9e71eb0a0",
+          "source_tree_sha1": "50d0578de82177bc9288fd2c902b9e0c45fcab53",
+          "evidence": "S1 owner message; environment distinguishes phase caps",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "s1-sweep.json",
+              "case": "tblgen",
+              "label": "s1-merge16",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "tblgen",
+              "label": "s1-copy8",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "tblgen",
+              "label": "s1-copy16",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "tblgen",
+              "label": "s1-gc8",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "tblgen",
+              "label": "s1-gc16",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "tblgen",
+              "label": "s1-control",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "tblgen",
+              "label": "s1-merge8",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "lld",
+              "label": "s1-merge16",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "lld",
+              "label": "s1-copy8",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "lld",
+              "label": "s1-copy16",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "lld",
+              "label": "s1-gc8",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "lld",
+              "label": "s1-gc16",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "lld",
+              "label": "s1-control",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "lld",
+              "label": "s1-merge8",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "clang",
+              "label": "s1-merge16",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "clang",
+              "label": "s1-copy8",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "clang",
+              "label": "s1-copy16",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "clang",
+              "label": "s1-gc8",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "clang",
+              "label": "s1-gc16",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "clang",
+              "label": "s1-control",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "clang",
+              "label": "s1-merge8",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "ra",
+              "label": "s1-merge16",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "ra",
+              "label": "s1-copy8",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "ra",
+              "label": "s1-copy16",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "ra",
+              "label": "s1-gc8",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "ra",
+              "label": "s1-gc16",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "ra",
+              "label": "s1-control",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "s1-sweep.json",
+              "case": "ra",
+              "label": "s1-merge8",
+              "sample_count": 20,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "hello",
+              "label": "s1-control",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "hello",
+              "label": "s1-copy8",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "hello",
+              "label": "s1-copy16",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "rhello",
+              "label": "s1-control",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "rhello",
+              "label": "s1-copy8",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "rhello",
+              "label": "s1-copy16",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "tblgen",
+              "label": "s1-control",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "tblgen",
+              "label": "s1-copy8",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "tblgen",
+              "label": "s1-copy16",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "lld",
+              "label": "s1-control",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "lld",
+              "label": "s1-copy8",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "lld",
+              "label": "s1-copy16",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang",
+              "label": "s1-control",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang",
+              "label": "s1-copy8",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang",
+              "label": "s1-copy16",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang-s",
+              "label": "s1-control",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang-s",
+              "label": "s1-copy8",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang-s",
+              "label": "s1-copy16",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra",
+              "label": "s1-control",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra",
+              "label": "s1-copy8",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra",
+              "label": "s1-copy16",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra-s",
+              "label": "s1-control",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra-s",
+              "label": "s1-copy8",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra-s",
+              "label": "s1-copy16",
+              "sample_count": 32,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "s2": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-s2-cache-locality/mold",
+      "branch": "codex/mold-s2-cache-locality",
+      "commit": "412974f6cb927e2a35c2827b28ac371f4d5c9b5b",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "rejected",
+      "notes": [
+        "topics/s2.md"
+      ],
+      "validation": "Release; targeted native9/0/0; eight goldens and separate untimed handoff/assignment counts.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "1d42f1118e4fe4551406da5e6fcea0e96835fea50ae6a42c5f202522d80d6bd1",
+          "source_commit": "412974f6cb927e2a35c2827b28ac371f4d5c9b5b",
+          "source_tree_sha1": "c622927a77495658bb2ec977a16f283a9ace3925",
+          "evidence": "S2 owner message",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-fourth.json",
+              "case": "hello",
+              "label": "s2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "rhello",
+              "label": "s2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "tblgen",
+              "label": "s2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "lld",
+              "label": "s2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "clang",
+              "label": "s2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "clang-s",
+              "label": "s2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "ra",
+              "label": "s2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fourth.json",
+              "case": "ra-s",
+              "label": "s2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "g1": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-g1-compact-gc-targets/mold",
+      "branch": "codex/mold-g1-compact-gc-targets",
+      "commit": "25c7f28ff8360e5aeba3c1a8880eb318dbf39d5c",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "rejected_after_confirmation",
+      "notes": [
+        "topics/g1.md",
+        "topics/g1-measurements.md"
+      ],
+      "validation": "Release; targeted native23; full native550/14/0; eight screen goldens; four-case50-pair confirmation.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "83c8aa3650b328a8e8c44fbc07d08d7d73452ca20a166b04196c0a7ba1f0a57d",
+          "source_commit": "25c7f28ff8360e5aeba3c1a8880eb318dbf39d5c",
+          "source_tree_sha1": "5d19bcb07e6292da267d829d8037e8e439b7a1bc",
+          "evidence": "topics/g1.md",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "confirm-g1-h1.json",
+              "case": "lld",
+              "label": "g1",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "confirm-g1-h1.json",
+              "case": "clang",
+              "label": "g1",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "confirm-g1-h1.json",
+              "case": "ra",
+              "label": "g1",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "confirm-g1-h1.json",
+              "case": "ra-s",
+              "label": "g1",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "hello",
+              "label": "g1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "rhello",
+              "label": "g1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "tblgen",
+              "label": "g1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "lld",
+              "label": "g1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "clang",
+              "label": "g1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "clang-s",
+              "label": "g1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "ra",
+              "label": "g1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "ra-s",
+              "label": "g1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "p1": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-p1-symbol-blocks/mold",
+      "branch": "codex/mold-p1-symbol-blocks",
+      "commit": "45934a7b546408ecebbdfa5a4ad8c5a6f96ebd3f",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "included_in_combined_final_timings_complete",
+      "notes": [
+        "topics/p1.md",
+        "notes/production-review-h1-p1.md"
+      ],
+      "validation": "v1 release/unit/full native550/14/0. v2 release/unit/targeted native14 passed. Current45934a7b adds semantic test only; unit helper passed. Both eight goldens.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "b5728f858fcea4d121c1400817d5fa738c61181e22256fb932d9ecf9fb5b27b7",
+          "source_commit": "871cfa702559c162bd7ff9ee50a6b16610416d9f",
+          "source_tree_sha1": "f4190d753f899c9435a22eb3eae3187651b7637c",
+          "evidence": "topics/p1.md v1",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-p1.json",
+              "case": "hello",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-p1.json",
+              "case": "rhello",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-p1.json",
+              "case": "tblgen",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-p1.json",
+              "case": "lld",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-p1.json",
+              "case": "clang",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-p1.json",
+              "case": "clang-s",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-p1.json",
+              "case": "ra",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-p1.json",
+              "case": "ra-s",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        },
+        {
+          "binary_sha256": "be6e3fab81c17a0fc5234823845a45418ab9f2cb64e7d11acfe43f539fd82cc4",
+          "source_commit": "e0f2d3e942fc9985b202f8d2f9327d79acd90e78",
+          "source_tree_sha1": "d5c11653b174fb1a42dab3b725c2cb08b2b2828e",
+          "evidence": "parent message P1 v2",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-fifth.json",
+              "case": "hello",
+              "label": "p1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "rhello",
+              "label": "p1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "tblgen",
+              "label": "p1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "lld",
+              "label": "p1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang",
+              "label": "p1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang-s",
+              "label": "p1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra",
+              "label": "p1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra-s",
+              "label": "p1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "hello",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "rhello",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "tblgen",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "lld",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "clang",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "clang-s",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "ra",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "ra-s",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "hello",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "rhello",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "tblgen",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "lld",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "clang",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "clang-s",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "ra",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "ra-s",
+              "label": "p1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "h1": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-h1-batched-advice/mold",
+      "branch": "codex/mold-h1-batched-advice",
+      "commit": "c35c2fbbb6de046c41df90a3d03464fb1e0619b1",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "retained_experimental_conditional_tradeoff",
+      "notes": [
+        "topics/h1.md",
+        "notes/h1-kernel-attribution.md",
+        "notes/production-review-h1-p1.md"
+      ],
+      "validation": "v1 release/unit/full native550/14/0; cleaned release and targeted build-ID test passed; eight goldens; separate kernel profiles.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "63323bbb928fc45b6b090c9f6e2e3aad23170c9401f239ca289e37d9c5614d6b",
+          "source_commit": "e3347c30bc6d4827a62357599fb9ac5ae528d08f",
+          "source_tree_sha1": "7077d37395f4314f588452ee4bbe6798f287dbad",
+          "evidence": "topics/h1.md",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "confirm-g1-h1.json",
+              "case": "lld",
+              "label": "h1",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "confirm-g1-h1.json",
+              "case": "clang",
+              "label": "h1",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "confirm-g1-h1.json",
+              "case": "ra",
+              "label": "h1",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "confirm-g1-h1.json",
+              "case": "ra-s",
+              "label": "h1",
+              "sample_count": 50,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "hello",
+              "label": "h1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "rhello",
+              "label": "h1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "tblgen",
+              "label": "h1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "lld",
+              "label": "h1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "clang",
+              "label": "h1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "clang-s",
+              "label": "h1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "ra",
+              "label": "h1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-g1-h1.json",
+              "case": "ra-s",
+              "label": "h1",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        },
+        {
+          "binary_sha256": "0fd060bfbb6d88038ba977feb142dc3682243b7eebb78e5a7377774ae969878e",
+          "source_commit": "c35c2fbbb6de046c41df90a3d03464fb1e0619b1",
+          "source_tree_sha1": "9e09ba9a0edbb137145e04a41041317149894d48",
+          "evidence": "H1 cleaned parent frozen candidate",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-fifth.json",
+              "case": "hello",
+              "label": "h1-clean",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "rhello",
+              "label": "h1-clean",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "tblgen",
+              "label": "h1-clean",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "lld",
+              "label": "h1-clean",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang",
+              "label": "h1-clean",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang-s",
+              "label": "h1-clean",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra",
+              "label": "h1-clean",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra-s",
+              "label": "h1-clean",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "hello",
+              "label": "h1-clean",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "rhello",
+              "label": "h1-clean",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "tblgen",
+              "label": "h1-clean",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "lld",
+              "label": "h1-clean",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "clang",
+              "label": "h1-clean",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "clang-s",
+              "label": "h1-clean",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "ra",
+              "label": "h1-clean",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "ra-s",
+              "label": "h1-clean",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            }
+          ]
+        }
+      ]
+    },
+    "h2": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-h2-pipelined-hash/mold",
+      "branch": "codex/mold-h2-pipelined-hash",
+      "commit": "2790a9882afd3f580249d727c910f382a9900b3f",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "rejected",
+      "notes": [
+        "topics/h2.md"
+      ],
+      "validation": "Release/unit/full native550/14/0; eleven-mode12MiB oracle fixture matched; eight corpus goldens.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "50c2ca9372565b00411f352f1053f1e2227984a9a53b9cd83713edb37d23d370",
+          "source_commit": "2790a9882afd3f580249d727c910f382a9900b3f",
+          "source_tree_sha1": "adf4a6c91068b2a9acc7b8bb036890b3c6bd0856",
+          "evidence": "topics/h2.md",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-second.json",
+              "case": "hello",
+              "label": "h2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "rhello",
+              "label": "h2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "tblgen",
+              "label": "h2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "lld",
+              "label": "h2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "clang",
+              "label": "h2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "clang-s",
+              "label": "h2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "ra",
+              "label": "h2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-second.json",
+              "case": "ra-s",
+              "label": "h2",
+              "sample_count": 24,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "k1": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-k1-prefault-output/mold",
+      "branch": "codex/mold-k1-prefault-output",
+      "commit": "6d24b45ab5604dae0f59ef9a937cd603ebb9d9d9",
+      "dirty": false,
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "independent": true,
+      "decision": "rejected_as_default_both_output_modes",
+      "notes": [
+        "topics/k1.md",
+        "topics/k1-review.md"
+      ],
+      "validation": "Release; local logs confirm unit33+2 and full native550/14/0 (validation/k1/). Eight reused-output and eight fresh-output goldens.",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "a1c023acfe43a21a24f38f225beaca6b9502a9b0b6f2096b93696454b12f36e0",
+          "source_commit": "6d24b45ab5604dae0f59ef9a937cd603ebb9d9d9",
+          "source_tree_sha1": "2d620f8723cff42a42d0520c1c297219486f0b2f",
+          "evidence": "K1 parent frozen screen candidate",
+          "instrumented": false,
+          "lineage": "original_topic_baseline",
+          "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+          "measurement_groups": [
+            {
+              "result_file": "screen-fifth.json",
+              "case": "hello",
+              "label": "k1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "rhello",
+              "label": "k1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "tblgen",
+              "label": "k1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "lld",
+              "label": "k1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang",
+              "label": "k1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "clang-s",
+              "label": "k1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra",
+              "label": "k1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fifth.json",
+              "case": "ra-s",
+              "label": "k1",
+              "sample_count": 32,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "hello",
+              "label": "k1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "rhello",
+              "label": "k1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "tblgen",
+              "label": "k1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "lld",
+              "label": "k1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "clang",
+              "label": "k1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "clang-s",
+              "label": "k1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "ra",
+              "label": "k1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            },
+            {
+              "result_file": "screen-fresh.json",
+              "case": "ra-s",
+              "label": "k1",
+              "sample_count": 24,
+              "output_mode": "fresh"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "prior_1347_omnibus": {
+    "branch": "codex/mold-next-omnibus-1347",
+    "commit": "839f4e4bea0c9b6f1a2df6814859fd3714137d52",
+    "source_composition": [
+      "rebased control d5f03691",
+      "P1 file-major demand-sized symbol blocks",
+      "H1 batched output advice"
+    ],
+    "upstream_anchor": "1347ca95c906db060ecfbf838a792c5739970294",
+    "frozen_revisions": [
+      {
+        "binary_sha256": "4422ead1df414794d40e4a4aee1e5af3696d2fcec6d118bf965fe36f465f41b7",
+        "source_commit": "80f062238e88d941a6b16e175477dff42e2ace4c",
+        "source_tree_sha1": "0adae45861f04d5571a37ec3f357f6891a3d14d8",
+        "evidence": "parent provisional omnibus rebased onto upstream1347ca95",
+        "instrumented": false,
+        "lineage": "upstream_rebased_candidate",
+        "base_anchor": "1347ca95c906db060ecfbf838a792c5739970294",
+        "measurement_groups": [
+          {
+            "result_file": "omnibus-fresh.json",
+            "case": "hello",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus-fresh.json",
+            "case": "rhello",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus-fresh.json",
+            "case": "tblgen",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus-fresh.json",
+            "case": "lld",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus-fresh.json",
+            "case": "clang",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus-fresh.json",
+            "case": "clang-s",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus-fresh.json",
+            "case": "ra",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus-fresh.json",
+            "case": "ra-s",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus.json",
+            "case": "hello",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          },
+          {
+            "result_file": "omnibus.json",
+            "case": "rhello",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          },
+          {
+            "result_file": "omnibus.json",
+            "case": "tblgen",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          },
+          {
+            "result_file": "omnibus.json",
+            "case": "lld",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          },
+          {
+            "result_file": "omnibus.json",
+            "case": "clang",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          },
+          {
+            "result_file": "omnibus.json",
+            "case": "clang-s",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          },
+          {
+            "result_file": "omnibus.json",
+            "case": "ra",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          },
+          {
+            "result_file": "omnibus.json",
+            "case": "ra-s",
+            "label": "omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          }
+        ]
+      }
+    ],
+    "decision": "Prior 1347 stage complete: 50 pairs/eight cases in both modes, full validation passed; do not attribute to latest rebased binaries",
+    "timing_results": [
+      "results/omnibus.json",
+      "results/omnibus-fresh.json"
+    ],
+    "timing_summary": "results/summary-omnibus.json",
+    "result_note": "topics/omnibus.md",
+    "validation": "Full --init rerun:18 targets,8028 pass/1026 skip/0 fail; new build-id-large-mmap test18 passes; native551/14/0; unit34+2. First attempt stopped at container PID limit due unreaped children, preserved as infrastructure failure. Review839f4e4b adds only the regression test and formatting over frozen80f0622. Formatting and armv7/i686/powerpc 32-bit host source checks passed; missing i686/ppc Rust std components were installed only in a disposable test container for the successful retry."
+  },
+  "omnibus": {
+    "worktree": "/Users/callen/.codex/worktrees/mold-next-omnibus/mold",
+    "branch": "codex/mold-next-omnibus",
+    "commit": "8e522e5217adea17329e8e2eeb753fc482de4b16",
+    "dirty": true,
+    "source_composition": [
+      "latest rebased control f1dec0f0",
+      "P1 symbol allocation",
+      "H1 batched advice",
+      "regression tests and formatting"
+    ],
+    "upstream_anchor": "75200f107ee958227e87a96e67ad491567a4854a",
+    "frozen_revisions": [
+      {
+        "binary_sha256": "0257d93ddd1a92d5990d92294b8ae6d252bacff30dcb492f8755a8905d90d60b",
+        "source_commit": "8e522e5217adea17329e8e2eeb753fc482de4b16",
+        "source_tree_sha1": "685c311da42ed34e451e851da1e1170fcedadf07",
+        "evidence": "Build agent frozen binary; validation/latest-omnibus/ logs; original binaries untouched",
+        "instrumented": false,
+        "lineage": "latest_upstream_75200_candidate",
+        "base_anchor": "75200f107ee958227e87a96e67ad491567a4854a",
+        "cargo_lock_sha256": "e11293521c6cf5adbb4abf011f2f1fc03686687e44563fff60fd3ce295d12763",
+        "measurement_groups": [
+          {
+            "result_file": "confirm-clang-latest.json",
+            "case": "clang",
+            "label": "latest-omnibus",
+            "sample_count": 80,
+            "output_mode": "reused"
+          },
+          {
+            "result_file": "omnibus-latest-fresh.json",
+            "case": "hello",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus-latest-fresh.json",
+            "case": "rhello",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus-latest-fresh.json",
+            "case": "tblgen",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus-latest-fresh.json",
+            "case": "lld",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus-latest-fresh.json",
+            "case": "clang",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus-latest-fresh.json",
+            "case": "clang-s",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus-latest-fresh.json",
+            "case": "ra",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus-latest-fresh.json",
+            "case": "ra-s",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "fresh"
+          },
+          {
+            "result_file": "omnibus-latest.json",
+            "case": "hello",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          },
+          {
+            "result_file": "omnibus-latest.json",
+            "case": "rhello",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          },
+          {
+            "result_file": "omnibus-latest.json",
+            "case": "tblgen",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          },
+          {
+            "result_file": "omnibus-latest.json",
+            "case": "lld",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          },
+          {
+            "result_file": "omnibus-latest.json",
+            "case": "clang",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          },
+          {
+            "result_file": "omnibus-latest.json",
+            "case": "clang-s",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          },
+          {
+            "result_file": "omnibus-latest.json",
+            "case": "ra",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          },
+          {
+            "result_file": "omnibus-latest.json",
+            "case": "ra-s",
+            "label": "latest-omnibus",
+            "sample_count": 50,
+            "output_mode": "reused"
+          }
+        ]
+      }
+    ],
+    "decision": "Retained experimental P1+H1 composition as conditional tradeoff. Primary50 reused Clang wall+1.75% CI[+0.30,+3.13] remains. Separate80-pair Clang confirmation in renewed contention: P1-only wallneutral; combined wall-7.45% CI[-8.36,-6.90], CPU-16.20% CI[-27.66,-9.20]. No universal large-link speedup claim.",
+    "timing_results": [
+      "results/omnibus-latest.json",
+      "results/omnibus-latest-fresh.json",
+      "results/confirm-clang-latest.json"
+    ],
+    "result_note": "topics/omnibus-latest.md",
+    "timing_summary": "results/summary-omnibus-latest.json",
+    "h1_isolation": {
+      "summary": "results/summary-confirm-clang-h1-isolation.json",
+      "reference": "e41a4bd5",
+      "candidate": "8e522e52",
+      "pairs": 80,
+      "wall_pct": -7.5411778,
+      "wall_ci95": [
+        -8.101452,
+        -6.980189
+      ],
+      "cpu_pct": -20.150589,
+      "cpu_ci95": [
+        -29.054745,
+        -9.234921
+      ],
+      "scope": "Same latest binaries in a separately observed higher-cost Clang state; does not erase primary50 regression."
+    },
+    "validation": "Latest combined 8e522e52: release, unit34+2, full18-target architecture suite8028 pass/1026 skip/0 fail; large build-id test18 passes; native551/14/0; fmt and armv7/i686/PowerPC foreign-host source checks passed. Logs validation/latest-omnibus/full-20261006T182934.log and hosts-20261006T183708.log. Prior1347 validation is separate."
+  },
+  "publication_worktrees": {
+    "pr1696_p1": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-pr1696-refined/mold",
+      "branch": "codex/mold-pr1696-refined",
+      "commit": "e41a4bd5ecfd23d318d4ce4a0a089f2e35a60e95",
+      "dirty": false,
+      "lineage": "latest 75200f10 rebased control f1dec0f0 plus P1",
+      "frozen_revisions": [
+        {
+          "binary_sha256": "8179754f5ed1dbdea1b6310fea377e78faafc3098bd15b6a95824596962d9a5e",
+          "source_commit": "e41a4bd5ecfd23d318d4ce4a0a089f2e35a60e95",
+          "source_tree_sha1": "764bd5b40739e1abb08adef1b841a1341a52b801",
+          "evidence": "Build agent separately frozen latest-p1 isolation binary; same Cargo.lock and build flags as latest control/combined",
+          "instrumented": false,
+          "lineage": "latest_upstream_75200_p1_only",
+          "base_anchor": "75200f107ee958227e87a96e67ad491567a4854a",
+          "cargo_lock_sha256": "e11293521c6cf5adbb4abf011f2f1fc03686687e44563fff60fd3ce295d12763",
+          "measurement_groups": [
+            {
+              "result_file": "confirm-clang-latest.json",
+              "case": "clang",
+              "label": "latest-p1",
+              "sample_count": 80,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ],
+      "purpose": "Existing PR1696 refinement; latest P1-only separately built and unit-tested. Its frozen binary completed the80-pair Clang comparison. Broad integration counts belong to combined8e522e52. PR edit/comment publication is handled separately by coordinator."
+    },
+    "h1_upstream": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-h1-upstream/mold",
+      "branch": "codex/mold-h1-upstream",
+      "commit": "626776e2087adff62d442c4e5fff1a824fe39446",
+      "dirty": false,
+      "lineage": "latest upstream75200f10 plus H1 only",
+      "measured_binary_at_this_head": null,
+      "purpose": "Separate experimental H1 draft planned by coordinator. Includes large-output regression test and formatting. The test passed on18 targets in both prior and latest combined full suites. This standalone publication head was not separately benchmarked; H1 isolation is combined8e522e52 versus P1-onlye41a4bd5, both including PR1696."
+    }
+  },
+  "prior_publication_refs": {
+    "h1": {
+      "branch": "codex/mold-h1-upstream-1347",
+      "commit": "b29d960523eff28b41d30c4feb0969ac93ea061b"
+    },
+    "pr1696_p1": {
+      "branch": "codex/mold-pr1696-refined-1347",
+      "commit": "3b5caf8a2db31dd4278268eaa9218e96f391d21e"
+    }
+  },
+  "profile_worktrees": {
+    "control": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-current-profile/mold",
+      "branch": "codex/mold-current-profile",
+      "commit": "d048c042adb4131449fb4462e724d5b7b0fa6f40",
+      "dirty": false,
+      "frozen_revisions": [
+        {
+          "binary_sha256": "c93e0ce3a99f4de74d0bb2c16465286b4a0d89b288bbd5813376320d622b7c52",
+          "source_commit": "d048c042adb4131449fb4462e724d5b7b0fa6f40",
+          "source_tree_sha1": "5cfc4f2fef2d0f2ad7a9e09f4041425850e48d8d",
+          "evidence": "Coordinator frozen final phase diagnostic binary; separate interval/input-cleanup instrumentation commit",
+          "instrumented": true,
+          "lineage": "upstream_rebased_control_instrumented",
+          "base_anchor": "1347ca95c906db060ecfbf838a792c5739970294",
+          "production_source_commit": "d5f03691582bc6e425d122c5592d0b33448ff7eb",
+          "measurement_groups": [
+            {
+              "result_file": "final-phases.json",
+              "case": "hello",
+              "label": "current",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases.json",
+              "case": "rhello",
+              "label": "current",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases.json",
+              "case": "tblgen",
+              "label": "current",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases.json",
+              "case": "lld",
+              "label": "current",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases.json",
+              "case": "clang",
+              "label": "current",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases.json",
+              "case": "clang-s",
+              "label": "current",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases.json",
+              "case": "ra",
+              "label": "current",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases.json",
+              "case": "ra-s",
+              "label": "current",
+              "sample_count": 12,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "omnibus": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-omnibus-profile/mold",
+      "branch": "codex/mold-omnibus-profile",
+      "commit": "88b76de5f7c0f649179ae9997f9c3ae955309e2a",
+      "dirty": false,
+      "frozen_revisions": [
+        {
+          "binary_sha256": "90661b040627894ee5e112b2b12b302460222df3bdde49a9f3dd3e677c86eb16",
+          "source_commit": "88b76de5f7c0f649179ae9997f9c3ae955309e2a",
+          "source_tree_sha1": "733479e5099a97800ab09ef46317f9212f191d43",
+          "evidence": "Coordinator frozen final phase diagnostic binary; separate interval/input-cleanup instrumentation commit",
+          "instrumented": true,
+          "lineage": "upstream_rebased_candidate_instrumented",
+          "base_anchor": "1347ca95c906db060ecfbf838a792c5739970294",
+          "production_source_commit": "80f062238e88d941a6b16e175477dff42e2ace4c",
+          "measurement_groups": [
+            {
+              "result_file": "final-phases.json",
+              "case": "hello",
+              "label": "omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases.json",
+              "case": "rhello",
+              "label": "omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases.json",
+              "case": "tblgen",
+              "label": "omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases.json",
+              "case": "lld",
+              "label": "omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases.json",
+              "case": "clang",
+              "label": "omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases.json",
+              "case": "clang-s",
+              "label": "omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases.json",
+              "case": "ra",
+              "label": "omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases.json",
+              "case": "ra-s",
+              "label": "omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "latest_profile_worktrees": {
+    "control": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-latest-control-profile/mold",
+      "branch": "codex/mold-latest-control-profile",
+      "commit": "9acc87021b8923bb8562178ee3410d62852f0e62",
+      "dirty": false,
+      "frozen_revisions": [
+        {
+          "binary_sha256": "d15be68a45325b7a1708ff14b87c0ec4ac7b8e1a143c232832b19076606fe12e",
+          "source_commit": "9acc87021b8923bb8562178ee3410d62852f0e62",
+          "source_tree_sha1": "bf4aa22d83f5a55f893ae8833fd9fcff1a7e82f8",
+          "evidence": "Profiling agent frozen manifest-latest.json; interval instrumentation matches prior patch identity",
+          "instrumented": true,
+          "lineage": "latest_upstream_75200_control_instrumented",
+          "base_anchor": "75200f107ee958227e87a96e67ad491567a4854a",
+          "production_source_commit": "f1dec0f067198959a1339e761f27f27ccc4179d1",
+          "measurement_groups": [
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "hello",
+              "label": "latest-control",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "rhello",
+              "label": "latest-control",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "tblgen",
+              "label": "latest-control",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "lld",
+              "label": "latest-control",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "clang",
+              "label": "latest-control",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "clang-s",
+              "label": "latest-control",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "ra",
+              "label": "latest-control",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "ra-s",
+              "label": "latest-control",
+              "sample_count": 12,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    },
+    "omnibus": {
+      "worktree": "/Users/callen/.codex/worktrees/mold-latest-omnibus-profile/mold",
+      "branch": "codex/mold-latest-omnibus-profile",
+      "commit": "5edabcfadbd9ff94ff4d9c778882e200f185a34a",
+      "dirty": false,
+      "frozen_revisions": [
+        {
+          "binary_sha256": "077b9de49b3ef25e46128bc78da9c9977efc9ba6e0a131389d6474ee37881155",
+          "source_commit": "5edabcfadbd9ff94ff4d9c778882e200f185a34a",
+          "source_tree_sha1": "66daf46aea5df8da242e5b380d4003a38424ba2b",
+          "evidence": "Profiling agent frozen manifest-latest.json; interval instrumentation matches prior patch identity",
+          "instrumented": true,
+          "lineage": "latest_upstream_75200_candidate_instrumented",
+          "base_anchor": "75200f107ee958227e87a96e67ad491567a4854a",
+          "production_source_commit": "8e522e5217adea17329e8e2eeb753fc482de4b16",
+          "measurement_groups": [
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "hello",
+              "label": "latest-omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "rhello",
+              "label": "latest-omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "tblgen",
+              "label": "latest-omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "lld",
+              "label": "latest-omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "clang",
+              "label": "latest-omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "clang-s",
+              "label": "latest-omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "ra",
+              "label": "latest-omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            },
+            {
+              "result_file": "final-phases-latest.json",
+              "case": "ra-s",
+              "label": "latest-omnibus",
+              "sample_count": 12,
+              "output_mode": "reused"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "attribution_artifacts": {
+    "ms3": {
+      "manifest": "measurement/ms3/manifest.json",
+      "details": {
+        "purpose": "untimed explanatory Vec allocation counts; separate from production timing",
+        "threads": 8,
+        "cpus": "0-7",
+        "cases": 8,
+        "runs_per_case_variant": 3,
+        "total_links": 48,
+        "golden_matches": 48,
+        "binaries": {
+          "baseline": {
+            "source_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+            "instrumented_binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e"
+          },
+          "candidate": {
+            "source_commit": "8db6b72248d04d4feefc0d788fea9f9c0cfbab0f",
+            "instrumented_binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8"
+          }
+        },
+        "capacity_definition": "sum of individual section capacities at end of split; not simultaneous peak RSS",
+        "moved_bytes_definition": "live payload size when Vec capacity and pointer both change; not measured hardware traffic",
+        "limits": "instrumentation, allocator state and worker count may affect realloc movement; no durations collected"
+      }
+    },
+    "cr2": {
+      "source": "notes/cr2.md",
+      "frozen_binary": {
+        "binary_sha256": "a9101dcbe9eb6e336f06c6fbb3e2439a0ef345c82889186559e9aa98962f521f",
+        "source_commit": "b6c6c09f58f9c7d83a5257b573df57dc6ea6f0e3",
+        "source_tree_sha1": "b33d9ed7d55037be06f277f961fa189ae63b4ba2",
+        "evidence": "CR2 owner message instrumented, untimed only",
+        "instrumented": true,
+        "lineage": "original_topic_baseline",
+        "base_anchor": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+        "measurement_groups": []
+      }
+    },
+    "cr5-counts": {
+      "file": "topics/cr5-counts/counts.json",
+      "source_commit": "6789e6c53fa9a82e27bc8295d88f212575a030e0",
+      "purpose": "untimed eligibility/work counts; instrumentation changes execution cost",
+      "binary_sha256": "1624bcf787c69f7f18892497037b23b7f29b0738e28fd37c346edc0f45fc99b2"
+    },
+    "s2-assignment-counts": {
+      "file": "topics/s2-assignment-counts/counts.json",
+      "source_commit": "412974f6cb927e2a35c2827b28ac371f4d5c9b5b",
+      "purpose": "untimed eligibility/work counts; instrumentation changes execution cost",
+      "binary_sha256": "afe0e7936086bb1d3b3660f205d77567f3611894155ef8ee77739185bec3e1a5"
+    },
+    "s2-candidate-counts": {
+      "file": "topics/s2-candidate-counts/counts.json",
+      "source_commit": "412974f6cb927e2a35c2827b28ac371f4d5c9b5b",
+      "purpose": "untimed eligibility/work counts; instrumentation changes execution cost",
+      "binary_sha256": "1d42f1118e4fe4551406da5e6fcea0e96835fea50ae6a42c5f202522d80d6bd1"
+    },
+    "s2-counts": {
+      "file": "topics/s2-counts/counts.json",
+      "source_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "purpose": "untimed eligibility/work counts; instrumentation changes execution cost",
+      "binary_sha256": "072c350d0164a0b4aa1d2dedebafba74be591d263dc38a5ca8dcf9c1baf492b5"
+    }
+  },
+  "limitations": [
+    "Validation is native x86_64 unless separately stated; no sanitizer, Windows runtime or cross-target runtime claim.",
+    "Current checkout commit may include test-only changes; only frozen_revisions.source_commit identifies each measured production binary.",
+    "Output hashes apply to last measured link per case/label, not every individual timed sample.",
+    "Fresh output means harness output unlink outside timing; input caches are not flushed.",
+    "Untimed attribution counters and sequential kernel profiles are not interleaved timing evidence.",
+    "H1 gains depended on the observed contention state; later reused-output controls also became much cheaper. Output-mode labels alone do not establish the cause or guarantee the earlier speedup.",
+    "Original-baseline topic measurements do not directly measure newly rebased publication heads."
+  ]
+}

@@ -1,0 +1,161 @@
+diff --git a/src/chunks/merged.rs b/src/chunks/merged.rs
+index 0ec571f9d555a167e66f96dc8fb51022661e4c23..692ae0299831f7982381b5b09ca40fbeb98b4e35 100644
+--- a/src/chunks/merged.rs
++++ b/src/chunks/merged.rs
+@@ -77,6 +77,8 @@ pub struct MergedSection<E: Target> {
+     /// The fragments once insertion is done.
+     pub fragments: FrozenMap<SectionFragment>,
+     pub estimation: u64,
++    // Final offsets indexed by the stable bucket ID, for debug relocations.
++    compact_offsets: Option<Box<[u64]>>,
+     pub resolved: bool,
+ 
+     /// The fragments in deterministic order within each hash-table shard.
+@@ -148,6 +150,7 @@ impl<E: Target> MergedSection<E> {
+             map: ConcurrentMap::default(),
+             fragments: FrozenMap::default(),
+             estimation: 0,
++            compact_offsets: None,
+             resolved: false,
+             shards: Vec::new(),
+             shard_offsets: Vec::new(),
+@@ -248,6 +251,24 @@ impl<E: Target> MergedSection<E> {
+     pub fn is_alloc(&self) -> bool {
+         self.hdr.shdr.sh_flags.get() & SHF_ALLOC as u64 != 0
+     }
++
++    #[inline]
++    pub fn fragment_offset(&self, entry: EntryId) -> u64 {
++        match &self.compact_offsets {
++            Some(offsets) => offsets[entry.raw() as usize],
++            None => self.fragments.get(entry).offset(),
++        }
++    }
++
++    #[inline]
++    pub fn prefetch_fragment(&self, entry: EntryId) {
++        match &self.compact_offsets {
++            Some(offsets) => {
++                crate::util::prefetch(std::ptr::from_ref(&offsets[entry.raw() as usize]).cast())
++            }
++            None => self.fragments.prefetch(entry),
++        }
++    }
+ }
+ 
+ /// Splits the members into fragments and deduplicates them.
+@@ -505,6 +526,21 @@ pub fn layout<E: Target>(msec: &mut MergedSection<E>) {
+     msec.hdr.shdr.sh_size.set(size);
+     msec.shards = shards;
+     msec.shard_offsets = shard_offsets;
++    // Layout can run again to place DWARF32 strings first. Rebuild only
++    // after all offsets are final for this layout, retaining original IDs.
++    msec.compact_offsets = if !msec.is_alloc()
++        && msec.hdr.name.starts_with(b".debug_")
++        && msec.hdr.shdr.sh_flags.get() & SHF_STRINGS as u64 != 0
++        && msec.estimation >= 4096
++    {
++        Some(
++            msec.fragments
++                .map_buckets(|frag| frag.map_or(0, SectionFragment::offset))
++                .into_boxed_slice(),
++        )
++    } else {
++        None
++    };
+ }
+ 
+ pub fn write_to<E: Target>(ctx: &Context<E>, id: MergedSectionId, buf: &mut [u8]) {
+@@ -545,3 +581,44 @@ pub fn write_to<E: Target>(ctx: &Context<E>, id: MergedSectionId, buf: &mut [u8]
+ pub fn print_stats<E: Target>(msec: &MergedSection<E>) {
+     out!("{} estimation={} actual={}", msec.hdr.name, msec.estimation, msec.fragments.len());
+ }
++
++#[cfg(test)]
++mod compact_offset_tests {
++    use super::*;
++    use crate::arch::X86_64;
++
++    #[test]
++    fn compact_offsets_follow_layout_and_dwarf32_relayout() {
++        let mut section = MergedSection::<X86_64>::new(
++            BStr::new(b".debug_str"),
++            (SHF_MERGE | SHF_STRINGS) as u64,
++            SHT_PROGBITS,
++            1,
++        );
++        section.map = ConcurrentMap::with_capacity(100);
++        section.estimation = 4096;
++        section.hdr.shdr.sh_addralign.set(8);
++        let first = section.insert(b"first\0", 1, 0, true);
++        let aligned = section.insert(b"aligned\0", 2, 3, true);
++        let last = section.insert(b"last\0", 16383, 0, true);
++        assert_eq!(section.insert(b"aligned\0", 2, 2, true), aligned);
++        section.fragments = std::mem::take(&mut section.map).freeze();
++        section.resolved = true;
++        layout(&mut section);
++        assert!(section.compact_offsets.is_some());
++        let before = section.fragment_offset(last);
++        for id in [first, aligned, last] {
++            assert_eq!(section.fragment_offset(id), section.fragments.get(id).offset());
++        }
++        section.fragments.get(last).set_32bit();
++        layout(&mut section);
++        assert_ne!(section.fragment_offset(last), before);
++        for id in [first, aligned, last] {
++            assert_eq!(section.fragment_offset(id), section.fragments.get(id).offset());
++        }
++        section.hdr.shdr.sh_flags.set((SHF_MERGE | SHF_STRINGS | SHF_ALLOC) as u64);
++        layout(&mut section);
++        assert!(section.compact_offsets.is_none());
++        assert_eq!(section.fragment_offset(last), section.fragments.get(last).offset());
++    }
++}
+diff --git a/src/context.rs b/src/context.rs
+index fa4ec764e3f234d19bb518d1301995f06ad4af85..0361669e57640f886521fd9dec57038b24d2c63e 100644
+--- a/src/context.rs
++++ b/src/context.rs
+@@ -417,7 +417,7 @@ impl<E: Target> Context<E> {
+ 
+     pub fn fragment_addr(&self, r: FragmentRef) -> u64 {
+         let msec = &self.merged_sections[r.section.index()];
+-        msec.hdr.shdr.sh_addr.get() + msec.fragments.get(r.entry).offset()
++        msec.hdr.shdr.sh_addr.get() + msec.fragment_offset(r.entry)
+     }
+ 
+     pub fn output_section(&self, id: OutputSectionId) -> &OutputSection<E> {
+diff --git a/src/input_sections.rs b/src/input_sections.rs
+index f34b97ff6c8520449b1837396b7011bbe0f1e3dd..06ab652a03a420d28d6526e263d726aefa66596a 100644
+--- a/src/input_sections.rs
++++ b/src/input_sections.rs
+@@ -799,7 +799,7 @@ impl<E: Target> InputSection<E> {
+             if cache.is_section { cache.value.wrapping_add(addend as u64) } else { cache.value };
+         let (frag, offset) = m.fragment_with_hint(value, &mut cache.next)?;
+         if let Some(&entry) = m.fragments.get(cache.next + 7) {
+-            ctx.merged_sections[m.parent.index()].fragments.prefetch(entry);
++            ctx.merged_sections[m.parent.index()].prefetch_fragment(entry);
+         }
+         Some((
+             FragmentRef { section: m.parent, entry: frag },
+diff --git a/src/util/concurrent_map.rs b/src/util/concurrent_map.rs
+index 87b47c063863229e7e8e03ccbea1917e8f56b4d3..293fd4108fb4c9c5aa1dc91b71b0d004df9a491b 100644
+--- a/src/util/concurrent_map.rs
++++ b/src/util/concurrent_map.rs
+@@ -364,6 +364,17 @@ impl<T> FrozenMap<T> {
+         self.0.value_at(id.0 as usize)
+     }
+ 
++    /// Builds a compact side table preserving the map's bucket identities.
++    pub(crate) fn map_buckets<U: Send>(&self, map: impl Fn(Option<&T>) -> U + Send + Sync) -> Vec<U>
++    where
++        T: Send + Sync,
++    {
++        (0..self.0.nbuckets)
++            .into_par_iter()
++            .map(|i| map(self.0.is_occupied(i).then(|| self.0.value_at(i))))
++            .collect()
++    }
++
+     #[inline]
+     pub(crate) fn prefetch(&self, id: EntryId) {
+         crate::util::prefetch(std::ptr::from_ref(self.0.entry(id.0 as usize)).cast());

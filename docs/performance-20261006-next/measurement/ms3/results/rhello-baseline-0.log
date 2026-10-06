@@ -1,0 +1,37 @@
+      unique_comdats=1
+     num_unique_cies=2
+            num_dsos=3
+             comdats=8
+  removed_comdat_mem=14
+            num_objs=26
+            num_cies=28
+       output_chunks=51
+    ms3_vec_sections=73
+ms3_vec_reallocations=158
+ms3_vec_moving_reallocations=158
+ ms3_vec_allocations=304
+            num_fdes=542
+         parsed_objs=647
+      undefined_syms=2934
+            dso_syms=4912
+         reloc_alloc=6078
+    regular_sections=6135
+        defined_syms=7450
+      input_sections=9246
+            all_syms=15713
+      merged_strings=17505
+    string_fragments=18811
+      reloc_nonalloc=133005
+ms3_vec_final_live_bytes=225732
+ms3_vec_live_bytes_moved=283488
+ms3_vec_final_capacity_bytes=291720
+   total_input_bytes=56004831
+.comment estimation=1627 actual=4
+.debug_gdb_scripts estimation=1626 actual=1
+.debug_str estimation=18371 actual=16843
+.rodata.str1.1 estimation=1755 actual=236
+.rodata.cst4 estimation=1737 actual=206
+.rodata.cst16 estimation=1698 actual=137
+.rodata.cst32 estimation=1633 actual=14
+.rodata.cst8 estimation=1658 actual=63
+.rodata.str1.2 estimation=1626 actual=1

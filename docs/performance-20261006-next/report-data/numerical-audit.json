@@ -1,0 +1,20 @@
+{
+  "utc": "2026-10-06T23:54:29.510210+00:00",
+  "result": "pass",
+  "summary_groups_checked": 423,
+  "exported_samples_checked": 12296,
+  "renderer_comparisons_checked": 267,
+  "saved_confidence_intervals_matched": 267,
+  "rendered_comparisons_sha256": "f9ac2b70bdfdb236728c4525f9fa596dbcaaec4ee1b6567578d0c71f341b7605",
+  "checks": [
+    "unique case/label/file identities and sample rounds",
+    "absolute medians and nearest-rank tails",
+    "CPU sum before median",
+    "per-link peak RSS unit conversion and max",
+    "sample metrics against raw links",
+    "renderer median ratios recomputed from raw samples",
+    "binary/output hashes, environment and output-mode identity",
+    "saved confidence intervals exactly match declared source"
+  ],
+  "limits": "This audit recomputes numerical inputs and matches declared interval evidence; it does not independently validate hardware counters or infer causality from host-state changes."
+}

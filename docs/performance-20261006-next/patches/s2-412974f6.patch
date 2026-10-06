@@ -1,0 +1,245 @@
+diff --git a/src/chunks/merged.rs b/src/chunks/merged.rs
+index 0ec571f9d555a167e66f96dc8fb51022661e4c23..3a7586bf6fae54bc9bbfb73aa4397a7195ac8939 100644
+--- a/src/chunks/merged.rs
++++ b/src/chunks/merged.rs
+@@ -343,51 +343,68 @@ pub fn resolve_sections<E: Target>(
+     options: ResolveOptions<'_>,
+ ) {
+     let ResolveOptions { allocated_only, gc_sections, comment, cmdline_args, timers } = options;
+-    let t = timers.start("split_contents");
+-    let estimates: Vec<Option<HyperLogLog>> = sections
+-        .par_iter()
+-        .zip(members.par_iter_mut())
+-        .map(|(section, members)| {
+-            (!section.resolved && (!allocated_only || section.is_alloc())).then(|| {
+-                members
+-                    .par_iter_mut()
+-                    .fold(HyperLogLog::default, |mut sketch, member| {
+-                        member.merge_info.split_contents::<E>(
+-                            &display_file(member.filename, member.archive_name),
+-                            member.data,
+-                            member.name,
+-                            section,
+-                            &mut sketch,
+-                        );
+-                        sketch
+-                    })
+-                    .reduce(HyperLogLog::default, |a, b| a.merged(&b))
+-            })
+-        })
+-        .collect();
+-    drop(t);
+-
+-    // We aim for a 2/3 occupancy ratio
+-    let t = timers.start("resize");
+-    sections.par_iter_mut().zip(&estimates).for_each(|(section, estimate)| {
+-        if let Some(estimate) = estimate {
+-            section.estimation = estimate.cardinality();
+-            section.map = ConcurrentMap::with_capacity(section.estimation as usize * 3 / 2);
+-        }
+-    });
+-    drop(t);
+-
+-    let t = timers.start("resolve_contents");
+-    sections
+-        .par_iter()
+-        .zip(members.par_iter_mut())
++    let workers = rayon::current_num_threads();
++    let bytes: usize = sections
++        .iter()
++        .zip(members.iter())
+         .filter(|(section, _)| !section.resolved && (!allocated_only || section.is_alloc()))
+-        .for_each(|(section, members)| {
+-            members.par_iter_mut().for_each(|member| {
+-                member.merge_info.resolve_contents(member.data, section, gc_sections);
+-            });
++        .flat_map(|(_, members)| members.iter())
++        .map(|member| member.data.len())
++        .sum();
++    // Fixed ownership trades work stealing for reuse of the fragment metadata
++    // created by the preceding split pass. Amortize its setup on large inputs.
++    if workers > 1 && bytes >= 8 * 1024 * 1024 {
++        static LOCAL_BYTES: crate::util::perf::Counter =
++            crate::util::perf::Counter::new("local_merge_bytes");
++        LOCAL_BYTES.add(bytes as i64);
++        resolve_with_local_ownership(sections, members, allocated_only, gc_sections, timers);
++    } else {
++        let t = timers.start("split_contents");
++        let estimates: Vec<Option<HyperLogLog>> = sections
++            .par_iter()
++            .zip(members.par_iter_mut())
++            .map(|(section, members)| {
++                (!section.resolved && (!allocated_only || section.is_alloc())).then(|| {
++                    members
++                        .par_iter_mut()
++                        .fold(HyperLogLog::default, |mut sketch, member| {
++                            member.merge_info.split_contents::<E>(
++                                &display_file(member.filename, member.archive_name),
++                                member.data,
++                                member.name,
++                                section,
++                                &mut sketch,
++                            );
++                            sketch
++                        })
++                        .reduce(HyperLogLog::default, |a, b| a.merged(&b))
++                })
++            })
++            .collect();
++        drop(t);
++
++        // We aim for a 2/3 occupancy ratio
++        let t = timers.start("resize");
++        sections.par_iter_mut().zip(&estimates).for_each(|(section, estimate)| {
++            if let Some(estimate) = estimate {
++                section.estimation = estimate.cardinality();
++                section.map = ConcurrentMap::with_capacity(section.estimation as usize * 3 / 2);
++            }
+         });
+-    drop(t);
++        drop(t);
++
++        let t = timers.start("resolve_contents");
++        sections
++            .par_iter()
++            .zip(members.par_iter_mut())
++            .filter(|(section, _)| !section.resolved && (!allocated_only || section.is_alloc()))
++            .for_each(|(section, members)| {
++                members.par_iter_mut().for_each(|member| {
++                    member.merge_info.resolve_contents(member.data, section, gc_sections);
++                });
++            });
++        drop(t);
++    }
+ 
+     sections
+         .par_iter_mut()
+@@ -410,6 +427,103 @@ pub fn resolve_sections<E: Target>(
+         });
+ }
+ 
++/// Runs both member passes with identical ownership. The only redistributed
++/// values are at most one contiguous member range per section and worker;
++/// fragment bytes, hashes, and offsets stay in their original allocations.
++fn resolve_with_local_ownership<E: Target>(
++    sections: &mut [MergedSection<E>],
++    members: &mut [Vec<ResolveMember<'_>>],
++    allocated_only: bool,
++    gc_sections: bool,
++    timers: &Timers,
++) {
++    use std::sync::Mutex;
++    let t = timers.start("assign_merge_workers");
++    let workers = rayon::current_num_threads();
++    let mut jobs: Vec<Vec<(usize, &mut [ResolveMember<'_>])>> =
++        (0..workers).map(|_| Vec::new()).collect();
++    let mut estimates: Vec<Option<HyperLogLog>> = sections
++        .iter()
++        .map(|section| {
++            (!section.resolved && (!allocated_only || section.is_alloc()))
++                .then(HyperLogLog::default)
++        })
++        .collect();
++    for (id, members) in members.iter_mut().enumerate() {
++        if estimates[id].is_none() {
++            continue;
++        }
++        let mut bytes: usize = members.iter().map(|member| member.data.len()).sum();
++        let mut remaining = members.as_mut_slice();
++        for (worker, jobs) in jobs.iter_mut().enumerate() {
++            if remaining.is_empty() {
++                break;
++            }
++            let target =
++                if worker + 1 == workers { usize::MAX } else { bytes.div_ceil(workers - worker) };
++            let mut end = 0;
++            let mut size = 0;
++            while end < remaining.len() && (end == 0 || size < target) {
++                size += remaining[end].data.len();
++                end += 1;
++            }
++            let part = remaining.split_off_mut(..end).unwrap();
++            jobs.push((id, part));
++            bytes -= size;
++        }
++        debug_assert!(remaining.is_empty());
++    }
++    // Each mutex is acquired only by its matching broadcast worker. There is
++    // no nested Rayon work or worker-local guard while a job slot is held.
++    let jobs: Vec<_> = jobs.into_iter().map(Mutex::new).collect();
++    drop(t);
++
++    let t = timers.start("split_contents");
++    let parts = rayon::broadcast(|worker| {
++        let mut jobs = jobs[worker.index()].lock().unwrap();
++        jobs.iter_mut()
++            .map(|(id, members)| {
++                let mut sketch = HyperLogLog::default();
++                for member in members.iter_mut() {
++                    member.merge_info.split_contents::<E>(
++                        &display_file(member.filename, member.archive_name),
++                        member.data,
++                        member.name,
++                        &sections[*id],
++                        &mut sketch,
++                    );
++                }
++                (*id, sketch)
++            })
++            .collect::<Vec<_>>()
++    });
++    for (id, sketch) in parts.into_iter().flatten() {
++        let estimate = estimates[id].take().unwrap();
++        estimates[id] = Some(estimate.merged(&sketch));
++    }
++    drop(t);
++
++    let t = timers.start("resize");
++    sections.par_iter_mut().zip(&estimates).for_each(|(section, estimate)| {
++        if let Some(estimate) = estimate {
++            section.estimation = estimate.cardinality();
++            section.map = ConcurrentMap::with_capacity(section.estimation as usize * 3 / 2);
++        }
++    });
++    drop(t);
++
++    let t = timers.start("resolve_contents");
++    rayon::broadcast(|worker| {
++        let mut jobs = jobs[worker.index()].lock().unwrap();
++        for (id, members) in jobs.iter_mut() {
++            for member in members.iter_mut() {
++                member.merge_info.resolve_contents(member.data, &sections[*id], gc_sections);
++            }
++        }
++    });
++    drop(t);
++}
++
+ // Add strings to .comment
+ fn add_comment_strings<E: Target>(
+     msec: &MergedSection<E>,
+diff --git a/tests/arch-x86_64-merge-local-ownership.sh b/tests/arch-x86_64-merge-local-ownership.sh
+new file mode 100755
+index 0000000000000000000000000000000000000000..f787069c48fb92153c488dfafff5794f1db8ada7
+--- /dev/null
++++ b/tests/arch-x86_64-merge-local-ownership.sh
+@@ -0,0 +1,19 @@
++#!/usr/bin/env bash
++. $(dirname $0)/common.inc
++
++# More than 8 MiB of mergeable input enables stable ownership. There are fewer
++# members than workers in the last run; every input must still be processed.
++for i in $(seq 1 8); do
++  cat <<EOF | $CC -c -xassembler -o $t/$i.o -
++.section .debug_str,"MS",@progbits,1
++.rept 65536
++.asciz "stable-input-locality-$i"
++.endr
++EOF
++done
++echo '.globl _start; _start: .byte 0' | $CC -c -xassembler -o $t/start.o -
++./mold --threads=1 --build-id=sha256 -o $t/serial $t/*.o
++for threads in 2 8 32; do
++  ./mold --threads=$threads --build-id=sha256 -o $t/parallel $t/*.o
++  cmp $t/serial $t/parallel
++done

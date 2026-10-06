@@ -1,0 +1,250 @@
+diff --git a/src/arch/x86_64.rs b/src/arch/x86_64.rs
+index 9bd7d84241874db3fe0367f3e3399be8576e06f7..73acccbeebcf271ee3cfe6e3aa785ca7bff64c5a 100644
+--- a/src/arch/x86_64.rs
++++ b/src/arch/x86_64.rs
+@@ -522,68 +522,109 @@ impl Target for X86_64 {
+     fn apply_reloc_nonalloc(ctx: &Context<Self>, isec: &InputSection<Self>, buf: &mut [u8]) {
+         let mut fragment_cache = crate::input_sections::FragmentLookup::default();
+         let file = &ctx.objs[isec.file.index()];
+-        for rel in isec.relocations(ctx) {
+-            let Some(NonAllocReloc { sym, s, a, frag }) =
+-                isec.resolve_nonalloc(ctx, file, &rel, &mut fragment_cache)
+-            else {
+-                continue;
+-            };
+-            let off = rel.r_offset() as usize;
+-
+-            let check = |val: i64, lo: i64, hi: i64| isec.check_range(ctx, &rel, val, lo, hi);
+-            let write32 = |buf: &mut [u8], val: u64| {
+-                check(val as i64, 0, 1 << 32);
+-                write_ul32(&mut buf[off..], val as u32);
+-            };
+-            let write32s = |buf: &mut [u8], val: u64| {
+-                check(val as i64, -(1 << 31), 1 << 31);
+-                write_ul32(&mut buf[off..], val as u32);
+-            };
+-
+-            match rel.r_type() {
+-                R_X86_64_8 => {
+-                    check(s.wrapping_add(a) as i64, 0, 1 << 8);
+-                    buf[off] = s.wrapping_add(a) as u8;
+-                }
+-                R_X86_64_16 => {
+-                    check(s.wrapping_add(a) as i64, 0, 1 << 16);
+-                    write_ul16(&mut buf[off..], s.wrapping_add(a) as u16);
+-                }
+-                R_X86_64_32 => write32(buf, s.wrapping_add(a)),
+-                R_X86_64_32S => write32s(buf, s.wrapping_add(a)),
+-                R_X86_64_64 => match isec.tombstone_with_file(ctx, file, sym, frag) {
+-                    Some(v) => write_ul64(&mut buf[off..], v),
+-                    None => write_ul64(&mut buf[off..], s.wrapping_add(a)),
+-                },
+-                R_X86_64_DTPOFF32 => match isec.tombstone_with_file(ctx, file, sym, frag) {
+-                    Some(v) => write_ul32(&mut buf[off..], v as u32),
+-                    None => write32s(buf, s.wrapping_add(a).wrapping_sub(ctx.dtp_addr)),
+-                },
+-                R_X86_64_DTPOFF64 => match isec.tombstone_with_file(ctx, file, sym, frag) {
+-                    Some(v) => write_ul64(&mut buf[off..], v),
+-                    None => {
+-                        write_ul64(&mut buf[off..], s.wrapping_add(a).wrapping_sub(ctx.dtp_addr))
++        let mut rels = isec.relocations(ctx);
++        // Ordinary RELA entries can be decoded without reporting errors.
++        // Keep CREL streaming one record at a time so decoder diagnostics
++        // retain their original ordering relative to relocation diagnostics.
++        let lookahead = rels.len() >= 32
++            && isec
++                .relsec_idx()
++                .is_some_and(|i| file.base.shdrs[i as usize].sh_type.get() != SHT_CREL);
++        let mut window = [ElfRel::<Self>::default(); 16];
++        let capacity = if lookahead { window.len() } else { 1 };
++        loop {
++            let mut count = 0;
++            while count < capacity {
++                let Some(rel) = rels.next() else { break };
++                window[count] = rel;
++                count += 1;
++            }
++            if count == 0 {
++                break;
++            }
++            if lookahead {
++                for rel in &window[..count] {
++                    let Some(sym) = file.base.elf_syms.get(rel.r_sym() as usize) else { continue };
++                    let shndx = sym.st_shndx();
++                    // Extended and special section indices retain the normal
++                    // lookup path; speculation must never diagnose them.
++                    if shndx == SHN_UNDEF || shndx >= SHN_LORESERVE {
++                        continue;
++                    }
++                    if let Some(merged) = file.merge_info(shndx as usize) {
++                        let offset = if sym.st_type() == STT_SECTION {
++                            sym.st_value().wrapping_add(rel.r_addend() as u64)
++                        } else {
++                            sym.st_value()
++                        };
++                        merged.prefetch_target(ctx, offset);
+                     }
+-                },
+-                R_X86_64_GOTOFF64 => write_ul64(
+-                    &mut buf[off..],
+-                    s.wrapping_add(a).wrapping_sub(ctx.gotplt.shdr.sh_addr.get()),
+-                ),
+-                R_X86_64_GOTPC64 => {
+-                    // PC-relative relocation doesn't make sense for non-memory-allocated
+-                    // section, but GCC 6.3.0 seems to create this reloc for
+-                    // _GLOBAL_OFFSET_TABLE_.
+-                    write_ul64(&mut buf[off..], ctx.gotplt.shdr.sh_addr.get().wrapping_add(a))
+                 }
+-                R_X86_64_SIZE32 => write32(buf, sym.esym(ctx).st_size().wrapping_add(a)),
+-                R_X86_64_SIZE64 => {
+-                    write_ul64(&mut buf[off..], sym.esym(ctx).st_size().wrapping_add(a))
++            }
++            for &rel in &window[..count] {
++                let Some(NonAllocReloc { sym, s, a, frag }) =
++                    isec.resolve_nonalloc(ctx, file, &rel, &mut fragment_cache)
++                else {
++                    continue;
++                };
++                let off = rel.r_offset() as usize;
++
++                let check = |val: i64, lo: i64, hi: i64| isec.check_range(ctx, &rel, val, lo, hi);
++                let write32 = |buf: &mut [u8], val: u64| {
++                    check(val as i64, 0, 1 << 32);
++                    write_ul32(&mut buf[off..], val as u32);
++                };
++                let write32s = |buf: &mut [u8], val: u64| {
++                    check(val as i64, -(1 << 31), 1 << 31);
++                    write_ul32(&mut buf[off..], val as u32);
++                };
++
++                match rel.r_type() {
++                    R_X86_64_8 => {
++                        check(s.wrapping_add(a) as i64, 0, 1 << 8);
++                        buf[off] = s.wrapping_add(a) as u8;
++                    }
++                    R_X86_64_16 => {
++                        check(s.wrapping_add(a) as i64, 0, 1 << 16);
++                        write_ul16(&mut buf[off..], s.wrapping_add(a) as u16);
++                    }
++                    R_X86_64_32 => write32(buf, s.wrapping_add(a)),
++                    R_X86_64_32S => write32s(buf, s.wrapping_add(a)),
++                    R_X86_64_64 => match isec.tombstone_with_file(ctx, file, sym, frag) {
++                        Some(v) => write_ul64(&mut buf[off..], v),
++                        None => write_ul64(&mut buf[off..], s.wrapping_add(a)),
++                    },
++                    R_X86_64_DTPOFF32 => match isec.tombstone_with_file(ctx, file, sym, frag) {
++                        Some(v) => write_ul32(&mut buf[off..], v as u32),
++                        None => write32s(buf, s.wrapping_add(a).wrapping_sub(ctx.dtp_addr)),
++                    },
++                    R_X86_64_DTPOFF64 => match isec.tombstone_with_file(ctx, file, sym, frag) {
++                        Some(v) => write_ul64(&mut buf[off..], v),
++                        None => write_ul64(
++                            &mut buf[off..],
++                            s.wrapping_add(a).wrapping_sub(ctx.dtp_addr),
++                        ),
++                    },
++                    R_X86_64_GOTOFF64 => write_ul64(
++                        &mut buf[off..],
++                        s.wrapping_add(a).wrapping_sub(ctx.gotplt.shdr.sh_addr.get()),
++                    ),
++                    R_X86_64_GOTPC64 => {
++                        // PC-relative relocation doesn't make sense for non-memory-allocated
++                        // section, but GCC 6.3.0 seems to create this reloc for
++                        // _GLOBAL_OFFSET_TABLE_.
++                        write_ul64(&mut buf[off..], ctx.gotplt.shdr.sh_addr.get().wrapping_add(a))
++                    }
++                    R_X86_64_SIZE32 => write32(buf, sym.esym(ctx).st_size().wrapping_add(a)),
++                    R_X86_64_SIZE64 => {
++                        write_ul64(&mut buf[off..], sym.esym(ctx).st_size().wrapping_add(a))
++                    }
++                    _ => fatal!(
++                        "{}: invalid relocation for non-allocated sections: {}",
++                        isec.display(file),
++                        rel.type_name::<Self>()
++                    ),
+                 }
+-                _ => fatal!(
+-                    "{}: invalid relocation for non-allocated sections: {}",
+-                    isec.display(file),
+-                    rel.type_name::<Self>()
+-                ),
+             }
+         }
+     }
+diff --git a/src/input_sections.rs b/src/input_sections.rs
+index f34b97ff6c8520449b1837396b7011bbe0f1e3dd..4c8bfd07988ebe90c67f7df12f4ced985ee9cb98 100644
+--- a/src/input_sections.rs
++++ b/src/input_sections.rs
+@@ -1634,6 +1634,17 @@ impl MergeInfo {
+         self.hashes = Vec::new();
+     }
+ 
++    /// Prefetches the actual target of a future nonallocated relocation.
++    /// This performs no symbol resolution, diagnostics, or state mutation.
++    #[inline]
++    pub(crate) fn prefetch_target<E: Target>(&self, ctx: &Context<E>, offset: u64) {
++        if let Some(idx) = self.frag_offsets.partition_point(|&o| o as u64 <= offset).checked_sub(1)
++            && let Some(&entry) = self.fragments.get(idx)
++        {
++            ctx.merged_sections[self.parent.index()].fragments.prefetch(entry);
++        }
++    }
++
+     /// Finds the fragment containing `offset` and the offset within it.
+     #[inline]
+     pub fn fragment(&self, offset: u64) -> Option<(EntryId, i64)> {
+diff --git a/tests/arch-x86_64-nonalloc-window.sh b/tests/arch-x86_64-nonalloc-window.sh
+new file mode 100755
+index 0000000000000000000000000000000000000000..fabbdff5a873a2949ac8ff6c4da4b52c28644d23
+--- /dev/null
++++ b/tests/arch-x86_64-nonalloc-window.sh
+@@ -0,0 +1,49 @@
++#!/usr/bin/env bash
++. $(dirname $0)/common.inc
++
++[ $MACHINE = x86_64 ] || skip
++
++# A lookahead window must preserve relocation order, including overlapping
++# writes and a later block overwriting an earlier block's result.
++cat <<'ASM' | $CC -c -o $t/a.o -xassembler -
++.globl _start
++_start:
++  ret
++.section .debug_a,"",@progbits
++a: .byte 0
++.section .nonalloc,"",@progbits
++.quad 0
++.reloc 0, R_X86_64_64, a + 42
++.reloc 0, R_X86_64_32, a + 7
++.rept 128
++.quad a + 11
++.endr
++.reloc 0, R_X86_64_64, a + 99
++ASM
++
++./mold -o $t/exe $t/a.o
++$OBJCOPY --dump-section .nonalloc=$t/data $t/exe
++od -An -tu8 -v $t/data | xargs > $t/words
++{
++  printf '99'
++  for i in $(seq 1 128); do printf ' 11'; done
++  printf '\n'
++} | cmp - $t/words
++
++# Range diagnostics retain their original relocation order.
++cat <<'ASM' | $CC -c -o $t/b.o -xassembler -
++.globl _start
++_start:
++  ret
++.section .nonalloc,"",@progbits
++.byte limit
++.short limit
++.long limit
++.long 0
++.reloc 7, R_X86_64_32S, limit
++ASM
++
++not ./mold -o $t/bad --defsym=limit=4294967296 $t/b.o > $t/log 2>&1
++for ty in R_X86_64_8 R_X86_64_16 R_X86_64_32 R_X86_64_32S; do
++  grep "relocation $ty against limit out of range" $t/log
++done

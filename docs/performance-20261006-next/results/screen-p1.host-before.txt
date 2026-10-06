@@ -1,0 +1,20 @@
+2026-10-06T16:57:24-05:00
+ 16:57:24 up 25 days,  3:21, 28 users,  load average: 5.10, 2.61, 4.55
+               total        used        free      shared  buff/cache   available
+Mem:           250Gi        26Gi       9.3Gi        17Mi       216Gi       223Gi
+Swap:          8.0Gi       1.3Gi       6.7Gi
+    PID COMMAND         %CPU %MEM
+2952212 cand4           99.8  3.5
+2879522 .qemu-system-x8 12.9  3.2
+   2543 warp-svc         1.2  0.3
+1555934 omp              0.6  0.1
+   3850 dockerd          0.6  0.0
+   3185 containerd       0.5  0.0
+   5178 gitea            0.3  0.0
+   4550 containerd-shim  0.2  0.0
+   4553 containerd-shim  0.2  0.0
+2952747 (udev-worker)    0.1  0.0
+2952761 (udev-worker)    0.1  0.0
+2952655 (udev-worker)    0.1  0.0
+2952677 (udev-worker)    0.1  0.0
+2952705 (udev-worker)    0.1  0.0

@@ -1,0 +1,196 @@
+{
+  "source_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+  "purpose": "untimed eligibility/work counts; instrumentation changes execution cost",
+  "cases": {
+    "hello": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/s2-counts",
+        "@response.txt",
+        "-o",
+        "codex-s2-counts.out",
+        "--no-fork",
+        "--stats"
+      ],
+      "counts": {
+        "s2_handoff_sections": 4,
+        "s2_handoff_fragments": 7,
+        "s2_same_worker_fragments": 7,
+        "s2_same_cpu_fragments": 7,
+        "s2_same_l3_fragments": 7
+      },
+      "output_sha256": "7277a7318c05b3cb221c9ddc1995bba0deea7b291589fb6ce0ccf8f3857e3d80",
+      "golden_matches": true
+    },
+    "rhello": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/s2-counts",
+        "@response.txt",
+        "-o",
+        "codex-s2-counts.out",
+        "--no-fork",
+        "--stats"
+      ],
+      "counts": {
+        "s2_cross_l3_fragments": 6,
+        "s2_handoff_sections": 73,
+        "s2_same_worker_fragments": 18805,
+        "s2_same_cpu_fragments": 18805,
+        "s2_same_l3_fragments": 18805,
+        "s2_handoff_fragments": 18811
+      },
+      "output_sha256": "967631a389972f215d294980db400e57627ca2a4fdc60a7316b5bbeb7cf998b6",
+      "golden_matches": true
+    },
+    "tblgen": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/s2-counts",
+        "@response.txt",
+        "-o",
+        "codex-s2-counts.out",
+        "--no-fork",
+        "--stats"
+      ],
+      "counts": {
+        "s2_resolve_endpoint_migrations": 1,
+        "s2_handoff_sections": 371,
+        "s2_same_worker_fragments": 32151,
+        "s2_same_cpu_fragments": 32151,
+        "s2_same_l3_fragments": 49951,
+        "s2_cross_l3_fragments": 188655,
+        "s2_handoff_fragments": 238606
+      },
+      "output_sha256": "63b068abefeb622662818685a0794d8e5c7e8a5d651213eda3577810ea3369cd",
+      "golden_matches": true
+    },
+    "lld": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/s2-counts",
+        "@response.txt",
+        "-o",
+        "codex-s2-counts.out",
+        "--no-fork",
+        "--stats"
+      ],
+      "counts": {
+        "s2_resolve_endpoint_migrations": 1,
+        "s2_handoff_sections": 6763,
+        "s2_same_cpu_fragments": 443367,
+        "s2_same_worker_fragments": 443528,
+        "s2_same_l3_fragments": 2479374,
+        "s2_cross_l3_fragments": 6895594,
+        "s2_handoff_fragments": 9374968
+      },
+      "output_sha256": "5de7d2ef5dc164818fdbdb3d53d1f433c4bf90a9755bdce13b88e694fafcb763",
+      "golden_matches": true
+    },
+    "clang": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/s2-counts",
+        "@response.txt",
+        "-o",
+        "codex-s2-counts.out",
+        "--no-fork",
+        "--stats"
+      ],
+      "counts": {
+        "s2_resolve_endpoint_migrations": 1,
+        "s2_split_endpoint_migrations": 2,
+        "s2_handoff_sections": 9298,
+        "s2_same_cpu_fragments": 212449,
+        "s2_same_worker_fragments": 249998,
+        "s2_same_l3_fragments": 4235371,
+        "s2_cross_l3_fragments": 12098316,
+        "s2_handoff_fragments": 16333687
+      },
+      "output_sha256": "3fa34d9efa75ab05e4a553e9116f5943bd6a3defa8ba3b3c017b1aef37216c88",
+      "golden_matches": true
+    },
+    "clang-s": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/s2-counts",
+        "@response.txt",
+        "-o",
+        "codex-s2-counts.out",
+        "--no-fork",
+        "--stats",
+        "--strip-debug"
+      ],
+      "counts": {
+        "s2_same_worker_fragments": 1580,
+        "s2_same_cpu_fragments": 1848,
+        "s2_handoff_sections": 5206,
+        "s2_same_l3_fragments": 52626,
+        "s2_cross_l3_fragments": 129606,
+        "s2_handoff_fragments": 182232
+      },
+      "output_sha256": "982ccb2f6847c86c8c5fc9e63631c3b3fb4276b3ecf4a808c55100a032a80c28",
+      "golden_matches": true
+    },
+    "ra": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/s2-counts",
+        "@response.txt",
+        "-o",
+        "codex-s2-counts.out",
+        "--no-fork",
+        "--stats"
+      ],
+      "counts": {
+        "s2_handoff_sections": 17576,
+        "s2_same_worker_fragments": 64916,
+        "s2_same_cpu_fragments": 64931,
+        "s2_same_l3_fragments": 261484,
+        "s2_cross_l3_fragments": 909918,
+        "s2_handoff_fragments": 1171402
+      },
+      "output_sha256": "c54bb48368d1b75376996429c790ab2e8895d835a4a9c466d93bfa77274d4947",
+      "golden_matches": true
+    },
+    "ra-s": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/s2-counts",
+        "@response.txt",
+        "-o",
+        "codex-s2-counts.out",
+        "--no-fork",
+        "--stats",
+        "--strip-debug"
+      ],
+      "counts": {
+        "s2_same_worker_fragments": 821,
+        "s2_same_cpu_fragments": 821,
+        "s2_same_l3_fragments": 7819,
+        "s2_handoff_sections": 11921,
+        "s2_cross_l3_fragments": 24752,
+        "s2_handoff_fragments": 32571
+      },
+      "output_sha256": "5b7b53af257f19a253831ab081923075b0f10190728da4aa399eab3b15860b6c",
+      "golden_matches": true
+    }
+  },
+  "binary_sha256": "072c350d0164a0b4aa1d2dedebafba74be591d263dc38a5ca8dcf9c1baf492b5"
+}

@@ -1,0 +1,192 @@
+diff --git a/src/driver.rs b/src/driver.rs
+index 143001187cc46e9e4c502925946a4518ff40b1f7..1414de3efd2725e9afb64017c213d3ac16a68c4b 100644
+--- a/src/driver.rs
++++ b/src/driver.rs
+@@ -553,6 +553,8 @@ pub fn link<E: Target>(cmdline: Cmdline) -> LinkResult {
+     // Beyond this, you can assume that symbol addresses including their
+     // GOT or PLT addresses have a correct final value.
+ 
++    passes::prepare_nonalloc_fragment_offsets(&mut ctx);
++
+     // If --compress-debug-sections is given, compress .debug_* sections
+     // using zlib or zstd.
+     if ctx.args.compress_debug_sections != crate::cmdline::DebugCompression::None {
+diff --git a/src/input_sections.rs b/src/input_sections.rs
+index f34b97ff6c8520449b1837396b7011bbe0f1e3dd..f3bdc0ed10f9433e45d962f489a98282560b90b2 100644
+--- a/src/input_sections.rs
++++ b/src/input_sections.rs
+@@ -618,7 +618,15 @@ impl<E: Target> InputSection<E> {
+         let sym = &ctx.symbols[file.base.symbols[rel.r_sym() as usize]];
+         let frag = self.fragment_with_file(ctx, file, rel, cache);
+         let (s, a) = match frag {
+-            Some((frag, addend)) => (ctx.fragment_addr(frag), addend as u64),
++            Some((frag, addend)) => {
++                let addr = match cache.final_offset {
++                    Some(offset) => {
++                        ctx.merged_sections[frag.section.index()].hdr.shdr.sh_addr.get() + offset
++                    }
++                    None => ctx.fragment_addr(frag),
++                };
++                (addr, addend as u64)
++            }
+             None => (sym.addr(ctx), self.rel_addend(rel) as u64),
+         };
+         Some(NonAllocReloc { sym, s, a, frag: frag.map(|(f, _)| f) })
+@@ -780,6 +788,7 @@ impl<E: Target> InputSection<E> {
+         cache: &mut FragmentLookup<'a>,
+     ) -> Option<(FragmentRef, i64)> {
+         debug_assert!(!self.is_alloc());
++        cache.final_offset = None;
+         if cache.sym_idx != Some(rel.r_sym()) {
+             cache.sym_idx = Some(rel.r_sym());
+             cache.section = None;
+@@ -798,8 +807,13 @@ impl<E: Target> InputSection<E> {
+         let value =
+             if cache.is_section { cache.value.wrapping_add(addend as u64) } else { cache.value };
+         let (frag, offset) = m.fragment_with_hint(value, &mut cache.next)?;
+-        if let Some(&entry) = m.fragments.get(cache.next + 7) {
+-            ctx.merged_sections[m.parent.index()].fragments.prefetch(entry);
++        cache.final_offset = m.final_offsets.get(cache.next - 1).copied();
++        if m.final_offsets.is_empty() {
++            if let Some(&entry) = m.fragments.get(cache.next + 7) {
++                ctx.merged_sections[m.parent.index()].fragments.prefetch(entry);
++            }
++        } else if let Some(offset) = m.final_offsets.get(cache.next + 7) {
++            crate::util::prefetch(std::ptr::from_ref(offset).cast());
+         }
+         Some((
+             FragmentRef { section: m.parent, entry: frag },
+@@ -1506,6 +1520,9 @@ pub struct MergeInfo {
+     pub fragments: Vec<EntryId>,
+     frag_offsets: Vec<u32>,
+     hashes: Vec<u64>,
++    // Final merged offsets in input-fragment order. Empty until final layout,
++    // and for sections outside the debug-string fast path.
++    final_offsets: Box<[u64]>,
+ }
+ 
+ /// Cached section-symbol lookup for one non-allocated relocation stream.
+@@ -1518,6 +1535,7 @@ pub struct FragmentLookup<'a> {
+     value: u64,
+     is_section: bool,
+     next: usize,
++    final_offset: Option<u64>,
+ }
+ 
+ impl MergeInfo {
+@@ -1537,6 +1555,7 @@ impl MergeInfo {
+             fragments: Vec::new(),
+             frag_offsets: Vec::new(),
+             hashes: Vec::new(),
++            final_offsets: Box::default(),
+         }
+     }
+ 
+@@ -1634,6 +1653,15 @@ impl MergeInfo {
+         self.hashes = Vec::new();
+     }
+ 
++    /// Translates stable fragment IDs after all merged-section layout passes.
++    pub(crate) fn prepare_final_offsets<E: Target>(
++        &mut self,
++        parent: &crate::chunks::merged::MergedSection<E>,
++    ) {
++        self.final_offsets =
++            self.fragments.iter().map(|&id| parent.fragments.get(id).offset()).collect();
++    }
++
+     /// Finds the fragment containing `offset` and the offset within it.
+     #[inline]
+     pub fn fragment(&self, offset: u64) -> Option<(EntryId, i64)> {
+@@ -1862,6 +1890,7 @@ mod tests {
+             fragments,
+             frag_offsets: (0..12).map(|i| 5 + i * 3).collect(),
+             hashes: Vec::new(),
++            final_offsets: Box::default(),
+         };
+         let mut next = 0;
+         for offset in [0, 5, 8, 11, 11, 6, 35, 38, 35, 5, 4, 8] {
+diff --git a/src/passes.rs b/src/passes.rs
+index 4c25490502327c2e3c7f355a01e9b950dde30feb..2df7b47f9111821ee8efa60b7cf79a0cad7445c1 100644
+--- a/src/passes.rs
++++ b/src/passes.rs
+@@ -830,6 +830,28 @@ fn merged_resolve_members<E: Target>(
+         })
+ }
+ 
++/// Copies final debug-string offsets into each input's sequential fragment
++/// table. Run after DWARF32 ordering and before debug compression relocates it.
++pub fn prepare_nonalloc_fragment_offsets<E: Target>(ctx: &mut Context<E>) {
++    let _t = ctx.timer("prepare_fragment_offsets");
++    static TRANSLATED: Counter = Counter::new("translated_debug_fragments");
++    let Context { objs, merged_sections, .. } = ctx;
++    objs.par_iter_mut().for_each(|file| {
++        for (info, _) in file.sections.merge_infos_with_inputs_mut() {
++            let parent = &merged_sections[info.parent.index()];
++            if !parent.is_alloc()
++                && parent.hdr.name.starts_with(b".debug_")
++                && parent.hdr.shdr.sh_flags.get() & SHF_STRINGS as u64 != 0
++                && parent.estimation >= 4096
++                && info.fragments.len() >= 32
++            {
++                info.prepare_final_offsets(parent);
++                TRANSLATED.add(info.fragments.len() as i64);
++            }
++        }
++    });
++}
++
+ pub fn create_merged_sections<E: Target>(ctx: &mut Context<E>) {
+     let _t = ctx.timer("create_merged_sections");
+ 
+diff --git a/tests/arch-x86_64-debug-fragment-offsets.sh b/tests/arch-x86_64-debug-fragment-offsets.sh
+new file mode 100755
+index 0000000000000000000000000000000000000000..e2cea4c183baba553ea5f26f6e2c8d5f4271fe8f
+--- /dev/null
++++ b/tests/arch-x86_64-debug-fragment-offsets.sh
+@@ -0,0 +1,45 @@
++#!/usr/bin/env bash
++. $(dirname $0)/common.inc
++
++# This pool crosses the translation threshold. Check both section-symbol
++# addends and named-symbol addends against the bytes of the merged pool.
++{
++  cat <<'ASM'
++.globl _start, first
++_start: ret
++.section .debug_str,"MS",@progbits,1
++first:
++ASM
++  awk 'BEGIN { for (i = 0; i < 8192; i++) { printf ".Lstr%d: .asciz \"unique-%05d\"\n", i, i } }'
++  cat <<'ASM'
++.section .debug_probe,"",@progbits
++.quad first + 3
++.quad .Lstr8191 + 2
++.quad first - 1
++.quad .Lstr17 + 1
++.quad 1234
++ASM
++} | $CC -c -o $t/a.o -xassembler -
++
++# Duplicate input strings exercise the many-to-one translation.
++{
++  printf '.section .debug_str,"MS",@progbits,1\n'
++  awk 'BEGIN { for (i = 4095; i >= 0; i--) printf ".asciz \"unique-%05d\"\n", i }'
++} | $CC -c -o $t/b.o -xassembler -
++
++./mold -o $t/exe $t/a.o $t/b.o --stats > $t/log
++awk -F= '/translated_debug_fragments/ { if ($2 >= 12288) found = 1 } END { exit !found }' $t/log
++$OBJCOPY --dump-section .debug_probe=$t/probe --dump-section .debug_str=$t/strings $t/exe
++read first last negative middle absolute <<< "$(od -An -tu8 -v $t/probe | xargs)"
++[ "$negative" = "$((first - 4))" ]
++[ "$absolute" = 1234 ]
++[ "$(dd if=$t/strings bs=1 skip=$((first - 3)) count=12 2>/dev/null)" = unique-00000 ]
++[ "$(dd if=$t/strings bs=1 skip=$((last - 2)) count=12 2>/dev/null)" = unique-08191 ]
++[ "$(dd if=$t/strings bs=1 skip=$((middle - 1)) count=12 2>/dev/null)" = unique-00017 ]
++
++# Compression must consume the same final offsets before freeing input data.
++./mold -o $t/compressed $t/a.o $t/b.o --compress-debug-sections=zlib
++$OBJCOPY --decompress-debug-sections $t/compressed $t/uncompressed
++$OBJCOPY --dump-section .debug_probe=$t/probe2 --dump-section .debug_str=$t/strings2 $t/uncompressed
++cmp $t/probe $t/probe2
++cmp $t/strings $t/strings2

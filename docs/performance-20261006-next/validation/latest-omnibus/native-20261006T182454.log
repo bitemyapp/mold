@@ -1,0 +1,20 @@
+source_commit=8e522e5217adea17329e8e2eeb753fc482de4b16
+cpu_set=24-31
+command=cargo test --release --locked -p mold --no-default-features --features x86_64 --test integration -- --native --test-threads 8 "$@"
+e11293521c6cf5adbb4abf011f2f1fc03686687e44563fff60fd3ce295d12763  /home/callen/work/mold-next-20261006/src/latest-omnibus/Cargo.lock
+   Compiling libmold v3.0.0 (/work)
+   Compiling mold-mimalloc-sys v0.1.49
+   Compiling mold-tests v3.0.0 (/work/tests)
+   Compiling mold-mimalloc v0.1.52
+   Compiling mold-arch-x86_64 v3.0.0 (/work/arch/x86_64)
+   Compiling mold v3.0.0 (/work/cli)
+    Finished `release` profile [optimized + debuginfo] target(s) in 27.13s
+     Running integration.rs (/target/release/deps/integration-4d49bde36dc6a6fa)
+completed 100/565
+completed 200/565
+completed 300/565
+completed 400/565
+completed 500/565
+x86_64: pass=551 skip=14 fail=0
+pass=551 skip=14 fail=0
+completed 565/565

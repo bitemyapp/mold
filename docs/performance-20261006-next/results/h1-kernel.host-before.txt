@@ -1,0 +1,20 @@
+2026-10-06T17:09:12-05:00
+ 17:09:12 up 25 days,  3:33, 29 users,  load average: 4.84, 5.94, 6.19
+               total        used        free      shared  buff/cache   available
+Mem:           250Gi        28Gi       3.6Gi       1.7Gi       222Gi       221Gi
+Swap:          8.0Gi       1.3Gi       6.7Gi
+    PID COMMAND         %CPU %MEM
+3203680 nockcloud_infer  100  3.3
+3087417 .qemu-system-x8 82.6  0.7
+2879522 .qemu-system-x8 25.9  3.2
+3203295 cargo            1.6  0.0
+   2543 warp-svc         1.2  0.3
+3203260 cargo-oxide      0.6  0.0
+1555934 omp              0.6  0.1
+   3850 dockerd          0.6  0.0
+   3185 containerd       0.5  0.0
+   5178 gitea            0.3  0.0
+3087729 virtiofsd        0.3  0.2
+   4550 containerd-shim  0.2  0.0
+   4553 containerd-shim  0.2  0.0
+   5098 gitlab-runner    0.1  0.0

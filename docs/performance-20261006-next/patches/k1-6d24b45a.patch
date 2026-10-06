@@ -1,0 +1,30 @@
+diff --git a/src/output_file.rs b/src/output_file.rs
+index 871206263ea886f726f74475e8a9d4f712fb1e80..e54ae0e0e7b2d25e5614bb1b76370a7803c07e73 100644
+--- a/src/output_file.rs
++++ b/src/output_file.rs
+@@ -190,6 +190,25 @@ fn map_file(file: &File, len: usize) -> io::Result<Option<MmapMut>> {
+     // number of faults drops by an order of magnitude.
+     // SAFETY: the range is the mapping; the advice is only a hint.
+     unsafe { crate::util::madvise_hugepage(map.as_mut_ptr(), map.len()) };
++
++    // Resolve writable faults before copying threads contend on ext4's
++    // shared dirty-folio locks. Only the file-backed prefix is accessible:
++    // the mapping may reserve additional address space for a later extend.
++    #[cfg(any(target_os = "android", target_os = "linux"))]
++    if len >= 4 * 1024 * 1024 {
++        // SAFETY: fstatfs writes the initialized structure through a valid
++        // descriptor. The advice covers a writable, mapped range inside the
++        // current file length and does not alter its contents. Unsupported
++        // kernels or a partial failure retain ordinary demand-fault behavior.
++        unsafe {
++            let mut fs: libc::statfs = std::mem::zeroed();
++            if libc::fstatfs(file.as_raw_fd(), &raw mut fs) == 0
++                && fs.f_type == libc::EXT4_SUPER_MAGIC as _
++            {
++                libc::madvise(map.as_mut_ptr().cast(), len, libc::MADV_POPULATE_WRITE);
++            }
++        }
++    }
+     Ok(Some(map))
+ }
+ 

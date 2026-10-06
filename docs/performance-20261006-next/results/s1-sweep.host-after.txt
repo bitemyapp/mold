@@ -1,0 +1,20 @@
+2026-10-06T17:33:16-05:00
+ 17:33:16 up 25 days,  3:57, 24 users,  load average: 12.62, 13.56, 11.02
+               total        used        free      shared  buff/cache   available
+Mem:           250Gi        19Gi        20Gi       1.5Gi       213Gi       230Gi
+Swap:          8.0Gi       1.3Gi       6.7Gi
+    PID COMMAND         %CPU %MEM
+3460302 nix              105  0.1
+2879522 .qemu-system-x8 19.6  3.2
+3460326 nix-daemon       9.2  0.0
+3394098 .qemu-system-x8  8.3  0.6
+3460324 nix-daemon       6.1  0.0
+   2543 warp-svc         1.2  0.3
+1555934 omp              0.6  0.1
+   3850 dockerd          0.6  0.0
+   3185 containerd       0.5  0.0
+   5178 gitea            0.3  0.0
+   4550 containerd-shim  0.2  0.0
+   4553 containerd-shim  0.2  0.0
+3394410 virtiofsd        0.2  0.2
+   5098 gitlab-runner    0.1  0.0

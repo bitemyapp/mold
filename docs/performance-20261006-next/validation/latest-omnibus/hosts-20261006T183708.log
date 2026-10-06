@@ -1,0 +1,185 @@
+source_commit=8e522e5217adea17329e8e2eeb753fc482de4b16
+cpu_set=24-31
+command=rustup target add armv7-unknown-linux-gnueabihf i686-unknown-linux-gnu powerpc-unknown-linux-gnu && for host_target in armv7-unknown-linux-gnueabihf i686-unknown-linux-gnu powerpc-unknown-linux-gnu; do cargo check --locked --workspace --all-targets --target "$host_target" || exit; done
+e11293521c6cf5adbb4abf011f2f1fc03686687e44563fff60fd3ce295d12763  /home/callen/work/mold-next-20261006/src/latest-omnibus/Cargo.lock
+info: component rust-std for target armv7-unknown-linux-gnueabihf is up to date
+info: downloading 2 components
+   Compiling libc v0.2.189
+    Checking cfg-if v1.0.4
+   Compiling crossbeam-utils v0.8.22
+   Compiling crossbeam-epoch v0.9.20
+   Compiling crossbeam-deque v0.8.7
+   Compiling rayon-core v1.13.0
+   Compiling getrandom v0.4.3
+   Compiling zstd-sys v2.0.16+zstd.1.5.7
+    Checking zlib-rs v0.6.8
+   Compiling cpp_demangle v0.5.1
+   Compiling crc32fast v1.5.1
+   Compiling portable-atomic v1.15.0
+   Compiling blake3 v1.8.7
+   Compiling libmold v3.0.0 (/work)
+    Checking allocator-api2 v0.2.21
+    Checking memchr v2.8.3
+    Checking foldhash v0.2.0
+    Checking either v1.18.0
+    Checking regex-automata v0.4.18
+    Checking constant_time_eq v0.4.2
+    Checking arrayvec v0.7.8
+    Checking equivalent v1.0.2
+    Checking hashbrown v0.17.1
+    Checking flate2 v1.1.10
+warning: libmold@3.0.0: Inherited flag "-mno-omit-leaf-frame-pointer" is not supported by the currently used CC
+warning: libmold@3.0.0: Inherited flag "-mno-omit-leaf-frame-pointer" is not supported by the currently used CC
+    Checking libz-rs-sys v0.6.8
+    Checking memmap2 v0.9.11
+    Checking bstr v1.13.1
+    Checking uuid v1.27.0
+    Checking rayon v1.12.0
+    Checking rustc-demangle v0.1.28
+    Checking xxhash-rust v0.8.18
+   Compiling mold-mimalloc-sys v0.1.49
+   Compiling mold v3.0.0 (/work/cli)
+    Checking mold-tests v3.0.0 (/work/tests)
+    Checking mold-mimalloc v0.1.52
+   Compiling zstd-safe v7.2.4
+    Checking zstd v0.13.3
+    Checking mold-arch-sparc64 v3.0.0 (/work/arch/sparc64)
+    Checking mold-arch-arm32be v3.0.0 (/work/arch/arm32be)
+    Checking mold-arch-arm32 v3.0.0 (/work/arch/arm32)
+    Checking mold-arch-ppc64v1 v3.0.0 (/work/arch/ppc64v1)
+    Checking mold-arch-riscv32 v3.0.0 (/work/arch/riscv32)
+    Checking mold-arch-x86_64 v3.0.0 (/work/arch/x86_64)
+    Checking mold-arch-sh4 v3.0.0 (/work/arch/sh4)
+    Checking mold-arch-riscv32be v3.0.0 (/work/arch/riscv32be)
+    Checking mold-arch-loongarch32 v3.0.0 (/work/arch/loongarch32)
+    Checking mold-arch-ppc32 v3.0.0 (/work/arch/ppc32)
+    Checking mold-arch-riscv64 v3.0.0 (/work/arch/riscv64)
+    Checking mold-arch-ppc64v2 v3.0.0 (/work/arch/ppc64v2)
+    Checking mold-arch-arm64be v3.0.0 (/work/arch/arm64be)
+    Checking mold-arch-sh4be v3.0.0 (/work/arch/sh4be)
+    Checking mold-arch-s390x v3.0.0 (/work/arch/s390x)
+    Checking mold-arch-m68k v3.0.0 (/work/arch/m68k)
+    Checking mold-arch-arm64 v3.0.0 (/work/arch/arm64)
+    Checking mold-arch-i386 v3.0.0 (/work/arch/i386)
+    Checking mold-arch-riscv64be v3.0.0 (/work/arch/riscv64be)
+    Checking mold-arch-loongarch64 v3.0.0 (/work/arch/loongarch64)
+    Finished `dev` profile [unoptimized] target(s) in 4.76s
+   Compiling libc v0.2.189
+   Compiling crossbeam-utils v0.8.22
+    Checking cfg-if v1.0.4
+   Compiling crossbeam-epoch v0.9.20
+   Compiling crossbeam-deque v0.8.7
+   Compiling rayon-core v1.13.0
+   Compiling getrandom v0.4.3
+   Compiling zstd-sys v2.0.16+zstd.1.5.7
+    Checking zlib-rs v0.6.8
+   Compiling portable-atomic v1.15.0
+   Compiling cpp_demangle v0.5.1
+   Compiling crc32fast v1.5.1
+   Compiling blake3 v1.8.7
+    Checking regex-automata v0.4.18
+    Checking cpufeatures v0.3.1
+    Checking foldhash v0.2.0
+    Checking memchr v2.8.3
+    Checking arrayvec v0.7.8
+    Checking either v1.18.0
+    Checking constant_time_eq v0.4.2
+    Checking equivalent v1.0.2
+    Checking allocator-api2 v0.2.21
+    Checking hashbrown v0.17.1
+    Checking bstr v1.13.1
+    Checking flate2 v1.1.10
+    Checking uuid v1.27.0
+    Checking rayon v1.12.0
+    Checking memmap2 v0.9.11
+    Checking libz-rs-sys v0.6.8
+   Compiling libmold v3.0.0 (/work)
+    Checking rustc-demangle v0.1.28
+    Checking xxhash-rust v0.8.18
+   Compiling mold-mimalloc-sys v0.1.49
+   Compiling mold v3.0.0 (/work/cli)
+    Checking mold-tests v3.0.0 (/work/tests)
+    Checking mold-mimalloc v0.1.52
+   Compiling zstd-safe v7.2.4
+    Checking zstd v0.13.3
+    Checking mold-arch-s390x v3.0.0 (/work/arch/s390x)
+    Checking mold-arch-riscv32be v3.0.0 (/work/arch/riscv32be)
+    Checking mold-arch-ppc64v1 v3.0.0 (/work/arch/ppc64v1)
+    Checking mold-arch-sparc64 v3.0.0 (/work/arch/sparc64)
+    Checking mold-arch-sh4be v3.0.0 (/work/arch/sh4be)
+    Checking mold-arch-ppc64v2 v3.0.0 (/work/arch/ppc64v2)
+    Checking mold-arch-arm64be v3.0.0 (/work/arch/arm64be)
+    Checking mold-arch-arm64 v3.0.0 (/work/arch/arm64)
+    Checking mold-arch-arm32 v3.0.0 (/work/arch/arm32)
+    Checking mold-arch-arm32be v3.0.0 (/work/arch/arm32be)
+    Checking mold-arch-loongarch64 v3.0.0 (/work/arch/loongarch64)
+    Checking mold-arch-riscv32 v3.0.0 (/work/arch/riscv32)
+    Checking mold-arch-sh4 v3.0.0 (/work/arch/sh4)
+    Checking mold-arch-loongarch32 v3.0.0 (/work/arch/loongarch32)
+    Checking mold-arch-riscv64be v3.0.0 (/work/arch/riscv64be)
+    Checking mold-arch-riscv64 v3.0.0 (/work/arch/riscv64)
+    Checking mold-arch-ppc32 v3.0.0 (/work/arch/ppc32)
+    Checking mold-arch-i386 v3.0.0 (/work/arch/i386)
+    Checking mold-arch-m68k v3.0.0 (/work/arch/m68k)
+    Checking mold-arch-x86_64 v3.0.0 (/work/arch/x86_64)
+    Finished `dev` profile [unoptimized] target(s) in 3.95s
+   Compiling libc v0.2.189
+    Checking cfg-if v1.0.4
+   Compiling crossbeam-utils v0.8.22
+   Compiling crossbeam-epoch v0.9.20
+   Compiling crossbeam-deque v0.8.7
+   Compiling rayon-core v1.13.0
+   Compiling getrandom v0.4.3
+   Compiling zstd-sys v2.0.16+zstd.1.5.7
+    Checking zlib-rs v0.6.8
+   Compiling cpp_demangle v0.5.1
+   Compiling crc32fast v1.5.1
+   Compiling portable-atomic v1.15.0
+   Compiling blake3 v1.8.7
+    Checking arrayvec v0.7.8
+    Checking allocator-api2 v0.2.21
+    Checking regex-automata v0.4.18
+    Checking memchr v2.8.3
+    Checking either v1.18.0
+    Checking foldhash v0.2.0
+    Checking constant_time_eq v0.4.2
+    Checking equivalent v1.0.2
+    Checking hashbrown v0.17.1
+    Checking bstr v1.13.1
+    Checking flate2 v1.1.10
+    Checking memmap2 v0.9.11
+    Checking libz-rs-sys v0.6.8
+    Checking rayon v1.12.0
+    Checking uuid v1.27.0
+   Compiling libmold v3.0.0 (/work)
+    Checking xxhash-rust v0.8.18
+    Checking rustc-demangle v0.1.28
+   Compiling mold-mimalloc-sys v0.1.49
+   Compiling mold v3.0.0 (/work/cli)
+    Checking mold-tests v3.0.0 (/work/tests)
+warning: libmold@3.0.0: Inherited flag "-mno-omit-leaf-frame-pointer" is not supported by the currently used CC
+warning: libmold@3.0.0: Inherited flag "-mno-omit-leaf-frame-pointer" is not supported by the currently used CC
+    Checking mold-mimalloc v0.1.52
+   Compiling zstd-safe v7.2.4
+    Checking zstd v0.13.3
+    Checking mold-arch-arm64 v3.0.0 (/work/arch/arm64)
+    Checking mold-arch-riscv64be v3.0.0 (/work/arch/riscv64be)
+    Checking mold-arch-arm64be v3.0.0 (/work/arch/arm64be)
+    Checking mold-arch-riscv32be v3.0.0 (/work/arch/riscv32be)
+    Checking mold-arch-sh4be v3.0.0 (/work/arch/sh4be)
+    Checking mold-arch-x86_64 v3.0.0 (/work/arch/x86_64)
+    Checking mold-arch-riscv32 v3.0.0 (/work/arch/riscv32)
+    Checking mold-arch-ppc64v2 v3.0.0 (/work/arch/ppc64v2)
+    Checking mold-arch-loongarch32 v3.0.0 (/work/arch/loongarch32)
+    Checking mold-arch-ppc64v1 v3.0.0 (/work/arch/ppc64v1)
+    Checking mold-arch-i386 v3.0.0 (/work/arch/i386)
+    Checking mold-arch-sh4 v3.0.0 (/work/arch/sh4)
+    Checking mold-arch-riscv64 v3.0.0 (/work/arch/riscv64)
+    Checking mold-arch-m68k v3.0.0 (/work/arch/m68k)
+    Checking mold-arch-sparc64 v3.0.0 (/work/arch/sparc64)
+    Checking mold-arch-arm32be v3.0.0 (/work/arch/arm32be)
+    Checking mold-arch-loongarch64 v3.0.0 (/work/arch/loongarch64)
+    Checking mold-arch-arm32 v3.0.0 (/work/arch/arm32)
+    Checking mold-arch-ppc32 v3.0.0 (/work/arch/ppc32)
+    Checking mold-arch-s390x v3.0.0 (/work/arch/s390x)
+    Finished `dev` profile [unoptimized] target(s) in 3.96s

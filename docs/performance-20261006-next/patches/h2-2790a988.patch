@@ -1,0 +1,148 @@
+diff --git a/src/driver.rs b/src/driver.rs
+index 143001187cc46e9e4c502925946a4518ff40b1f7..4d92d1d342a4adf1f71628f9d16453b44cb5a9c4 100644
+--- a/src/driver.rs
++++ b/src/driver.rs
+@@ -3,7 +3,7 @@
+ use std::borrow::Cow;
+ use std::ffi::{OsStr, OsString};
+ use std::ops::Range;
+-use std::sync::Arc;
++use std::sync::{Arc, OnceLock};
+ 
+ use rayon::prelude::*;
+ 
+@@ -590,7 +590,7 @@ pub fn link<E: Target>(cmdline: Cmdline) -> LinkResult {
+         let buf = output.buf();
+ 
+         // Copy input sections to the output file and apply relocations.
+-        copy_chunks(&ctx, buf);
++        let early_hashes = copy_chunks_hashed(&ctx, buf, true);
+ 
+         E::finish_output(&ctx, buf);
+ 
+@@ -621,7 +621,7 @@ pub fn link<E: Target>(cmdline: Cmdline) -> LinkResult {
+         // we can compute it.
+         if ctx.buildid.is_some() {
+             let is_mmapped = output.is_mmapped();
+-            passes::write_build_id(&mut ctx, output.buf(), is_mmapped);
++            passes::write_build_id(&mut ctx, output.buf(), is_mmapped, &early_hashes);
+         }
+         if ctx.gnu_debuglink.is_some() {
+             passes::write_gnu_debuglink(&mut ctx, output.buf());
+@@ -696,6 +696,27 @@ struct Task {
+ // target sections). The buffer is split into the disjoint ranges each
+ // task needs so that all tasks can run in parallel safely.
+ pub(crate) fn copy_chunks<E: Target>(ctx: &Context<E>, buf: &mut [u8]) {
++    copy_chunks_hashed(ctx, buf, false);
++}
++
++fn copy_chunks_hashed<E: Target>(
++    ctx: &Context<E>,
++    buf: &mut [u8],
++    hash_ready_chunks: bool,
++) -> Vec<OnceLock<[u8; 32]>> {
++    // Only x86-64 ordinary output has no architecture-wide finishing writes.
++    // Emitted relocations can patch target sections after the first pass.
++    let enabled = hash_ready_chunks
++        && E::FAMILY == Family::X86_64
++        && matches!(ctx.args.build_id, crate::cmdline::BuildId::Hash(_))
++        && !ctx.args.emit_relocs
++        && !ctx.args.relocatable
++        && !ctx.args.z_rewrite_endbr;
++    let hashes = if enabled {
++        (0..buf.len().div_ceil(passes::BUILD_ID_SHARD)).map(|_| OnceLock::new()).collect()
++    } else {
++        Vec::new()
++    };
+     let t = ctx.timer("copy_chunks");
+ 
+     let mut first: Vec<Task> = Vec::new();
+@@ -743,8 +764,8 @@ pub(crate) fn copy_chunks<E: Target>(ctx: &Context<E>, buf: &mut [u8]) {
+     //
+     // We also do that for SH4 because despite being RELA, we always need
+     // to write addends to relocated places for SH4.
+-    run_tasks(ctx, buf, &first, &t);
+-    run_tasks(ctx, buf, &last, &t);
++    run_tasks(ctx, buf, &first, &t, &hashes);
++    run_tasks(ctx, buf, &last, &t, &[]);
+ 
+     // Undefined symbols in SHF_ALLOC sections are found by scan_relocations(),
+     // but those in non-SHF_ALLOC sections cannot be found until we copy section
+@@ -765,6 +786,7 @@ pub(crate) fn copy_chunks<E: Target>(ctx: &Context<E>, buf: &mut [u8]) {
+         pos = pos.max(r.end as usize);
+     }
+     buf[pos..].fill(0);
++    hashes
+ }
+ 
+ fn run_tasks<E: Target>(
+@@ -772,6 +794,7 @@ fn run_tasks<E: Target>(
+     buf: &mut [u8],
+     tasks: &[Task],
+     timer: &crate::util::perf::Timer,
++    hashes: &[OnceLock<[u8; 32]>],
+ ) {
+     let ranges: Vec<_> = tasks
+         .iter()
+@@ -805,6 +828,25 @@ fn run_tasks<E: Target>(
+             ChunkId::EhFrameReloc => chunks::eh_frame_reloc::copy_buf(ctx, own, extra1),
+             id => chunks::copy_buf(ctx, id, own),
+         }
++        // These nonallocated sections are final after their copy task joins
++        // its relocations. Endbr rewriting is disabled above; .rela.dyn
++        // sorting and gdb-index completion have their own chunks, and
++        // inter-chunk padding lies outside this slice.
++        if !hashes.is_empty()
++            && matches!(task.chunk, ChunkId::Output(_) | ChunkId::Merged(_))
++            && !ctx.chunk_header(task.chunk).is_alloc()
++        {
++            let offset = file_range(ctx, task.chunk).start as usize;
++            let shard = passes::BUILD_ID_SHARD;
++            let start = offset.next_multiple_of(shard) - offset;
++            if start < own.len() {
++                let end = start + (own.len() - start) / shard * shard;
++                own[start..end].par_chunks(shard).enumerate().for_each(|(i, bytes)| {
++                    let index = (offset + start) / shard + i;
++                    assert!(hashes[index].set(*blake3::hash(bytes).as_bytes()).is_ok());
++                });
++            }
++        }
+     });
+ 
+     // .eh_frame_hdr's header, whose table .eh_frame wrote.
+diff --git a/src/passes.rs b/src/passes.rs
+index 4c25490502327c2e3c7f355a01e9b950dde30feb..d8bb13923b722b0a3078a49d498748361442262a 100644
+--- a/src/passes.rs
++++ b/src/passes.rs
+@@ -4086,17 +4086,28 @@ pub fn compress_debug_sections<E: Target>(ctx: &mut Context<E>) {
+ 
+ // BLAKE3 is a cryptographic hash function just like SHA256.
+ // We use it instead of SHA256 because it's faster.
+-pub fn write_build_id<E: Target>(ctx: &mut Context<E>, buf: &mut [u8], is_mmapped: bool) {
++pub(crate) const BUILD_ID_SHARD: usize = 4 * 1024 * 1024;
++
++pub fn write_build_id<E: Target>(
++    ctx: &mut Context<E>,
++    buf: &mut [u8],
++    is_mmapped: bool,
++    early_hashes: &[std::sync::OnceLock<[u8; 32]>],
++) {
+     let _t = ctx.timer("write_build_id");
+     let contents: Vec<u8> = match &ctx.args.build_id {
+         BuildId::Hex(value) => value.clone(),
+         BuildId::Hash(size) => {
+-            const SHARD: usize = 4 * 1024 * 1024; // 4 MiB
++            const SHARD: usize = BUILD_ID_SHARD;
+             let hashes: Vec<[u8; 32]> = buf
+                 .par_chunks_mut(SHARD)
+                 .enumerate()
+                 .map(|(i, shard)| {
+-                    let hash = *blake3::hash(shard).as_bytes();
++                    let hash = early_hashes
++                        .get(i)
++                        .and_then(std::sync::OnceLock::get)
++                        .copied()
++                        .unwrap_or_else(|| *blake3::hash(shard).as_bytes());
+                     // Make the kernel page out the file contents we've just written
+                     // so that subsequent close(2) call will become quicker.
+                     if i > 0 && is_mmapped {

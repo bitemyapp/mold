@@ -1,0 +1,144 @@
+diff --git a/src/chunks/merged.rs b/src/chunks/merged.rs
+index 0ec571f9d555a167e66f96dc8fb51022661e4c23..4805cea3731bc3b2b24149bf323e0442ab8466ad 100644
+--- a/src/chunks/merged.rs
++++ b/src/chunks/merged.rs
+@@ -252,6 +252,11 @@ impl<E: Target> MergedSection<E> {
+ 
+ /// Splits the members into fragments and deduplicates them.
+ pub fn resolve<E: Target>(ctx: &mut Context<E>, id: MergedSectionId) {
++    let timers = ctx.timers.clone();
++    crate::util::parallel::with_phase_budget("merge", &timers, || resolve_inner(ctx, id));
++}
++
++fn resolve_inner<E: Target>(ctx: &mut Context<E>, id: MergedSectionId) {
+     let Context { objs, merged_sections, args, timers, .. } = ctx;
+     let msec = &merged_sections[id.index()];
+     let gc_sections = args.gc_sections;
+@@ -341,6 +346,17 @@ pub fn resolve_sections<E: Target>(
+     sections: &mut [MergedSection<E>],
+     members: &mut [Vec<ResolveMember<'_>>],
+     options: ResolveOptions<'_>,
++) {
++    let timers = options.timers.clone();
++    crate::util::parallel::with_phase_budget("merge", &timers, || {
++        resolve_sections_inner(sections, members, options);
++    });
++}
++
++fn resolve_sections_inner<E: Target>(
++    sections: &mut [MergedSection<E>],
++    members: &mut [Vec<ResolveMember<'_>>],
++    options: ResolveOptions<'_>,
+ ) {
+     let ResolveOptions { allocated_only, gc_sections, comment, cmdline_args, timers } = options;
+     let t = timers.start("split_contents");
+diff --git a/src/driver.rs b/src/driver.rs
+index 143001187cc46e9e4c502925946a4518ff40b1f7..d065dc8039689edf46d15e375f90a1a7cf17f868 100644
+--- a/src/driver.rs
++++ b/src/driver.rs
+@@ -696,6 +696,10 @@ struct Task {
+ // target sections). The buffer is split into the disjoint ranges each
+ // task needs so that all tasks can run in parallel safely.
+ pub(crate) fn copy_chunks<E: Target>(ctx: &Context<E>, buf: &mut [u8]) {
++    crate::util::parallel::with_phase_budget("copy", &ctx.timers, || copy_chunks_inner(ctx, buf));
++}
++
++fn copy_chunks_inner<E: Target>(ctx: &Context<E>, buf: &mut [u8]) {
+     let t = ctx.timer("copy_chunks");
+ 
+     let mut first: Vec<Task> = Vec::new();
+diff --git a/src/gc_sections.rs b/src/gc_sections.rs
+index 6ea96ecc784db258eecdf933472f4352fa97e9f1..2cfa67c9e7ad0f58ea92d70b2c999ba632d82d8b 100644
+--- a/src/gc_sections.rs
++++ b/src/gc_sections.rs
+@@ -287,6 +287,11 @@ fn sweep<E: Target>(ctx: &Context<E>) {
+ }
+ 
+ pub fn gc_sections<E: Target>(ctx: &mut Context<E>) {
++    let timers = ctx.timers.clone();
++    crate::util::parallel::with_phase_budget("gc", &timers, || gc_sections_inner(ctx));
++}
++
++fn gc_sections_inner<E: Target>(ctx: &mut Context<E>) {
+     let _t = ctx.timer("gc");
+ 
+     for file in &ctx.dsos {
+diff --git a/src/util/parallel.rs b/src/util/parallel.rs
+index 70b0c09a251dfbaded77e1ea0126765d51d38d03..fe324681a6aa3b3cf74b08196057c403f52052c6 100644
+--- a/src/util/parallel.rs
++++ b/src/util/parallel.rs
+@@ -1,5 +1,49 @@
+ use rayon::prelude::*;
+ 
++/// Experimental phase budget. Only the selected phase enters a separate
++/// bounded Rayon pool; other passes keep the linker's normal worker count.
++/// Callers enter at phase boundaries, without holding worker-local locks.
++/// Pool creation is intentionally part of measured link work.
++pub(crate) fn with_phase_budget<R: Send>(
++    phase: &str,
++    timers: &crate::util::perf::Timers,
++    run: impl FnOnce() -> R + Send,
++) -> R {
++    use std::sync::OnceLock;
++
++    struct Budget {
++        phase: String,
++        threads: usize,
++        pool: OnceLock<rayon::ThreadPool>,
++    }
++    static BUDGET: OnceLock<Option<Budget>> = OnceLock::new();
++    let budget = BUDGET.get_or_init(|| {
++        std::env::var("MOLD_PHASE_BUDGET").ok().map(|value| {
++            let Some((phase, count)) = value.split_once(':') else {
++                crate::fatal!("MOLD_PHASE_BUDGET must be merge:N, copy:N, or gc:N");
++            };
++            let threads = count.parse::<usize>().unwrap_or(0);
++            if !matches!(phase, "merge" | "copy" | "gc") || threads == 0 {
++                crate::fatal!("MOLD_PHASE_BUDGET must be merge:N, copy:N, or gc:N with N > 0");
++            }
++            Budget { phase: phase.to_owned(), threads, pool: OnceLock::new() }
++        })
++    });
++    let Some(budget) = budget else { return run() };
++    if budget.phase != phase || budget.threads >= rayon::current_num_threads() {
++        return run();
++    }
++    let pool = budget.pool.get_or_init(|| {
++        let _t = timers.start("phase_pool_init");
++        rayon::ThreadPoolBuilder::new()
++            .num_threads(budget.threads)
++            .thread_name(|i| format!("mold-phase-{i}"))
++            .build()
++            .unwrap_or_else(|err| crate::fatal!("failed to build phase thread pool: {err}"))
++    });
++    pool.install(run)
++}
++
+ /// An owned Rayon job whose result is needed by a later linker pass.
+ pub struct Background<T> {
+     receiver: std::sync::mpsc::Receiver<T>,
+diff --git a/tests/phase-thread-budget.sh b/tests/phase-thread-budget.sh
+new file mode 100755
+index 0000000000000000000000000000000000000000..ec7e93a1f7e2dc95f20fe0a6ede68c17991572d4
+--- /dev/null
++++ b/tests/phase-thread-budget.sh
+@@ -0,0 +1,19 @@
++#!/usr/bin/env bash
++. $(dirname $0)/common.inc
++unset MOLD_PHASE_BUDGET
++
++cat <<'EOF' | $CC -c -g -ffunction-sections -fdata-sections -x c -o $t/a.o -
++#include <stdio.h>
++static const char message[] = "phase budgets preserve linker output";
++int main(void) { puts(message); return 0; }
++EOF
++
++$CC -B. -Wl,--threads=8,--gc-sections,--build-id=sha256 -o $t/baseline $t/a.o
++for phase in merge copy gc; do
++  for threads in 1 2 4; do
++    MOLD_PHASE_BUDGET=$phase:$threads $CC -B. \
++      -Wl,--threads=8,--gc-sections,--build-id=sha256 -o $t/limited $t/a.o
++    cmp $t/baseline $t/limited
++  done
++done
++$QEMU $t/limited | grep 'phase budgets preserve linker output'

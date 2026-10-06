@@ -1,0 +1,44 @@
+diff --git a/src/util/concurrent_map.rs b/src/util/concurrent_map.rs
+index 87b47c063863229e7e8e03ccbea1917e8f56b4d3..512c1bae1d7f174016d56733a35f4bdfc6075270 100644
+--- a/src/util/concurrent_map.rs
++++ b/src/util/concurrent_map.rs
+@@ -388,8 +388,10 @@ impl<T> FrozenMap<T> {
+         let mut end = begin + shard_size;
+         let occupied = |idx: usize| self.0.is_occupied(idx);
+ 
+-        let size = (begin..end).filter(|&idx| occupied(idx)).count();
+-        let mut vec: Vec<EntryId> = Vec::with_capacity(size);
++        // The shard size bounds its occupancy, so one bounded reservation
++        // avoids a separate pass over every key pointer just to count entries.
++        // Actual occupancy is collected by the traversal's vector length.
++        let mut vec: Vec<EntryId> = Vec::with_capacity(shard_size);
+ 
+         // Since the shard is circular, we need to handle the last entries
+         // as if they were next to the first entries.
+@@ -439,6 +441,26 @@ impl<T> FrozenMap<T> {
+ mod tests {
+     use super::*;
+ 
++    #[test]
++    fn collision_wrap_preserves_canonical_order() {
++        let keys: [&'static [u8]; 8] = [b"bbb", b"a", b"cc", b"dd", b"ab", b"c", b"aaaa", b"z"];
++        let mut expected = keys.to_vec();
++        expected.sort_unstable_by(|a, b| a.len().cmp(&b.len()).then_with(|| a.cmp(b)));
++        for reverse in [false, true] {
++            let map = ConcurrentMap::with_capacity(100);
++            for i in 0..keys.len() {
++                let key = keys[if reverse { keys.len() - i - 1 } else { i }];
++                map.insert_with(key, 255, || ());
++            }
++            let map = map.freeze();
++            assert_eq!(
++                map.sorted_entries(0).iter().map(|&id| map.key(id)).collect::<Vec<_>>(),
++                expected
++            );
++            assert!(map.sorted_entries(NUM_SHARDS - 1).is_empty());
++        }
++    }
++
+     #[test]
+     fn insert_and_lookup() {
+         let map: ConcurrentMap<u32> = ConcurrentMap::with_capacity(100);

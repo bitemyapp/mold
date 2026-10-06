@@ -1,0 +1,423 @@
+diff --git a/src/util/concurrent_map.rs b/src/util/concurrent_map.rs
+index 87b47c063863229e7e8e03ccbea1917e8f56b4d3..ce9eee15772b4d901f403d42c97222acefc6c306 100644
+--- a/src/util/concurrent_map.rs
++++ b/src/util/concurrent_map.rs
+@@ -12,9 +12,9 @@
+ //! a concurrent hash map is critical for our linker.
+ //!
+ //! The map is an open-addressing table. Insertion is lock-free: a thread
+-//! claims an empty bucket with a compare-and-swap on its key pointer,
+-//! initializes the value, and then publishes the key; a thread that finds
+-//! a claimed bucket spins until the key appears. Probing stays within a
++//! claims an empty compact bucket with compare-and-swap, initializes one
++//! dense record, and then publishes its index; a thread that finds a
++//! claimed bucket spins until the index appears. Probing stays within a
+ //! shard of the table, so the entries of a shard can be laid out
+ //! independently of the others. Keys are byte strings that live for the
+ //! whole link, such as string literals inside input files, hashed once by
+@@ -26,7 +26,7 @@ use std::alloc::{Layout, alloc_zeroed, dealloc};
+ use std::cell::UnsafeCell;
+ use std::mem::MaybeUninit;
+ use std::ptr;
+-use std::sync::atomic::{AtomicPtr, AtomicU32, Ordering};
++use std::sync::atomic::{AtomicU32, Ordering};
+ 
+ pub const NUM_SHARDS: usize = 64;
+ 
+@@ -37,25 +37,33 @@ const MIN_NBUCKETS: usize = 16384;
+ const MAX_RETRY: usize = 256;
+ const _: () = assert!(MIN_NBUCKETS / NUM_SHARDS >= MAX_RETRY);
+ 
+-/// The key pointer of a bucket that a thread has claimed but not yet
+-/// published: -1 marks the slot as claimed until its value has been
+-/// initialized.
+-const CLAIMED: *mut u8 = usize::MAX as *mut u8;
+-
+-// In order to avoid unnecessary cache-line false sharing, we want
+-// to make this object aligned to a reasonably large
+-// power-of-two address.
+-#[repr(C, align(32))]
+-struct Entry<T> {
+-    key: AtomicPtr<u8>,
+-    // Published by the release store of `key` and read after the acquire
+-    // load that observes it, so relaxed accesses suffice.
+-    keylen: AtomicU32,
++/// Empty and claimed compact bucket states. Published values are dense
++/// record indices plus one; external EntryIds continue to identify buckets.
++const EMPTY: u32 = 0;
++const CLAIMED: u32 = u32::MAX;
++
++#[repr(C)]
++struct Record<T> {
++    key: *const u8,
++    keylen: u32,
+     value: UnsafeCell<MaybeUninit<T>>,
+ }
+ 
++impl<T> Record<T> {
++    fn value(&self) -> &T {
++        // SAFETY: record references are formed only after initialization and
++        // publication, or by the thread that has just initialized the record.
++        unsafe { (*self.value.get()).assume_init_ref() }
++    }
++}
++
++// Different shards allocate independently. A unique key consumes exactly
++// one initialized record; duplicates never reserve a rich record.
++#[repr(align(64))]
++struct ShardCount(AtomicU32);
++
+ #[cfg(not(windows))]
+-fn allocate_entries<T>(bufsize: usize) -> *mut Entry<T> {
++fn allocate_entries<T>(bufsize: usize) -> *mut T {
+     // SAFETY: this creates fresh private anonymous storage.
+     let entries = unsafe {
+         libc::mmap(
+@@ -75,11 +83,11 @@ fn allocate_entries<T>(bufsize: usize) -> *mut Entry<T> {
+ }
+ 
+ #[cfg(windows)]
+-fn allocate_entries<T>(bufsize: usize) -> *mut Entry<T> {
+-    let layout = Layout::from_size_align(bufsize, align_of::<Entry<T>>())
+-        .expect("invalid concurrent-map layout");
++fn allocate_entries<T>(bufsize: usize) -> *mut T {
++    let layout =
++        Layout::from_size_align(bufsize, align_of::<T>()).expect("invalid concurrent-map layout");
+     // SAFETY: the layout has nonzero size.
+-    let entries = unsafe { alloc_zeroed(layout).cast::<Entry<T>>() };
++    let entries = unsafe { alloc_zeroed(layout).cast::<T>() };
+     if entries.is_null() {
+         panic!("cannot allocate {bufsize} bytes for concurrent map");
+     }
+@@ -87,15 +95,15 @@ fn allocate_entries<T>(bufsize: usize) -> *mut Entry<T> {
+ }
+ 
+ #[cfg(not(windows))]
+-unsafe fn deallocate_entries<T>(entries: *mut Entry<T>, bufsize: usize) {
++unsafe fn deallocate_entries<T>(entries: *mut T, bufsize: usize) {
+     // SAFETY: `entries` was mapped by `allocate_entries` with this size.
+     let _ = unsafe { libc::munmap(entries.cast(), bufsize) };
+ }
+ 
+ #[cfg(windows)]
+-unsafe fn deallocate_entries<T>(entries: *mut Entry<T>, bufsize: usize) {
+-    let layout = Layout::from_size_align(bufsize, align_of::<Entry<T>>())
+-        .expect("invalid concurrent-map layout");
++unsafe fn deallocate_entries<T>(entries: *mut T, bufsize: usize) {
++    let layout =
++        Layout::from_size_align(bufsize, align_of::<T>()).expect("invalid concurrent-map layout");
+     // SAFETY: `entries` was allocated by `allocate_entries` with this layout.
+     unsafe { dealloc(entries.cast(), layout) };
+ }
+@@ -119,7 +127,9 @@ impl EntryId {
+ /// A map under construction. Freeze it once concurrent insertion is complete
+ /// to look up and traverse its entries.
+ pub struct ConcurrentMap<T> {
+-    entries: *mut Entry<T>,
++    entries: *mut AtomicU32,
++    records: *mut Record<T>,
++    counts: Box<[ShardCount]>,
+     nbuckets: usize,
+ }
+ 
+@@ -131,7 +141,12 @@ unsafe impl<T: Send + Sync> Sync for ConcurrentMap<T> {}
+ impl<T> Default for ConcurrentMap<T> {
+     /// A map without buckets, to be replaced before use.
+     fn default() -> Self {
+-        Self { entries: ptr::null_mut(), nbuckets: 0 }
++        Self {
++            entries: ptr::null_mut(),
++            records: ptr::null_mut(),
++            counts: Box::default(),
++            nbuckets: 0,
++        }
+     }
+ }
+ 
+@@ -139,40 +154,60 @@ impl<T> ConcurrentMap<T> {
+     /// A map with room for about `nkeys` distinct keys.
+     pub fn with_capacity(nkeys: usize) -> Self {
+         let nbuckets = nkeys.next_power_of_two().max(MIN_NBUCKETS);
++        assert!(nbuckets < u32::MAX as usize, "too many concurrent-map buckets");
+         let bufsize = Self::bufsize(nbuckets);
+         // mmap is faster than malloc + memset on Unix; the platform allocator
+         // returns equivalently zeroed storage on Windows.
+-        let entries = allocate_entries(bufsize);
++        let entries = allocate_entries::<AtomicU32>(bufsize);
++        // Reserve address space for each shard's dense prefix. Anonymous
++        // pages backing unused records are never touched or populated.
++        let records = allocate_entries::<Record<T>>(Self::records_bufsize(nbuckets));
+         // SAFETY: the range is the fresh allocation; the advice is only a
+         // hint on targets that support it.
+         unsafe { crate::util::madvise_hugepage(entries.cast(), bufsize) };
+-        Self { entries, nbuckets }
++        Self {
++            entries,
++            records,
++            nbuckets,
++            counts: Box::new(std::array::from_fn::<_, NUM_SHARDS, _>(|_| {
++                ShardCount(AtomicU32::new(0))
++            })),
++        }
+     }
+ 
+     fn bufsize(nbuckets: usize) -> usize {
+-        size_of::<Entry<T>>().checked_mul(nbuckets).expect("table size overflow")
++        size_of::<AtomicU32>().checked_mul(nbuckets).expect("table size overflow")
++    }
++
++    fn records_bufsize(nbuckets: usize) -> usize {
++        size_of::<Record<T>>().checked_mul(nbuckets).expect("record storage overflow")
+     }
+ 
+-    /// The number of entries, counted.
++    /// Occupancy is collected while allocating unique dense records.
+     fn len(&self) -> usize {
+-        (0..self.nbuckets).filter(|&idx| self.is_occupied(idx)).count()
++        self.counts.iter().map(|n| n.0.load(Ordering::Relaxed) as usize).sum()
+     }
+ 
+-    fn entry(&self, idx: usize) -> &Entry<T> {
++    fn entry(&self, idx: usize) -> &AtomicU32 {
+         debug_assert!(idx < self.nbuckets);
+-        // SAFETY: idx is within the allocation.
++        // SAFETY: the index is in the compact bucket allocation.
+         unsafe { &*self.entries.add(idx) }
+     }
+ 
+     fn is_occupied(&self, idx: usize) -> bool {
+-        let key = self.entry(idx).key.load(Ordering::Acquire);
+-        !key.is_null() && key != CLAIMED
++        !matches!(self.entry(idx).load(Ordering::Acquire), EMPTY | CLAIMED)
++    }
++
++    fn record(&self, published: u32) -> &Record<T> {
++        debug_assert!(published != EMPTY && published != CLAIMED);
++        // SAFETY: a published index names a fully initialized record whose
++        // lifetime is the map's; the acquire load observes its publication.
++        unsafe { &*self.records.add((published - 1) as usize) }
+     }
+ 
+     fn value_at(&self, idx: usize) -> &T {
+-        // SAFETY: callers only ask for values of published entries, which
+-        // were initialized before publication.
+-        unsafe { (*self.entry(idx).value.get()).assume_init_ref() }
++        let record = self.record(self.entry(idx).load(Ordering::Acquire));
++        record.value()
+     }
+ 
+     /// The probe sequence for a hash: the buckets of one shard, starting
+@@ -242,43 +277,47 @@ impl<T> ConcurrentMap<T> {
+ 
+         for idx in self.probe(hash) {
+             let ent = self.entry(idx);
+-
+-            // Avoid an atomic update when the slot is already occupied.
+-            let mut ptr = ent.key.load(Ordering::Acquire);
+-            if !ptr.is_null() && ptr != CLAIMED {
+-                if equals(ptr, ent.keylen.load(Ordering::Relaxed)) {
+-                    return (EntryId(idx as u32), self.value_at(idx), false);
++            let mut published = ent.load(Ordering::Acquire);
++            if !matches!(published, EMPTY | CLAIMED) {
++                let record = self.record(published);
++                if equals(record.key, record.keylen) {
++                    return (EntryId(idx as u32), record.value(), false);
+                 }
+                 continue;
+             }
+-
+-            if ptr.is_null() {
+-                match ent.key.compare_exchange(
+-                    ptr::null_mut(),
+-                    CLAIMED,
+-                    Ordering::Acquire,
+-                    Ordering::Acquire,
+-                ) {
++            if published == EMPTY {
++                match ent.compare_exchange(EMPTY, CLAIMED, Ordering::Acquire, Ordering::Acquire) {
+                     Ok(_) => {
++                        // Initialization can panic; do it before reserving a
++                        // dense record, so every counted record is droppable.
+                         let (keylen, value) = initialize.take().expect("initialized once")();
+-                        // SAFETY: the claim gives this thread exclusive
+-                        // access to the bucket until the key is published.
+-                        unsafe { (*ent.value.get()).write(value) };
+-                        ent.keylen.store(keylen, Ordering::Relaxed);
+-                        ent.key.store(key.cast_mut(), Ordering::Release);
+-                        return (EntryId(idx as u32), self.value_at(idx), true);
++                        let shard_size = self.nbuckets / NUM_SHARDS;
++                        let shard = idx / shard_size;
++                        let local = self.counts[shard].0.fetch_add(1, Ordering::Relaxed) as usize;
++                        debug_assert!(local < shard_size);
++                        let dense = shard * shard_size + local;
++                        // SAFETY: this counter position is unique to the
++                        // winning insertion; the record is not published yet.
++                        unsafe {
++                            self.records.add(dense).write(Record {
++                                key,
++                                keylen,
++                                value: UnsafeCell::new(MaybeUninit::new(value)),
++                            });
++                        }
++                        ent.store(dense as u32 + 1, Ordering::Release);
++                        return (EntryId(idx as u32), self.record(dense as u32 + 1).value(), true);
+                     }
+-                    Err(current) => ptr = current,
++                    Err(current) => published = current,
+                 }
+             }
+-
+-            // Wait for the thread that claimed the slot to publish its key.
+-            while ptr == CLAIMED {
++            while published == CLAIMED {
+                 std::hint::spin_loop();
+-                ptr = ent.key.load(Ordering::Acquire);
++                published = ent.load(Ordering::Acquire);
+             }
+-            if equals(ptr, ent.keylen.load(Ordering::Relaxed)) {
+-                return (EntryId(idx as u32), self.value_at(idx), false);
++            let record = self.record(published);
++            if equals(record.key, record.keylen) {
++                return (EntryId(idx as u32), record.value(), false);
+             }
+         }
+         panic!("the concurrent map is full");
+@@ -310,16 +349,23 @@ impl<T> Drop for ConcurrentMap<T> {
+             return;
+         }
+         if std::mem::needs_drop::<T>() {
+-            for idx in 0..self.nbuckets {
+-                if self.is_occupied(idx) {
+-                    // SAFETY: the value of a published entry is initialized
+-                    // and dropped exactly once, here.
+-                    unsafe { (*self.entry(idx).value.get()).assume_init_drop() };
++            let shard_size = self.nbuckets / NUM_SHARDS;
++            for (shard, count) in self.counts.iter().enumerate() {
++                for local in 0..count.0.load(Ordering::Relaxed) as usize {
++                    // SAFETY: every allocated dense record is initialized
++                    // exactly once; dropping the map excludes other accesses.
++                    unsafe {
++                        (*(*self.records.add(shard * shard_size + local)).value.get())
++                            .assume_init_drop();
++                    }
+                 }
+             }
+         }
+-        // SAFETY: allocated in with_capacity and not yet released.
+-        unsafe { deallocate_entries(self.entries, Self::bufsize(self.nbuckets)) };
++        // SAFETY: both ranges were allocated by with_capacity.
++        unsafe {
++            deallocate_entries(self.entries, Self::bufsize(self.nbuckets));
++            deallocate_entries(self.records, Self::records_bufsize(self.nbuckets));
++        };
+     }
+ }
+ 
+@@ -343,16 +389,14 @@ impl<T> Default for FrozenMap<T> {
+ impl<T> FrozenMap<T> {
+     /// The published key of a bucket, if any.
+     fn key_at(&self, idx: usize) -> Option<&'static [u8]> {
+-        let ent = self.0.entry(idx);
+-        let key = ent.key.load(Ordering::Acquire);
+-        if key.is_null() || key == CLAIMED {
++        let published = self.0.entry(idx).load(Ordering::Acquire);
++        if matches!(published, EMPTY | CLAIMED) {
+             return None;
+         }
+-        // SAFETY: a published key is a live 'static slice whose length was
+-        // written before the key pointer.
+-        Some(unsafe {
+-            std::slice::from_raw_parts(key, ent.keylen.load(Ordering::Relaxed) as usize)
+-        })
++        let record = self.0.record(published);
++        // SAFETY: the acquire publication guarantees initialized key data,
++        // whose source mapping remains live for the entire link.
++        Some(unsafe { std::slice::from_raw_parts(record.key, record.keylen as usize) })
+     }
+ 
+     /// Returns a published entry identified by an ID obtained from this map.
+@@ -366,7 +410,8 @@ impl<T> FrozenMap<T> {
+ 
+     #[inline]
+     pub(crate) fn prefetch(&self, id: EntryId) {
+-        crate::util::prefetch(std::ptr::from_ref(self.0.entry(id.0 as usize)).cast());
++        let record = self.0.record(self.0.entry(id.0 as usize).load(Ordering::Acquire));
++        crate::util::prefetch(record.value.get().cast());
+     }
+ 
+     pub fn key(&self, id: EntryId) -> &'static [u8] {
+@@ -439,6 +484,74 @@ impl<T> FrozenMap<T> {
+ mod tests {
+     use super::*;
+ 
++    #[test]
++    fn collision_wrap_preserves_canonical_order() {
++        let keys: [&'static [u8]; 8] = [b"bbb", b"a", b"cc", b"dd", b"ab", b"c", b"aaaa", b"z"];
++        let mut expected = keys.to_vec();
++        expected.sort_unstable_by(|a, b| a.len().cmp(&b.len()).then_with(|| a.cmp(b)));
++        for reverse in [false, true] {
++            let map = ConcurrentMap::with_capacity(100);
++            for i in 0..keys.len() {
++                let key = keys[if reverse { keys.len() - i - 1 } else { i }];
++                map.insert_with(key, 255, || ());
++            }
++            let map = map.freeze();
++            assert_eq!(
++                map.sorted_entries(0).iter().map(|&id| map.key(id)).collect::<Vec<_>>(),
++                expected
++            );
++            assert!(map.sorted_entries(NUM_SHARDS - 1).is_empty());
++        }
++    }
++
++    #[test]
++    fn concurrent_publication_and_value_destruction() {
++        use std::sync::Arc;
++        use std::sync::atomic::AtomicUsize;
++        struct Value(usize, Arc<AtomicUsize>);
++        impl Drop for Value {
++            fn drop(&mut self) {
++                self.1.fetch_add(1, Ordering::Relaxed);
++            }
++        }
++        let dropped = Arc::new(AtomicUsize::new(0));
++        let map = ConcurrentMap::with_capacity(100);
++        (0..4096usize).into_par_iter().for_each(|i| {
++            let key: &'static [u8] = &b"abcdefgh"[i % 8..i % 8 + 1];
++            let (_, value, _) =
++                map.insert_with(key, (i % 8) as u64, || Value(i % 8, dropped.clone()));
++            assert_eq!(value.0, i % 8);
++        });
++        assert_eq!(map.len(), 8);
++        drop(map);
++        assert_eq!(dropped.load(Ordering::Relaxed), 8);
++    }
++
++    #[test]
++    fn failed_initializer_does_not_reserve_a_record() {
++        use std::panic::{AssertUnwindSafe, catch_unwind};
++        use std::sync::Arc;
++        use std::sync::atomic::AtomicUsize;
++        struct Value(Arc<AtomicUsize>);
++        impl Drop for Value {
++            fn drop(&mut self) {
++                self.0.fetch_add(1, Ordering::Relaxed);
++            }
++        }
++        let dropped = Arc::new(AtomicUsize::new(0));
++        let map = ConcurrentMap::with_capacity(100);
++        map.insert_with(b"published", 0, || Value(dropped.clone()));
++        assert!(
++            catch_unwind(AssertUnwindSafe(|| {
++                map.insert_with(b"failed", 1, || panic!("initializer failed"));
++            }))
++            .is_err()
++        );
++        assert_eq!(map.len(), 1);
++        drop(map);
++        assert_eq!(dropped.load(Ordering::Relaxed), 1);
++    }
++
+     #[test]
+     fn insert_and_lookup() {
+         let map: ConcurrentMap<u32> = ConcurrentMap::with_capacity(100);

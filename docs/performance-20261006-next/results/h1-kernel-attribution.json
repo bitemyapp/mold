@@ -1,0 +1,38 @@
+{
+  "recorded_links_per_binary": 30,
+  "event": "cycles",
+  "frequency_hz": 999,
+  "share_denominator": "total sampled cycle period",
+  "lost_samples": {
+    "baseline": 0,
+    "h1": 0
+  },
+  "out_of_order_events": {
+    "baseline": 1,
+    "h1": 0
+  },
+  "total_cycle_period": {
+    "baseline": 504385994396,
+    "h1": 409979057803
+  },
+  "shares_pct": {
+    "baseline": {
+      "spinlock": 58.27,
+      "block_dirty_folio": 57.9,
+      "advice_zap": 20.35,
+      "fault_dirty_shared_page": 18.84,
+      "block_page_mkwrite": 18.72,
+      "merge_insert": 3.78
+    },
+    "h1": {
+      "spinlock": 49.51,
+      "block_dirty_folio": 48.92,
+      "advice_zap": null,
+      "fault_dirty_shared_page": 24.48,
+      "block_page_mkwrite": 24.44,
+      "merge_insert": 4.65
+    }
+  },
+  "missing_advice_limit_pct": 0.5,
+  "note": "Missing branch is below graph display threshold, not zero. Diagnostic profiles are separate sequential captures, not interleaved timing estimates."
+}

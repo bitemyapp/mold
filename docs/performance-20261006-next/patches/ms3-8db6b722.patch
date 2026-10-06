@@ -1,0 +1,85 @@
+diff --git a/src/input_sections.rs b/src/input_sections.rs
+index f34b97ff6c8520449b1837396b7011bbe0f1e3dd..8c0f3b8ff2d7a77a12cf95af8ff7ec37d29bfb7c 100644
+--- a/src/input_sections.rs
++++ b/src/input_sections.rs
+@@ -1580,6 +1580,15 @@ impl MergeInfo {
+             let hash = xxhash_rust::xxh3::xxh3_64(&data[pos..pos + size]);
+             self.hashes.push(hash);
+             sketch.insert(hash);
++            // Learn density from work already performed, not another string
++            // scan. A bounded reservation avoids repeated growth/copying of
++            // both arrays while limiting a misleading prefix's memory cost.
++            if self.hashes.len() == 64 && parent.hdr.shdr.sh_flags.get() & SHF_STRINGS as u64 != 0 {
++                let estimated = data.len().saturating_mul(72) / (pos + size);
++                let capacity = estimated.clamp(64, 65536);
++                self.frag_offsets.reserve_exact(capacity - self.frag_offsets.len());
++                self.hashes.reserve_exact(capacity - self.hashes.len());
++            }
+         };
+         if parent.hdr.shdr.sh_flags.get() & SHF_STRINGS as u64 != 0 {
+             let mut pos = 0;
+diff --git a/tests/arch-x86_64-mergeable-string-density.sh b/tests/arch-x86_64-mergeable-string-density.sh
+new file mode 100755
+index 0000000000000000000000000000000000000000..54dadf644f8f56736ca1f627fba0bc8f5e66243a
+--- /dev/null
++++ b/tests/arch-x86_64-mergeable-string-density.sh
+@@ -0,0 +1,59 @@
++#!/usr/bin/env bash
++. $(dirname $0)/common.inc
++
++# Two opposite density changes exercise storage growth while references to
++# every string must continue to resolve correctly. Wide strings exercise
++# the same path with a terminator wider than one byte.
++awk 'BEGIN {
++  for (group = 0; group < 2; group++) {
++    printf ".section .rodata.density%d,\"aMS\",@progbits,1\n", group
++    for (i = 0; i < 2048; i++) {
++      printf "s%d_%d: .string \"%d:%04d", group, i, group, i
++      if ((i < 64) == (group == 0))
++        for (j = 0; j < 200; j++) printf "x"
++      print "\""
++    }
++  }
++  print ".section .rodata.wide,\"aMS\",@progbits,4"
++  print ".p2align 2"
++  for (i = 0; i < 2048; i++) printf "w%d: .long %d, 0\n", i, i + 1
++  print ".section .data,\"aw\",@progbits"
++  print ".globl strings"
++  print "strings:"
++  for (group = 0; group < 2; group++)
++    for (i = 0; i < 2048; i++) printf ".quad s%d_%d\n", group, i
++  print ".globl wide_strings"
++  print "wide_strings:"
++  for (i = 0; i < 2048; i++) printf ".quad w%d\n", i
++  print ".section .note.GNU-stack,\"\",@progbits"
++}' > $t/a.s
++$CC -c -o $t/a.o $t/a.s
++
++cat <<'EOF' | $CC -c -o $t/b.o -x c -
++#include <assert.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <string.h>
++extern const char *strings[2][2048];
++extern const uint32_t *wide_strings[2048];
++int main() {
++  for (int group = 0; group < 2; group++) {
++    for (int i = 0; i < 2048; i++) {
++      char expected[256];
++      int n = sprintf(expected, "%d:%04d", group, i);
++      if ((i < 64) == (group == 0)) {
++        memset(expected + n, 'x', 200);
++        n += 200;
++      }
++      expected[n] = 0;
++      assert(strcmp(strings[group][i], expected) == 0);
++      assert(wide_strings[i][0] == i + 1 && wide_strings[i][1] == 0);
++    }
++  }
++}
++EOF
++for threads in 1 8; do
++  $CC -B. -o $t/exe$threads $t/a.o $t/b.o -Wl,--threads=$threads
++  $QEMU $t/exe$threads
++done
++cmp $t/exe1 $t/exe8

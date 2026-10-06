@@ -1,0 +1,1460 @@
+{
+  "purpose": "untimed measurement-only Vec allocation counters",
+  "threads": 8,
+  "cpus": "0-7",
+  "runs_per_case_variant": 3,
+  "rows": [
+    {
+      "case": "hello",
+      "variant": "baseline",
+      "run": 0,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "7277a7318c05b3cb221c9ddc1995bba0deea7b291589fb6ce0ccf8f3857e3d80",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/hello/cur",
+      "counters": {
+        "ms3_vec_reallocations": 0,
+        "ms3_vec_moving_reallocations": 0,
+        "ms3_vec_live_bytes_moved": 0,
+        "ms3_vec_sections": 4,
+        "ms3_vec_allocations": 8,
+        "ms3_vec_final_live_bytes": 84,
+        "ms3_vec_final_capacity_bytes": 192
+      },
+      "log": "hello-baseline-0.log"
+    },
+    {
+      "case": "hello",
+      "variant": "candidate",
+      "run": 0,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "7277a7318c05b3cb221c9ddc1995bba0deea7b291589fb6ce0ccf8f3857e3d80",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/hello/cur",
+      "counters": {
+        "ms3_vec_reallocations": 0,
+        "ms3_vec_moving_reallocations": 0,
+        "ms3_vec_live_bytes_moved": 0,
+        "ms3_vec_sections": 4,
+        "ms3_vec_allocations": 8,
+        "ms3_vec_final_live_bytes": 84,
+        "ms3_vec_final_capacity_bytes": 192
+      },
+      "log": "hello-candidate-0.log"
+    },
+    {
+      "case": "hello",
+      "variant": "candidate",
+      "run": 1,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "7277a7318c05b3cb221c9ddc1995bba0deea7b291589fb6ce0ccf8f3857e3d80",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/hello/cur",
+      "counters": {
+        "ms3_vec_reallocations": 0,
+        "ms3_vec_moving_reallocations": 0,
+        "ms3_vec_live_bytes_moved": 0,
+        "ms3_vec_sections": 4,
+        "ms3_vec_allocations": 8,
+        "ms3_vec_final_live_bytes": 84,
+        "ms3_vec_final_capacity_bytes": 192
+      },
+      "log": "hello-candidate-1.log"
+    },
+    {
+      "case": "hello",
+      "variant": "baseline",
+      "run": 1,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "7277a7318c05b3cb221c9ddc1995bba0deea7b291589fb6ce0ccf8f3857e3d80",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/hello/cur",
+      "counters": {
+        "ms3_vec_reallocations": 0,
+        "ms3_vec_moving_reallocations": 0,
+        "ms3_vec_live_bytes_moved": 0,
+        "ms3_vec_sections": 4,
+        "ms3_vec_allocations": 8,
+        "ms3_vec_final_live_bytes": 84,
+        "ms3_vec_final_capacity_bytes": 192
+      },
+      "log": "hello-baseline-1.log"
+    },
+    {
+      "case": "hello",
+      "variant": "baseline",
+      "run": 2,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "7277a7318c05b3cb221c9ddc1995bba0deea7b291589fb6ce0ccf8f3857e3d80",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/hello/cur",
+      "counters": {
+        "ms3_vec_reallocations": 0,
+        "ms3_vec_moving_reallocations": 0,
+        "ms3_vec_live_bytes_moved": 0,
+        "ms3_vec_sections": 4,
+        "ms3_vec_allocations": 8,
+        "ms3_vec_final_live_bytes": 84,
+        "ms3_vec_final_capacity_bytes": 192
+      },
+      "log": "hello-baseline-2.log"
+    },
+    {
+      "case": "hello",
+      "variant": "candidate",
+      "run": 2,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "7277a7318c05b3cb221c9ddc1995bba0deea7b291589fb6ce0ccf8f3857e3d80",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/hello/cur",
+      "counters": {
+        "ms3_vec_reallocations": 0,
+        "ms3_vec_moving_reallocations": 0,
+        "ms3_vec_live_bytes_moved": 0,
+        "ms3_vec_sections": 4,
+        "ms3_vec_allocations": 8,
+        "ms3_vec_final_live_bytes": 84,
+        "ms3_vec_final_capacity_bytes": 192
+      },
+      "log": "hello-candidate-2.log"
+    },
+    {
+      "case": "rhello",
+      "variant": "baseline",
+      "run": 0,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "967631a389972f215d294980db400e57627ca2a4fdc60a7316b5bbeb7cf998b6",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/rhello/cur",
+      "counters": {
+        "ms3_vec_sections": 73,
+        "ms3_vec_reallocations": 158,
+        "ms3_vec_moving_reallocations": 158,
+        "ms3_vec_allocations": 304,
+        "ms3_vec_final_live_bytes": 225732,
+        "ms3_vec_live_bytes_moved": 283488,
+        "ms3_vec_final_capacity_bytes": 291720
+      },
+      "log": "rhello-baseline-0.log"
+    },
+    {
+      "case": "rhello",
+      "variant": "candidate",
+      "run": 0,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "967631a389972f215d294980db400e57627ca2a4fdc60a7316b5bbeb7cf998b6",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/rhello/cur",
+      "counters": {
+        "ms3_vec_sections": 73,
+        "ms3_vec_reallocations": 122,
+        "ms3_vec_moving_reallocations": 122,
+        "ms3_vec_allocations": 268,
+        "ms3_vec_live_bytes_moved": 13152,
+        "ms3_vec_final_live_bytes": 225732,
+        "ms3_vec_final_capacity_bytes": 655860
+      },
+      "log": "rhello-candidate-0.log"
+    },
+    {
+      "case": "rhello",
+      "variant": "candidate",
+      "run": 1,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "967631a389972f215d294980db400e57627ca2a4fdc60a7316b5bbeb7cf998b6",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/rhello/cur",
+      "counters": {
+        "ms3_vec_sections": 73,
+        "ms3_vec_reallocations": 122,
+        "ms3_vec_moving_reallocations": 122,
+        "ms3_vec_allocations": 268,
+        "ms3_vec_live_bytes_moved": 13152,
+        "ms3_vec_final_live_bytes": 225732,
+        "ms3_vec_final_capacity_bytes": 655860
+      },
+      "log": "rhello-candidate-1.log"
+    },
+    {
+      "case": "rhello",
+      "variant": "baseline",
+      "run": 1,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "967631a389972f215d294980db400e57627ca2a4fdc60a7316b5bbeb7cf998b6",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/rhello/cur",
+      "counters": {
+        "ms3_vec_sections": 73,
+        "ms3_vec_reallocations": 158,
+        "ms3_vec_moving_reallocations": 158,
+        "ms3_vec_allocations": 304,
+        "ms3_vec_final_live_bytes": 225732,
+        "ms3_vec_live_bytes_moved": 283488,
+        "ms3_vec_final_capacity_bytes": 291720
+      },
+      "log": "rhello-baseline-1.log"
+    },
+    {
+      "case": "rhello",
+      "variant": "baseline",
+      "run": 2,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "967631a389972f215d294980db400e57627ca2a4fdc60a7316b5bbeb7cf998b6",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/rhello/cur",
+      "counters": {
+        "ms3_vec_sections": 73,
+        "ms3_vec_reallocations": 158,
+        "ms3_vec_moving_reallocations": 158,
+        "ms3_vec_allocations": 304,
+        "ms3_vec_final_live_bytes": 225732,
+        "ms3_vec_live_bytes_moved": 283488,
+        "ms3_vec_final_capacity_bytes": 291720
+      },
+      "log": "rhello-baseline-2.log"
+    },
+    {
+      "case": "rhello",
+      "variant": "candidate",
+      "run": 2,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "967631a389972f215d294980db400e57627ca2a4fdc60a7316b5bbeb7cf998b6",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/rhello/cur",
+      "counters": {
+        "ms3_vec_sections": 73,
+        "ms3_vec_reallocations": 122,
+        "ms3_vec_moving_reallocations": 122,
+        "ms3_vec_allocations": 268,
+        "ms3_vec_live_bytes_moved": 13152,
+        "ms3_vec_final_live_bytes": 225732,
+        "ms3_vec_final_capacity_bytes": 655860
+      },
+      "log": "rhello-candidate-2.log"
+    },
+    {
+      "case": "tblgen",
+      "variant": "baseline",
+      "run": 0,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "63b068abefeb622662818685a0794d8e5c7e8a5d651213eda3577810ea3369cd",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/tblgen/cur",
+      "counters": {
+        "ms3_vec_sections": 371,
+        "ms3_vec_reallocations": 2730,
+        "ms3_vec_moving_reallocations": 2730,
+        "ms3_vec_allocations": 3472,
+        "ms3_vec_final_live_bytes": 2863272,
+        "ms3_vec_live_bytes_moved": 4282656,
+        "ms3_vec_final_capacity_bytes": 4301940
+      },
+      "log": "tblgen-baseline-0.log"
+    },
+    {
+      "case": "tblgen",
+      "variant": "candidate",
+      "run": 0,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "63b068abefeb622662818685a0794d8e5c7e8a5d651213eda3577810ea3369cd",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/tblgen/cur",
+      "counters": {
+        "ms3_vec_sections": 371,
+        "ms3_vec_reallocations": 2078,
+        "ms3_vec_moving_reallocations": 2078,
+        "ms3_vec_allocations": 2820,
+        "ms3_vec_live_bytes_moved": 353376,
+        "ms3_vec_final_live_bytes": 2863272,
+        "ms3_vec_final_capacity_bytes": 9800820
+      },
+      "log": "tblgen-candidate-0.log"
+    },
+    {
+      "case": "tblgen",
+      "variant": "candidate",
+      "run": 1,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "63b068abefeb622662818685a0794d8e5c7e8a5d651213eda3577810ea3369cd",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/tblgen/cur",
+      "counters": {
+        "ms3_vec_sections": 371,
+        "ms3_vec_reallocations": 2078,
+        "ms3_vec_moving_reallocations": 2078,
+        "ms3_vec_allocations": 2820,
+        "ms3_vec_live_bytes_moved": 353376,
+        "ms3_vec_final_live_bytes": 2863272,
+        "ms3_vec_final_capacity_bytes": 9800820
+      },
+      "log": "tblgen-candidate-1.log"
+    },
+    {
+      "case": "tblgen",
+      "variant": "baseline",
+      "run": 1,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "63b068abefeb622662818685a0794d8e5c7e8a5d651213eda3577810ea3369cd",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/tblgen/cur",
+      "counters": {
+        "ms3_vec_sections": 371,
+        "ms3_vec_reallocations": 2730,
+        "ms3_vec_moving_reallocations": 2730,
+        "ms3_vec_allocations": 3472,
+        "ms3_vec_final_live_bytes": 2863272,
+        "ms3_vec_live_bytes_moved": 4282656,
+        "ms3_vec_final_capacity_bytes": 4301940
+      },
+      "log": "tblgen-baseline-1.log"
+    },
+    {
+      "case": "tblgen",
+      "variant": "baseline",
+      "run": 2,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "63b068abefeb622662818685a0794d8e5c7e8a5d651213eda3577810ea3369cd",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/tblgen/cur",
+      "counters": {
+        "ms3_vec_sections": 371,
+        "ms3_vec_reallocations": 2730,
+        "ms3_vec_moving_reallocations": 2730,
+        "ms3_vec_allocations": 3472,
+        "ms3_vec_final_live_bytes": 2863272,
+        "ms3_vec_live_bytes_moved": 4282656,
+        "ms3_vec_final_capacity_bytes": 4301940
+      },
+      "log": "tblgen-baseline-2.log"
+    },
+    {
+      "case": "tblgen",
+      "variant": "candidate",
+      "run": 2,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "63b068abefeb622662818685a0794d8e5c7e8a5d651213eda3577810ea3369cd",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/tblgen/cur",
+      "counters": {
+        "ms3_vec_sections": 371,
+        "ms3_vec_reallocations": 2078,
+        "ms3_vec_moving_reallocations": 2078,
+        "ms3_vec_allocations": 2820,
+        "ms3_vec_live_bytes_moved": 353376,
+        "ms3_vec_final_live_bytes": 2863272,
+        "ms3_vec_final_capacity_bytes": 9800820
+      },
+      "log": "tblgen-candidate-2.log"
+    },
+    {
+      "case": "lld",
+      "variant": "baseline",
+      "run": 0,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "5de7d2ef5dc164818fdbdb3d53d1f433c4bf90a9755bdce13b88e694fafcb763",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/lld/cur",
+      "counters": {
+        "ms3_vec_sections": 6763,
+        "ms3_vec_reallocations": 51788,
+        "ms3_vec_moving_reallocations": 51788,
+        "ms3_vec_allocations": 65314,
+        "ms3_vec_final_live_bytes": 112499616,
+        "ms3_vec_live_bytes_moved": 159604848,
+        "ms3_vec_final_capacity_bytes": 159999912
+      },
+      "log": "lld-baseline-0.log"
+    },
+    {
+      "case": "lld",
+      "variant": "candidate",
+      "run": 0,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "5de7d2ef5dc164818fdbdb3d53d1f433c4bf90a9755bdce13b88e694fafcb763",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/lld/cur",
+      "counters": {
+        "ms3_vec_sections": 6763,
+        "ms3_vec_reallocations": 36392,
+        "ms3_vec_moving_reallocations": 36392,
+        "ms3_vec_allocations": 49918,
+        "ms3_vec_live_bytes_moved": 10582476,
+        "ms3_vec_final_live_bytes": 112499616,
+        "ms3_vec_final_capacity_bytes": 308416236
+      },
+      "log": "lld-candidate-0.log"
+    },
+    {
+      "case": "lld",
+      "variant": "candidate",
+      "run": 1,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "5de7d2ef5dc164818fdbdb3d53d1f433c4bf90a9755bdce13b88e694fafcb763",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/lld/cur",
+      "counters": {
+        "ms3_vec_sections": 6763,
+        "ms3_vec_reallocations": 36392,
+        "ms3_vec_moving_reallocations": 36392,
+        "ms3_vec_allocations": 49918,
+        "ms3_vec_live_bytes_moved": 10582476,
+        "ms3_vec_final_live_bytes": 112499616,
+        "ms3_vec_final_capacity_bytes": 308416236
+      },
+      "log": "lld-candidate-1.log"
+    },
+    {
+      "case": "lld",
+      "variant": "baseline",
+      "run": 1,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "5de7d2ef5dc164818fdbdb3d53d1f433c4bf90a9755bdce13b88e694fafcb763",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/lld/cur",
+      "counters": {
+        "ms3_vec_sections": 6763,
+        "ms3_vec_reallocations": 51788,
+        "ms3_vec_moving_reallocations": 51788,
+        "ms3_vec_allocations": 65314,
+        "ms3_vec_final_live_bytes": 112499616,
+        "ms3_vec_live_bytes_moved": 159604848,
+        "ms3_vec_final_capacity_bytes": 159999912
+      },
+      "log": "lld-baseline-1.log"
+    },
+    {
+      "case": "lld",
+      "variant": "baseline",
+      "run": 2,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "5de7d2ef5dc164818fdbdb3d53d1f433c4bf90a9755bdce13b88e694fafcb763",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/lld/cur",
+      "counters": {
+        "ms3_vec_sections": 6763,
+        "ms3_vec_reallocations": 51788,
+        "ms3_vec_moving_reallocations": 51788,
+        "ms3_vec_allocations": 65314,
+        "ms3_vec_final_live_bytes": 112499616,
+        "ms3_vec_live_bytes_moved": 159604848,
+        "ms3_vec_final_capacity_bytes": 159999912
+      },
+      "log": "lld-baseline-2.log"
+    },
+    {
+      "case": "lld",
+      "variant": "candidate",
+      "run": 2,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "5de7d2ef5dc164818fdbdb3d53d1f433c4bf90a9755bdce13b88e694fafcb763",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/lld/cur",
+      "counters": {
+        "ms3_vec_sections": 6763,
+        "ms3_vec_reallocations": 36392,
+        "ms3_vec_moving_reallocations": 36392,
+        "ms3_vec_allocations": 49918,
+        "ms3_vec_live_bytes_moved": 10582476,
+        "ms3_vec_final_live_bytes": 112499616,
+        "ms3_vec_final_capacity_bytes": 308416236
+      },
+      "log": "lld-candidate-2.log"
+    },
+    {
+      "case": "clang",
+      "variant": "baseline",
+      "run": 0,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "3fa34d9efa75ab05e4a553e9116f5943bd6a3defa8ba3b3c017b1aef37216c88",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/clang.d",
+      "counters": {
+        "ms3_vec_sections": 9298,
+        "ms3_vec_reallocations": 74592,
+        "ms3_vec_moving_reallocations": 74592,
+        "ms3_vec_allocations": 93188,
+        "ms3_vec_final_live_bytes": 196004244,
+        "ms3_vec_live_bytes_moved": 279096480,
+        "ms3_vec_final_capacity_bytes": 279648648
+      },
+      "log": "clang-baseline-0.log"
+    },
+    {
+      "case": "clang",
+      "variant": "candidate",
+      "run": 0,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "3fa34d9efa75ab05e4a553e9116f5943bd6a3defa8ba3b3c017b1aef37216c88",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/clang.d",
+      "counters": {
+        "ms3_vec_sections": 9298,
+        "ms3_vec_reallocations": 51232,
+        "ms3_vec_moving_reallocations": 51232,
+        "ms3_vec_allocations": 69828,
+        "ms3_vec_live_bytes_moved": 14627916,
+        "ms3_vec_final_live_bytes": 196004244,
+        "ms3_vec_final_capacity_bytes": 517783116
+      },
+      "log": "clang-candidate-0.log"
+    },
+    {
+      "case": "clang",
+      "variant": "candidate",
+      "run": 1,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "3fa34d9efa75ab05e4a553e9116f5943bd6a3defa8ba3b3c017b1aef37216c88",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/clang.d",
+      "counters": {
+        "ms3_vec_sections": 9298,
+        "ms3_vec_reallocations": 51232,
+        "ms3_vec_moving_reallocations": 51232,
+        "ms3_vec_allocations": 69828,
+        "ms3_vec_live_bytes_moved": 14627916,
+        "ms3_vec_final_live_bytes": 196004244,
+        "ms3_vec_final_capacity_bytes": 517783116
+      },
+      "log": "clang-candidate-1.log"
+    },
+    {
+      "case": "clang",
+      "variant": "baseline",
+      "run": 1,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "3fa34d9efa75ab05e4a553e9116f5943bd6a3defa8ba3b3c017b1aef37216c88",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/clang.d",
+      "counters": {
+        "ms3_vec_sections": 9298,
+        "ms3_vec_reallocations": 74592,
+        "ms3_vec_moving_reallocations": 74592,
+        "ms3_vec_allocations": 93188,
+        "ms3_vec_final_live_bytes": 196004244,
+        "ms3_vec_live_bytes_moved": 279096480,
+        "ms3_vec_final_capacity_bytes": 279648648
+      },
+      "log": "clang-baseline-1.log"
+    },
+    {
+      "case": "clang",
+      "variant": "baseline",
+      "run": 2,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "3fa34d9efa75ab05e4a553e9116f5943bd6a3defa8ba3b3c017b1aef37216c88",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/clang.d",
+      "counters": {
+        "ms3_vec_sections": 9298,
+        "ms3_vec_reallocations": 74592,
+        "ms3_vec_moving_reallocations": 74592,
+        "ms3_vec_allocations": 93188,
+        "ms3_vec_final_live_bytes": 196004244,
+        "ms3_vec_live_bytes_moved": 279096480,
+        "ms3_vec_final_capacity_bytes": 279648648
+      },
+      "log": "clang-baseline-2.log"
+    },
+    {
+      "case": "clang",
+      "variant": "candidate",
+      "run": 2,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "3fa34d9efa75ab05e4a553e9116f5943bd6a3defa8ba3b3c017b1aef37216c88",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/clang.d",
+      "counters": {
+        "ms3_vec_sections": 9298,
+        "ms3_vec_reallocations": 51232,
+        "ms3_vec_moving_reallocations": 51232,
+        "ms3_vec_allocations": 69828,
+        "ms3_vec_live_bytes_moved": 14627916,
+        "ms3_vec_final_live_bytes": 196004244,
+        "ms3_vec_final_capacity_bytes": 517783116
+      },
+      "log": "clang-candidate-2.log"
+    },
+    {
+      "case": "clang-s",
+      "variant": "baseline",
+      "run": 0,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "982ccb2f6847c86c8c5fc9e63631c3b3fb4276b3ecf4a808c55100a032a80c28",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats",
+        "--strip-debug"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/clang.d",
+      "counters": {
+        "ms3_vec_sections": 5206,
+        "ms3_vec_reallocations": 8712,
+        "ms3_vec_moving_reallocations": 8712,
+        "ms3_vec_allocations": 19124,
+        "ms3_vec_final_live_bytes": 2186784,
+        "ms3_vec_live_bytes_moved": 2697168,
+        "ms3_vec_final_capacity_bytes": 3052920
+      },
+      "log": "clang-s-baseline-0.log"
+    },
+    {
+      "case": "clang-s",
+      "variant": "candidate",
+      "run": 0,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "982ccb2f6847c86c8c5fc9e63631c3b3fb4276b3ecf4a808c55100a032a80c28",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats",
+        "--strip-debug"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/clang.d",
+      "counters": {
+        "ms3_vec_sections": 5206,
+        "ms3_vec_reallocations": 8122,
+        "ms3_vec_moving_reallocations": 8122,
+        "ms3_vec_allocations": 18534,
+        "ms3_vec_live_bytes_moved": 901536,
+        "ms3_vec_final_live_bytes": 2186784,
+        "ms3_vec_final_capacity_bytes": 4044252
+      },
+      "log": "clang-s-candidate-0.log"
+    },
+    {
+      "case": "clang-s",
+      "variant": "candidate",
+      "run": 1,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "982ccb2f6847c86c8c5fc9e63631c3b3fb4276b3ecf4a808c55100a032a80c28",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats",
+        "--strip-debug"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/clang.d",
+      "counters": {
+        "ms3_vec_sections": 5206,
+        "ms3_vec_reallocations": 8122,
+        "ms3_vec_moving_reallocations": 8122,
+        "ms3_vec_allocations": 18534,
+        "ms3_vec_live_bytes_moved": 901536,
+        "ms3_vec_final_live_bytes": 2186784,
+        "ms3_vec_final_capacity_bytes": 4044252
+      },
+      "log": "clang-s-candidate-1.log"
+    },
+    {
+      "case": "clang-s",
+      "variant": "baseline",
+      "run": 1,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "982ccb2f6847c86c8c5fc9e63631c3b3fb4276b3ecf4a808c55100a032a80c28",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats",
+        "--strip-debug"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/clang.d",
+      "counters": {
+        "ms3_vec_sections": 5206,
+        "ms3_vec_reallocations": 8712,
+        "ms3_vec_moving_reallocations": 8712,
+        "ms3_vec_allocations": 19124,
+        "ms3_vec_final_live_bytes": 2186784,
+        "ms3_vec_live_bytes_moved": 2697168,
+        "ms3_vec_final_capacity_bytes": 3052920
+      },
+      "log": "clang-s-baseline-1.log"
+    },
+    {
+      "case": "clang-s",
+      "variant": "baseline",
+      "run": 2,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "982ccb2f6847c86c8c5fc9e63631c3b3fb4276b3ecf4a808c55100a032a80c28",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats",
+        "--strip-debug"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/clang.d",
+      "counters": {
+        "ms3_vec_sections": 5206,
+        "ms3_vec_reallocations": 8712,
+        "ms3_vec_moving_reallocations": 8712,
+        "ms3_vec_allocations": 19124,
+        "ms3_vec_final_live_bytes": 2186784,
+        "ms3_vec_live_bytes_moved": 2697168,
+        "ms3_vec_final_capacity_bytes": 3052920
+      },
+      "log": "clang-s-baseline-2.log"
+    },
+    {
+      "case": "clang-s",
+      "variant": "candidate",
+      "run": 2,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "982ccb2f6847c86c8c5fc9e63631c3b3fb4276b3ecf4a808c55100a032a80c28",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats",
+        "--strip-debug"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/clang.d",
+      "counters": {
+        "ms3_vec_sections": 5206,
+        "ms3_vec_reallocations": 8122,
+        "ms3_vec_moving_reallocations": 8122,
+        "ms3_vec_allocations": 18534,
+        "ms3_vec_live_bytes_moved": 901536,
+        "ms3_vec_final_live_bytes": 2186784,
+        "ms3_vec_final_capacity_bytes": 4044252
+      },
+      "log": "clang-s-candidate-2.log"
+    },
+    {
+      "case": "ra",
+      "variant": "baseline",
+      "run": 0,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "c54bb48368d1b75376996429c790ab2e8895d835a4a9c466d93bfa77274d4947",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/ra.d",
+      "counters": {
+        "ms3_vec_sections": 17576,
+        "ms3_vec_reallocations": 50768,
+        "ms3_vec_moving_reallocations": 50768,
+        "ms3_vec_allocations": 85920,
+        "ms3_vec_final_live_bytes": 14056824,
+        "ms3_vec_live_bytes_moved": 19531392,
+        "ms3_vec_final_capacity_bytes": 20425044
+      },
+      "log": "ra-baseline-0.log"
+    },
+    {
+      "case": "ra",
+      "variant": "candidate",
+      "run": 0,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "c54bb48368d1b75376996429c790ab2e8895d835a4a9c466d93bfa77274d4947",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/ra.d",
+      "counters": {
+        "ms3_vec_sections": 17576,
+        "ms3_vec_reallocations": 44786,
+        "ms3_vec_moving_reallocations": 44786,
+        "ms3_vec_allocations": 79938,
+        "ms3_vec_live_bytes_moved": 5791944,
+        "ms3_vec_final_live_bytes": 14056824,
+        "ms3_vec_final_capacity_bytes": 32057700
+      },
+      "log": "ra-candidate-0.log"
+    },
+    {
+      "case": "ra",
+      "variant": "candidate",
+      "run": 1,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "c54bb48368d1b75376996429c790ab2e8895d835a4a9c466d93bfa77274d4947",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/ra.d",
+      "counters": {
+        "ms3_vec_sections": 17576,
+        "ms3_vec_reallocations": 44786,
+        "ms3_vec_moving_reallocations": 44786,
+        "ms3_vec_allocations": 79938,
+        "ms3_vec_live_bytes_moved": 5791944,
+        "ms3_vec_final_live_bytes": 14056824,
+        "ms3_vec_final_capacity_bytes": 32057700
+      },
+      "log": "ra-candidate-1.log"
+    },
+    {
+      "case": "ra",
+      "variant": "baseline",
+      "run": 1,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "c54bb48368d1b75376996429c790ab2e8895d835a4a9c466d93bfa77274d4947",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/ra.d",
+      "counters": {
+        "ms3_vec_sections": 17576,
+        "ms3_vec_reallocations": 50768,
+        "ms3_vec_moving_reallocations": 50768,
+        "ms3_vec_allocations": 85920,
+        "ms3_vec_final_live_bytes": 14056824,
+        "ms3_vec_live_bytes_moved": 19531392,
+        "ms3_vec_final_capacity_bytes": 20425044
+      },
+      "log": "ra-baseline-1.log"
+    },
+    {
+      "case": "ra",
+      "variant": "baseline",
+      "run": 2,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "c54bb48368d1b75376996429c790ab2e8895d835a4a9c466d93bfa77274d4947",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/ra.d",
+      "counters": {
+        "ms3_vec_sections": 17576,
+        "ms3_vec_reallocations": 50768,
+        "ms3_vec_moving_reallocations": 50768,
+        "ms3_vec_allocations": 85920,
+        "ms3_vec_final_live_bytes": 14056824,
+        "ms3_vec_live_bytes_moved": 19531392,
+        "ms3_vec_final_capacity_bytes": 20425044
+      },
+      "log": "ra-baseline-2.log"
+    },
+    {
+      "case": "ra",
+      "variant": "candidate",
+      "run": 2,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "c54bb48368d1b75376996429c790ab2e8895d835a4a9c466d93bfa77274d4947",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/ra.d",
+      "counters": {
+        "ms3_vec_sections": 17576,
+        "ms3_vec_reallocations": 44786,
+        "ms3_vec_moving_reallocations": 44786,
+        "ms3_vec_allocations": 79938,
+        "ms3_vec_live_bytes_moved": 5791944,
+        "ms3_vec_final_live_bytes": 14056824,
+        "ms3_vec_final_capacity_bytes": 32057700
+      },
+      "log": "ra-candidate-2.log"
+    },
+    {
+      "case": "ra-s",
+      "variant": "baseline",
+      "run": 0,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "5b7b53af257f19a253831ab081923075b0f10190728da4aa399eab3b15860b6c",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats",
+        "--strip-debug"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/ra.d",
+      "counters": {
+        "ms3_vec_reallocations": 2144,
+        "ms3_vec_moving_reallocations": 2144,
+        "ms3_vec_sections": 11921,
+        "ms3_vec_allocations": 25986,
+        "ms3_vec_live_bytes_moved": 90480,
+        "ms3_vec_final_live_bytes": 390852,
+        "ms3_vec_final_capacity_bytes": 712692
+      },
+      "log": "ra-s-baseline-0.log"
+    },
+    {
+      "case": "ra-s",
+      "variant": "candidate",
+      "run": 0,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "5b7b53af257f19a253831ab081923075b0f10190728da4aa399eab3b15860b6c",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-0.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats",
+        "--strip-debug"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/ra.d",
+      "counters": {
+        "ms3_vec_reallocations": 2144,
+        "ms3_vec_moving_reallocations": 2144,
+        "ms3_vec_sections": 11921,
+        "ms3_vec_allocations": 25986,
+        "ms3_vec_live_bytes_moved": 90480,
+        "ms3_vec_final_live_bytes": 390852,
+        "ms3_vec_final_capacity_bytes": 711108
+      },
+      "log": "ra-s-candidate-0.log"
+    },
+    {
+      "case": "ra-s",
+      "variant": "candidate",
+      "run": 1,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "5b7b53af257f19a253831ab081923075b0f10190728da4aa399eab3b15860b6c",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats",
+        "--strip-debug"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/ra.d",
+      "counters": {
+        "ms3_vec_reallocations": 2144,
+        "ms3_vec_moving_reallocations": 2144,
+        "ms3_vec_sections": 11921,
+        "ms3_vec_allocations": 25986,
+        "ms3_vec_live_bytes_moved": 90480,
+        "ms3_vec_final_live_bytes": 390852,
+        "ms3_vec_final_capacity_bytes": 711108
+      },
+      "log": "ra-s-candidate-1.log"
+    },
+    {
+      "case": "ra-s",
+      "variant": "baseline",
+      "run": 1,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "5b7b53af257f19a253831ab081923075b0f10190728da4aa399eab3b15860b6c",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-1.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats",
+        "--strip-debug"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/ra.d",
+      "counters": {
+        "ms3_vec_reallocations": 2144,
+        "ms3_vec_moving_reallocations": 2144,
+        "ms3_vec_sections": 11921,
+        "ms3_vec_allocations": 25986,
+        "ms3_vec_live_bytes_moved": 90480,
+        "ms3_vec_final_live_bytes": 390852,
+        "ms3_vec_final_capacity_bytes": 712692
+      },
+      "log": "ra-s-baseline-1.log"
+    },
+    {
+      "case": "ra-s",
+      "variant": "baseline",
+      "run": 2,
+      "binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e",
+      "output_sha256": "5b7b53af257f19a253831ab081923075b0f10190728da4aa399eab3b15860b6c",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-baseline/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-baseline-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats",
+        "--strip-debug"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/ra.d",
+      "counters": {
+        "ms3_vec_reallocations": 2144,
+        "ms3_vec_moving_reallocations": 2144,
+        "ms3_vec_sections": 11921,
+        "ms3_vec_allocations": 25986,
+        "ms3_vec_live_bytes_moved": 90480,
+        "ms3_vec_final_live_bytes": 390852,
+        "ms3_vec_final_capacity_bytes": 712692
+      },
+      "log": "ra-s-baseline-2.log"
+    },
+    {
+      "case": "ra-s",
+      "variant": "candidate",
+      "run": 2,
+      "binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8",
+      "output_sha256": "5b7b53af257f19a253831ab081923075b0f10190728da4aa399eab3b15860b6c",
+      "command": [
+        "taskset",
+        "-c",
+        "0-7",
+        "/home/callen/work/mold-next-20261006/src/ms3/counts-candidate/mold-counts",
+        "@response.txt",
+        "-o",
+        "codex-ms3-counts-candidate-2.out",
+        "--no-fork",
+        "--threads=8",
+        "--stats",
+        "--strip-debug"
+      ],
+      "cwd": "/home/callen/work/mold-bench/wl/ra.d",
+      "counters": {
+        "ms3_vec_reallocations": 2144,
+        "ms3_vec_moving_reallocations": 2144,
+        "ms3_vec_sections": 11921,
+        "ms3_vec_allocations": 25986,
+        "ms3_vec_live_bytes_moved": 90480,
+        "ms3_vec_final_live_bytes": 390852,
+        "ms3_vec_final_capacity_bytes": 711108
+      },
+      "log": "ra-s-candidate-2.log"
+    }
+  ]
+}

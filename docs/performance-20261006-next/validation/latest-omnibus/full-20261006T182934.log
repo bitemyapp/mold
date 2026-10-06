@@ -1,0 +1,232 @@
+source_commit=8e522e5217adea17329e8e2eeb753fc482de4b16
+cpu_set=24-31
+command=cargo build --locked && cargo test --locked -p libmold -p mold-tests --lib && cargo test --locked -p mold --test integration -- --all --test-threads 8
+e11293521c6cf5adbb4abf011f2f1fc03686687e44563fff60fd3ce295d12763  /home/callen/work/mold-next-20261006/src/latest-omnibus/Cargo.lock
+   Compiling libc v0.2.189
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.11
+   Compiling crossbeam-utils v0.8.22
+   Compiling pkg-config v0.3.34
+   Compiling cfg-if v1.0.4
+   Compiling crossbeam-epoch v0.9.20
+   Compiling crossbeam-deque v0.8.7
+   Compiling zstd-safe v7.2.4
+   Compiling rayon-core v1.13.0
+   Compiling getrandom v0.4.3
+   Compiling cpp_demangle v0.5.1
+   Compiling zlib-rs v0.6.8
+   Compiling crc32fast v1.5.1
+   Compiling portable-atomic v1.15.0
+   Compiling foldhash v0.2.0
+   Compiling cpufeatures v0.3.1
+   Compiling memchr v2.8.3
+   Compiling constant_time_eq v0.4.2
+   Compiling regex-automata v0.4.18
+   Compiling either v1.18.0
+   Compiling arrayvec v0.7.8
+   Compiling allocator-api2 v0.2.21
+   Compiling equivalent v1.0.2
+   Compiling hashbrown v0.17.1
+   Compiling xxhash-rust v0.8.18
+   Compiling rustc-demangle v0.1.28
+   Compiling jobserver v0.1.35
+   Compiling cc v1.4.4
+   Compiling uuid v1.27.0
+   Compiling rayon v1.12.0
+   Compiling bstr v1.13.1
+   Compiling memmap2 v0.9.11
+   Compiling mold v3.0.0 (/work/cli)
+   Compiling mold-tests v3.0.0 (/work/tests)
+   Compiling zstd-sys v2.0.16+zstd.1.5.7
+   Compiling blake3 v1.8.7
+   Compiling libmold v3.0.0 (/work)
+   Compiling mold-mimalloc-sys v0.1.49
+   Compiling libz-rs-sys v0.6.8
+   Compiling flate2 v1.1.10
+   Compiling mold-mimalloc v0.1.52
+   Compiling zstd v0.13.3
+   Compiling mold-arch-riscv64be v3.0.0 (/work/arch/riscv64be)
+   Compiling mold-arch-sparc64 v3.0.0 (/work/arch/sparc64)
+   Compiling mold-arch-loongarch32 v3.0.0 (/work/arch/loongarch32)
+   Compiling mold-arch-i386 v3.0.0 (/work/arch/i386)
+   Compiling mold-arch-sh4 v3.0.0 (/work/arch/sh4)
+   Compiling mold-arch-x86_64 v3.0.0 (/work/arch/x86_64)
+   Compiling mold-arch-arm64be v3.0.0 (/work/arch/arm64be)
+   Compiling mold-arch-arm32 v3.0.0 (/work/arch/arm32)
+   Compiling mold-arch-riscv32 v3.0.0 (/work/arch/riscv32)
+   Compiling mold-arch-m68k v3.0.0 (/work/arch/m68k)
+   Compiling mold-arch-ppc64v1 v3.0.0 (/work/arch/ppc64v1)
+   Compiling mold-arch-ppc64v2 v3.0.0 (/work/arch/ppc64v2)
+   Compiling mold-arch-riscv64 v3.0.0 (/work/arch/riscv64)
+   Compiling mold-arch-arm32be v3.0.0 (/work/arch/arm32be)
+   Compiling mold-arch-s390x v3.0.0 (/work/arch/s390x)
+   Compiling mold-arch-sh4be v3.0.0 (/work/arch/sh4be)
+   Compiling mold-arch-ppc32 v3.0.0 (/work/arch/ppc32)
+   Compiling mold-arch-riscv32be v3.0.0 (/work/arch/riscv32be)
+   Compiling mold-arch-loongarch64 v3.0.0 (/work/arch/loongarch64)
+   Compiling mold-arch-arm64 v3.0.0 (/work/arch/arm64)
+    Finished `dev` profile [unoptimized] target(s) in 18.58s
+   Compiling mold-tests v3.0.0 (/work/tests)
+   Compiling libmold v3.0.0 (/work)
+    Finished `test` profile [unoptimized] target(s) in 2.41s
+     Running unittests src/lib.rs (/target/debug/deps/libmold-3800677eee301361)
+
+running 34 tests
+test cmdline::tests::cursor_borrows_non_utf8_separate_and_attached_values ... ok
+test chunks::reloc::tests::discarded_section_does_not_read_implicit_addend ... ok
+test cmdline::tests::cursor_preserves_gnu_option_boundaries_and_values ... ok
+test cmdline::tests::numeric_options_use_c_integer_syntax ... ok
+test input_files::tests::crel_addend_wraps ... ok
+test input_sections::tests::fragment_hint_handles_sequential_repeated_and_backward_offsets ... ok
+test input_files::tests::parallel_file_iteration_preserves_live_order_and_stable_storage ... ok
+test symbol::tests::accepts_long_symbol_name ... ok
+test symbol::tests::input_section_origin_roundtrip ... ok
+test symbol::tests::auxiliary_records_follow_first_use_and_preserve_existing_data ... ok
+test util::demangle::tests::rust_legacy_length_overflow ... ok
+test util::demangle::tests::rust_legacy_with_suffix ... ok
+test util::glob::tests::complex ... ok
+test util::glob::tests::default_has_no_matches ... ok
+test util::glob::tests::literals ... ok
+test chunks::gnu_hash::tests::matches_bytewise_hash_including_overflow_and_tails ... ok
+test util::glob::tests::shared_priorities_preserve_highest_match ... ok
+test util::glob::tests::many_patterns_use_nfa ... ok
+test symbol::tests::comdat_ownership_uses_lowest_priority ... ok
+test util::parallel::tests::background_job_joins_on_one_worker ... ok
+test util::perf::tests::implicit_timer_parents_follow_completed_intervals ... ok
+test util::concurrent_map::tests::insert_and_lookup ... ok
+test util::perf::tests::optional_recording_includes_nested_and_background_timers ... ok
+test util::tests::clean_paths ... ok
+test util::tests::leb128_roundtrip ... ok
+test util::tests::sign_extension ... ok
+test util::worker_local::tests::reuses_worker_storage_and_keeps_an_outside_slot ... ok
+test chunks::got::tests::got_ranges_preserve_order_and_ifunc_width ... ok
+test util::hyperloglog::tests::estimates_within_a_few_percent ... ok
+test symbol::tests::shard_hash_distributes_buckets_and_lookup_tags ... ok
+test symbol::tests::gather_preserves_identity_across_sparse_and_repeated_batches ... ok
+test util::siphash::tests::word_updates_match_bytes_with_partial_buffers_and_length_wraparound ... ok
+test util::parallel::tests::preserves_both_groups_across_blocks ... ok
+test output_file::tests::initializes_output_buffer_and_tracks_its_addresses ... ok
+
+test result: ok. 34 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running unittests lib.rs (/target/debug/deps/mold_tests-da7bcb5d00beaf61)
+
+running 2 tests
+test tests::canonicalizes_machine_names ... ok
+test tests::selects_generic_and_target_tests ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Compiling mold v3.0.0 (/work/cli)
+    Finished `test` profile [unoptimized] target(s) in 0.05s
+     Running integration.rs (/target/debug/deps/integration-6c78bdcc5407bea7)
+completed 100/9054
+completed 200/9054
+completed 300/9054
+completed 400/9054
+completed 500/9054
+completed 600/9054
+completed 700/9054
+completed 800/9054
+completed 900/9054
+completed 1000/9054
+completed 1100/9054
+completed 1200/9054
+completed 1300/9054
+completed 1400/9054
+completed 1500/9054
+completed 1600/9054
+completed 1700/9054
+completed 1800/9054
+completed 1900/9054
+completed 2000/9054
+completed 2100/9054
+completed 2200/9054
+completed 2300/9054
+completed 2400/9054
+completed 2500/9054
+completed 2600/9054
+completed 2700/9054
+completed 2800/9054
+completed 2900/9054
+completed 3000/9054
+completed 3100/9054
+completed 3200/9054
+completed 3300/9054
+completed 3400/9054
+completed 3500/9054
+completed 3600/9054
+completed 3700/9054
+completed 3800/9054
+completed 3900/9054
+completed 4000/9054
+completed 4100/9054
+completed 4200/9054
+completed 4300/9054
+completed 4400/9054
+completed 4500/9054
+completed 4600/9054
+completed 4700/9054
+completed 4800/9054
+completed 4900/9054
+completed 5000/9054
+completed 5100/9054
+completed 5200/9054
+completed 5300/9054
+completed 5400/9054
+completed 5500/9054
+completed 5600/9054
+completed 5700/9054
+completed 5800/9054
+completed 5900/9054
+completed 6000/9054
+completed 6100/9054
+completed 6200/9054
+completed 6300/9054
+completed 6400/9054
+completed 6500/9054
+completed 6600/9054
+completed 6700/9054
+completed 6800/9054
+completed 6900/9054
+completed 7000/9054
+completed 7100/9054
+completed 7200/9054
+completed 7300/9054
+completed 7400/9054
+completed 7500/9054
+completed 7600/9054
+completed 7700/9054
+completed 7800/9054
+completed 7900/9054
+completed 8000/9054
+completed 8100/9054
+completed 8200/9054
+completed 8300/9054
+completed 8400/9054
+completed 8500/9054
+completed 8600/9054
+completed 8700/9054
+completed 8800/9054
+completed 8900/9054
+completed 9000/9054
+completed 9054/9054
+aarch64: pass=459 skip=46 fail=0
+aarch64_be: pass=443 skip=51 fail=0
+arm: pass=449 skip=59 fail=0
+armeb: pass=435 skip=62 fail=0
+i686: pass=451 skip=48 fail=0
+loongarch64: pass=450 skip=57 fail=0
+m68k: pass=424 skip=72 fail=0
+ppc: pass=438 skip=57 fail=0
+ppc64: pass=431 skip=68 fail=0
+ppc64le: pass=438 skip=59 fail=0
+ppc64le-power10: pass=434 skip=63 fail=0
+riscv32: pass=437 skip=57 fail=0
+riscv64: pass=464 skip=56 fail=0
+s390x: pass=441 skip=55 fail=0
+sh4: pass=422 skip=72 fail=0
+sh4aeb: pass=421 skip=73 fail=0
+sparc64: pass=440 skip=57 fail=0
+x86_64: pass=551 skip=14 fail=0
+total: pass=8028 skip=1026 fail=0

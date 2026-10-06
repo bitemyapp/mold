@@ -1,0 +1,172 @@
+   Compiling cfg-if v1.0.4
+   Compiling crossbeam-utils v0.8.22
+   Compiling zlib-rs v0.6.8
+   Compiling zstd-sys v2.0.16+zstd.1.5.7
+   Compiling arrayvec v0.7.8
+   Compiling allocator-api2 v0.2.21
+   Compiling equivalent v1.0.2
+   Compiling constant_time_eq v0.4.2
+   Compiling getrandom v0.4.3
+   Compiling regex-automata v0.4.18
+   Compiling zstd-safe v7.2.4
+   Compiling either v1.18.0
+   Compiling cpufeatures v0.3.1
+   Compiling memchr v2.8.3
+   Compiling foldhash v0.2.0
+   Compiling zstd v0.13.3
+   Compiling blake3 v1.8.7
+   Compiling hashbrown v0.17.1
+   Compiling uuid v1.27.0
+   Compiling crossbeam-epoch v0.9.20
+   Compiling crc32fast v1.5.1
+   Compiling cpp_demangle v0.5.1
+   Compiling crossbeam-deque v0.8.7
+   Compiling portable-atomic v1.15.0
+   Compiling memmap2 v0.9.11
+   Compiling rayon-core v1.13.0
+   Compiling xxhash-rust v0.8.18
+   Compiling rustc-demangle v0.1.28
+   Compiling bstr v1.13.1
+   Compiling libmimalloc-sys v0.1.49 (https://github.com/rui314/mimalloc_rust?rev=3979460494f1cd1e7f936cb8e10f41e927c9f698#39794604)
+   Compiling mimalloc v0.1.52 (https://github.com/rui314/mimalloc_rust?rev=3979460494f1cd1e7f936cb8e10f41e927c9f698#39794604)
+   Compiling mold-tests v3.0.0 (/work/tests)
+   Compiling rayon v1.12.0
+   Compiling flate2 v1.1.10
+   Compiling libz-rs-sys v0.6.8
+   Compiling mold v3.0.0 (/work)
+   Compiling mold-arch-arm64 v3.0.0 (/work/arch/arm64)
+   Compiling mold-arch-x86_64 v3.0.0 (/work/arch/x86_64)
+   Compiling mold-arch-riscv64 v3.0.0 (/work/arch/riscv64)
+   Compiling mold-arch-riscv32 v3.0.0 (/work/arch/riscv32)
+   Compiling mold-arch-s390x v3.0.0 (/work/arch/s390x)
+   Compiling mold-arch-arm32be v3.0.0 (/work/arch/arm32be)
+   Compiling mold-arch-ppc64v2 v3.0.0 (/work/arch/ppc64v2)
+   Compiling mold-arch-loongarch32 v3.0.0 (/work/arch/loongarch32)
+   Compiling mold-arch-i386 v3.0.0 (/work/arch/i386)
+   Compiling mold-arch-riscv64be v3.0.0 (/work/arch/riscv64be)
+   Compiling mold-arch-m68k v3.0.0 (/work/arch/m68k)
+   Compiling mold-arch-ppc64v1 v3.0.0 (/work/arch/ppc64v1)
+   Compiling mold-arch-sh4 v3.0.0 (/work/arch/sh4)
+   Compiling mold-arch-loongarch64 v3.0.0 (/work/arch/loongarch64)
+   Compiling mold-arch-arm32 v3.0.0 (/work/arch/arm32)
+   Compiling mold-arch-sh4be v3.0.0 (/work/arch/sh4be)
+   Compiling mold-arch-arm64be v3.0.0 (/work/arch/arm64be)
+   Compiling mold-arch-ppc32 v3.0.0 (/work/arch/ppc32)
+   Compiling mold-arch-riscv32be v3.0.0 (/work/arch/riscv32be)
+   Compiling mold-arch-sparc64 v3.0.0 (/work/arch/sparc64)
+   Compiling mold-cli v3.0.0 (/work/cli)
+    Finished `dev` profile [unoptimized] target(s) in 17.44s
+   Compiling mold-tests v3.0.0 (/work/tests)
+   Compiling mold v3.0.0 (/work)
+    Finished `test` profile [unoptimized] target(s) in 2.42s
+     Running unittests src/lib.rs (/target/debug/deps/mold-c79d532d0a702ee5)
+
+running 34 tests
+test cmdline::tests::cursor_borrows_non_utf8_separate_and_attached_values ... ok
+test chunks::reloc::tests::discarded_section_does_not_read_implicit_addend ... ok
+test cmdline::tests::cursor_preserves_gnu_option_boundaries_and_values ... ok
+test input_files::tests::crel_addend_wraps ... ok
+test cmdline::tests::numeric_options_use_c_integer_syntax ... ok
+test input_sections::tests::fragment_hint_handles_sequential_repeated_and_backward_offsets ... ok
+test symbol::tests::accepts_long_symbol_name ... ok
+test symbol::tests::input_section_origin_roundtrip ... ok
+test symbol::tests::auxiliary_records_follow_first_use_and_preserve_existing_data ... ok
+test input_files::tests::parallel_file_iteration_preserves_live_order_and_stable_storage ... ok
+test chunks::gnu_hash::tests::matches_bytewise_hash_including_overflow_and_tails ... ok
+test util::concurrent_map::tests::insert_and_lookup ... ok
+test util::demangle::tests::rust_legacy_length_overflow ... ok
+test util::demangle::tests::rust_legacy_with_suffix ... ok
+test util::glob::tests::complex ... ok
+test util::glob::tests::default_has_no_matches ... ok
+test util::glob::tests::literals ... ok
+test util::glob::tests::shared_priorities_preserve_highest_match ... ok
+test output_file::tests::initializes_output_buffer_and_tracks_its_addresses ... ok
+test chunks::got::tests::got_ranges_preserve_order_and_ifunc_width ... ok
+test symbol::tests::shard_hash_distributes_buckets_and_lookup_tags ... ok
+test symbol::tests::comdat_ownership_uses_lowest_priority ... ok
+test util::perf::tests::implicit_timer_parents_follow_completed_intervals ... ok
+test util::tests::clean_paths ... ok
+test util::parallel::tests::background_job_joins_on_one_worker ... ok
+test util::tests::leb128_roundtrip ... ok
+test util::tests::sign_extension ... ok
+test util::perf::tests::optional_recording_includes_nested_and_background_timers ... ok
+test util::glob::tests::many_patterns_use_nfa ... ok
+test util::worker_local::tests::reuses_worker_storage_and_keeps_an_outside_slot ... ok
+test symbol::tests::gather_preserves_identity_across_sparse_and_repeated_batches ... ok
+test util::hyperloglog::tests::estimates_within_a_few_percent ... ok
+test util::siphash::tests::word_updates_match_bytes_with_partial_buffers_and_length_wraparound ... ok
+test util::parallel::tests::preserves_both_groups_across_blocks ... ok
+
+test result: ok. 34 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests lib.rs (/target/debug/deps/mold_tests-da7bcb5d00beaf61)
+
+running 2 tests
+test tests::canonicalizes_machine_names ... ok
+test tests::selects_generic_and_target_tests ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Compiling mold-cli v3.0.0 (/work/cli)
+    Finished `test` profile [unoptimized] target(s) in 0.05s
+     Running integration.rs (/target/debug/deps/integration-33a606dd6509ad01)
+completed 100/9036
+completed 200/9036
+completed 300/9036
+completed 400/9036
+completed 500/9036
+completed 600/9036
+completed 700/9036
+completed 800/9036
+completed 900/9036
+completed 1000/9036
+completed 1100/9036
+completed 1200/9036
+FAIL aarch64:ifunc-dso (/target/debug/mold-test/out/test/results/aarch64/ifunc-dso.log)
+FAIL aarch64:image-base (/target/debug/mold-test/out/test/results/aarch64/image-base.log)
+FAIL aarch64:init-in-dso (/target/debug/mold-test/out/test/results/aarch64/init-in-dso.log)
+FAIL aarch64:initfirst (/target/debug/mold-test/out/test/results/aarch64/initfirst.log)
+FAIL aarch64:ifunc-export (/target/debug/mold-test/out/test/results/aarch64/ifunc-export.log)
+FAIL aarch64:issue646 (/target/debug/mold-test/out/test/results/aarch64/issue646.log)
+FAIL aarch64:init (/target/debug/mold-test/out/test/results/aarch64/init.log)
+FAIL aarch64:interpose (/target/debug/mold-test/out/test/results/aarch64/interpose.log)
+FAIL aarch64:large-max-page-size-strip (/target/debug/mold-test/out/test/results/aarch64/large-max-page-size-strip.log)
+FAIL aarch64:large-text (/target/debug/mold-test/out/test/results/aarch64/large-text.log)
+FAIL aarch64:invalid-version-script (/target/debug/mold-test/out/test/results/aarch64/invalid-version-script.log)
+FAIL aarch64:large-alignment (/target/debug/mold-test/out/test/results/aarch64/large-alignment.log)
+FAIL aarch64:linker-script (/target/debug/mold-test/out/test/results/aarch64/linker-script.log)
+FAIL aarch64:linker-script-defsym (/target/debug/mold-test/out/test/results/aarch64/linker-script-defsym.log)
+FAIL aarch64:link-order (/target/debug/mold-test/out/test/results/aarch64/link-order.log)
+FAIL aarch64:linker-script-group-as-needed (/target/debug/mold-test/out/test/results/aarch64/linker-script-group-as-needed.log)
+FAIL aarch64:link-order2 (/target/debug/mold-test/out/test/results/aarch64/link-order2.log)
+FAIL aarch64:linker-script-error (/target/debug/mold-test/out/test/results/aarch64/linker-script-error.log)
+FAIL aarch64:linker-script3 (/target/debug/mold-test/out/test/results/aarch64/linker-script3.log)
+FAIL aarch64:linker-script-relocatable (/target/debug/mold-test/out/test/results/aarch64/linker-script-relocatable.log)
+FAIL aarch64:linker-script-version (/target/debug/mold-test/out/test/results/aarch64/linker-script-version.log)
+FAIL aarch64:linker-script2 (/target/debug/mold-test/out/test/results/aarch64/linker-script2.log)
+FAIL aarch64:linker-script4 (/target/debug/mold-test/out/test/results/aarch64/linker-script4.log)
+FAIL aarch64:lto-archive4 (/target/debug/mold-test/out/test/results/aarch64/lto-archive4.log)
+FAIL aarch64:long-symbol-name (/target/debug/mold-test/out/test/results/aarch64/long-symbol-name.log)
+FAIL aarch64:lto-comdat-archive (/target/debug/mold-test/out/test/results/aarch64/lto-comdat-archive.log)
+FAIL aarch64:lto-comdat-archive3 (/target/debug/mold-test/out/test/results/aarch64/lto-comdat-archive3.log)
+FAIL aarch64:lto-no-plugin (/target/debug/mold-test/out/test/results/aarch64/lto-no-plugin.log)
+FAIL aarch64:lto-version-script (/target/debug/mold-test/out/test/results/aarch64/lto-version-script.log)
+FAIL aarch64:many-input-sections (/target/debug/mold-test/out/test/results/aarch64/many-input-sections.log)
+FAIL aarch64:mergeable-entsize-order (/target/debug/mold-test/out/test/results/aarch64/mergeable-entsize-order.log)
+FAIL aarch64:main-in-dso (/target/debug/mold-test/out/test/results/aarch64/main-in-dso.log)
+FAIL aarch64:mergeable-local-symbols (/target/debug/mold-test/out/test/results/aarch64/mergeable-local-symbols.log)
+FAIL aarch64:missing-error (/target/debug/mold-test/out/test/results/aarch64/missing-error.log)
+completed 1300/9036
+FAIL aarch64:mold-wrapper (/target/debug/mold-test/out/test/results/aarch64/mold-wrapper.log)
+FAIL aarch64:mold-wrapper2 (/target/debug/mold-test/out/test/results/aarch64/mold-wrapper2.log)
+FAIL aarch64:nmagic (/target/debug/mold-test/out/test/results/aarch64/nmagic.log)
+FAIL aarch64:mergeable-strings (/target/debug/mold-test/out/test/results/aarch64/mergeable-strings.log)
+FAIL aarch64:mergeable-weak-def (/target/debug/mold-test/out/test/results/aarch64/mergeable-weak-def.log)
+FAIL aarch64:no-allow-shlib-undefined-lto (/target/debug/mold-test/out/test/results/aarch64/no-allow-shlib-undefined-lto.log)
+FAIL aarch64:no-allow-shlib-undefined-symver (/target/debug/mold-test/out/test/results/aarch64/no-allow-shlib-undefined-symver.log)
+FAIL aarch64:no-allow-shlib-undefined2 (/target/debug/mold-test/out/test/results/aarch64/no-allow-shlib-undefined2.log)
+FAIL aarch64:no-allow-shlib-undefined-hidden (/target/debug/mold-test/out/test/results/aarch64/no-allow-shlib-undefined-hidden.log)
+FAIL aarch64:no-error-rwx-segments (/target/debug/mold-test/out/test/results/aarch64/no-error-rwx-segments.log)
+FAIL aarch64:no-interp-on-shared (/target/debug/mold-test/out/test/results/aarch64/no-interp-on-shared.log)
+FAIL aarch64:no-allow-shlib-undefined3 (/target/debug/mold-test/out/test/results/aarch64/no-allow-shlib-undefined3.log)
+FAIL aarch64:no-allow-shlib-undefined4 (/target/debug/mold-test/out/test/results/aarch64/no-allow-shlib-undefined4.log)

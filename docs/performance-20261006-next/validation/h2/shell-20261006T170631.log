@@ -1,0 +1,11 @@
+MATCH --threads=1
+MATCH --threads=32
+MATCH --emit-relocs
+MATCH -r
+MATCH --compress-debug-sections=zlib
+MATCH --compress-debug-sections=zstd
+MATCH --gdb-index
+MATCH --strip-debug
+MATCH -z rewrite-endbr
+MATCH --build-id=md5
+MATCH --build-id=sha256

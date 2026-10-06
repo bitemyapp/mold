@@ -1,0 +1,75 @@
+diff --git a/src/driver.rs b/src/driver.rs
+index 143001187cc46e9e4c502925946a4518ff40b1f7..9c098cd40733602eb596b5c3df7d17f804a3f969 100644
+--- a/src/driver.rs
++++ b/src/driver.rs
+@@ -155,6 +155,8 @@ pub fn link<E: Target>(cmdline: Cmdline) -> LinkResult {
+         ctx.args.thread_count = Some(default_thread_count(&ctx.args, &jobs));
+     }
+ 
++    let profile_trace = ctx.args.perf && std::env::var_os("MOLD_PROFILE_TRACE").is_some();
++    let profile_window = profile_trace.then(|| ctx.timer("profile_window"));
+     let t_all = ctx.timer("all");
+     crate::subprocess::install_signal_handler();
+     error::install_panic_hook();
+@@ -654,7 +656,7 @@ pub fn link<E: Target>(cmdline: Cmdline) -> LinkResult {
+     if ctx.args.stats {
+         passes::show_stats(&ctx);
+     }
+-    if ctx.args.perf {
++    if ctx.args.perf && !profile_trace {
+         ctx.timers.print();
+     }
+ 
+@@ -666,7 +668,13 @@ pub fn link<E: Target>(cmdline: Cmdline) -> LinkResult {
+     // Dropping page table entries here in parallel makes process exit
+     // faster, as the kernel otherwise reclaims them in a single thread
+     // on exit. File contents stay in the page cache.
++    let profile_cleanup = profile_trace.then(|| ctx.timer("release_input_mappings"));
+     crate::mapped_file::drop_mappings();
++    drop(profile_cleanup);
++    drop(profile_window);
++    if profile_trace {
++        ctx.timers.print();
++    }
+ 
+     if ctx.args.quick_exit {
+         error::exit_after_cleanup(0);
+diff --git a/src/util/perf.rs b/src/util/perf.rs
+index f9c2b1c8552925d21c79f36d060d78a5506b9bb1..735b113afd0c54cc3ca0ac5cf9ed646c988aea91 100644
+--- a/src/util/perf.rs
++++ b/src/util/perf.rs
+@@ -228,8 +228,34 @@ impl Timers {
+                 r.end = Some(now);
+             }
+         }
++        // Preserve explicit parentage before display-only containment inference.
++        let trace = std::env::var_os("MOLD_PROFILE_TRACE").is_some();
++        let explicit: Vec<_> =
++            if trace { records.iter().map(|r| r.parent).collect() } else { Vec::new() };
+         nest_records(&mut records);
+ 
++        // Measurement-only output. No additional per-record timed clock reads.
++        if trace {
++            let origin = records.first().map(|r| r.start).unwrap_or(now);
++            println!("PROFILE_FORMAT\t2");
++            println!("PROFILE_THREADS\t{}", rayon::current_num_threads());
++            for (i, r) in records.iter().enumerate() {
++                let name: String = r.name.as_bytes().iter().map(|b| format!("{b:02x}")).collect();
++                println!(
++                    "PROFILE\t{}\t{}\t{}\t{}\t{}\t{:.9}\t{:.9}\t{}",
++                    i,
++                    r.parent.map_or(-1, |p| p as i64),
++                    explicit[i].map_or(-1, |p| p as i64),
++                    r.start.duration_since(origin).as_nanos(),
++                    r.end.unwrap().duration_since(origin).as_nanos(),
++                    r.user,
++                    r.sys,
++                    name
++                );
++            }
++            return;
++        }
++
+         fn print_rec(records: &[Record], i: usize, indent: usize) {
+             let r = &records[i];
+             let real = r.end.unwrap().duration_since(r.start).as_secs_f64();

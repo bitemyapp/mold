@@ -1,0 +1,20 @@
+{
+  "purpose": "Instrumented attribution only; excluded from production performance comparisons",
+  "host": "wx-workstation",
+  "cpu_affinity": "32-63",
+  "worker_policy": "existing adaptive default",
+  "labels": {
+    "current": {
+      "source_commit": "d5f03691582bc6e425d122c5592d0b33448ff7eb",
+      "profile_commit": "d048c042adb4131449fb4462e724d5b7b0fa6f40",
+      "profile_binary_sha256": "c93e0ce3a99f4de74d0bb2c16465286b4a0d89b288bbd5813376320d622b7c52",
+      "profile_binary": "/home/callen/work/mold-next-20261006/bin/current-profile"
+    },
+    "omnibus": {
+      "source_commit": "80f062238e88d941a6b16e175477dff42e2ace4c",
+      "profile_commit": "88b76de5f7c0f649179ae9997f9c3ae955309e2a",
+      "profile_binary_sha256": "90661b040627894ee5e112b2b12b302460222df3bdde49a9f3dd3e677c86eb16",
+      "profile_binary": "/home/callen/work/mold-next-20261006/bin/omnibus-profile"
+    }
+  }
+}

@@ -1,0 +1,33 @@
+     num_unique_cies=1
+            num_dsos=7
+       output_chunks=51
+            num_cies=81
+            num_objs=87
+  removed_comdat_mem=591
+         parsed_objs=889
+      unique_comdats=1627
+             comdats=1961
+            num_fdes=2866
+    regular_sections=6336
+      undefined_syms=6841
+            dso_syms=11544
+        defined_syms=12171
+      input_sections=14024
+         reloc_alloc=40594
+            all_syms=45507
+      merged_strings=84638
+    string_fragments=238606
+      reloc_nonalloc=332409
+   local_merge_bytes=12789042
+   total_input_bytes=191889340
+.comment estimation=1627 actual=4
+.rodata.cst4 estimation=1626 actual=1
+.rodata.cst16 estimation=1675 actual=90
+.debug_str estimation=86146 actual=79795
+.rodata.str1.1 estimation=4962 actual=4244
+.debug_line_str estimation=1895 actual=489
+.rodata.cst32 estimation=1627 actual=2
+.rodata.str1.16 estimation=1628 actual=5
+.rodata.cst8 estimation=1629 actual=8
+S2_WORKERS 12
+S2_ASSIGN [[0, 0, 286, 14, 7], [0, 3, 1538109, 21723, 5], [0, 5, 15282, 658, 7], [1, 0, 280, 14, 7], [1, 3, 1379024, 21996, 8], [1, 5, 15697, 665, 7], [2, 0, 280, 14, 7], [2, 3, 1603458, 20585, 5], [2, 5, 15392, 649, 6], [3, 0, 280, 14, 7], [3, 3, 950508, 11776, 2], [3, 5, 13921, 577, 7], [4, 0, 280, 14, 7], [4, 3, 1018300, 20242, 6], [4, 5, 14629, 656, 9], [5, 0, 280, 14, 7], [5, 3, 929757, 22645, 15], [5, 5, 14401, 622, 8], [6, 0, 280, 14, 7], [6, 3, 899100, 25385, 15], [6, 5, 14558, 663, 8], [7, 0, 280, 14, 7], [7, 3, 1090982, 19496, 6], [7, 5, 13665, 595, 7], [8, 0, 280, 14, 7], [8, 3, 829322, 22795, 10], [8, 5, 13280, 547, 5], [9, 0, 280, 14, 7], [9, 3, 1127249, 18095, 3], [9, 5, 13254, 580, 5], [10, 0, 280, 14, 7], [10, 3, 653806, 10876, 4], [10, 5, 16034, 665, 7], [11, 0, 246, 12, 6], [11, 3, 595652, 10128, 2], [11, 5, 10330, 454, 5]]

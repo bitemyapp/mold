@@ -1,0 +1,162 @@
+    Finished `dev` profile [unoptimized] target(s) in 0.03s
+    Finished `test` profile [unoptimized] target(s) in 0.01s
+     Running unittests src/lib.rs (/target/debug/deps/mold-c79d532d0a702ee5)
+
+running 34 tests
+test cmdline::tests::cursor_borrows_non_utf8_separate_and_attached_values ... ok
+test cmdline::tests::cursor_preserves_gnu_option_boundaries_and_values ... ok
+test input_files::tests::crel_addend_wraps ... ok
+test cmdline::tests::numeric_options_use_c_integer_syntax ... ok
+test chunks::reloc::tests::discarded_section_does_not_read_implicit_addend ... ok
+test input_sections::tests::fragment_hint_handles_sequential_repeated_and_backward_offsets ... ok
+test symbol::tests::comdat_ownership_uses_lowest_priority ... ok
+test input_files::tests::parallel_file_iteration_preserves_live_order_and_stable_storage ... ok
+test symbol::tests::auxiliary_records_follow_first_use_and_preserve_existing_data ... ok
+test symbol::tests::input_section_origin_roundtrip ... ok
+test util::demangle::tests::rust_legacy_length_overflow ... ok
+test util::demangle::tests::rust_legacy_with_suffix ... ok
+test util::glob::tests::complex ... ok
+test util::glob::tests::default_has_no_matches ... ok
+test util::glob::tests::literals ... ok
+test util::glob::tests::many_patterns_use_nfa ... ok
+test util::glob::tests::shared_priorities_preserve_highest_match ... ok
+test chunks::gnu_hash::tests::matches_bytewise_hash_including_overflow_and_tails ... ok
+test symbol::tests::accepts_long_symbol_name ... ok
+test util::concurrent_map::tests::insert_and_lookup ... ok
+test util::parallel::tests::background_job_joins_on_one_worker ... ok
+test util::perf::tests::implicit_timer_parents_follow_completed_intervals ... ok
+test util::perf::tests::optional_recording_includes_nested_and_background_timers ... ok
+test util::tests::clean_paths ... ok
+test util::tests::leb128_roundtrip ... ok
+test output_file::tests::initializes_output_buffer_and_tracks_its_addresses ... ok
+test util::worker_local::tests::reuses_worker_storage_and_keeps_an_outside_slot ... ok
+test chunks::got::tests::got_ranges_preserve_order_and_ifunc_width ... ok
+test util::hyperloglog::tests::estimates_within_a_few_percent ... ok
+test util::tests::sign_extension ... ok
+test symbol::tests::shard_hash_distributes_buckets_and_lookup_tags ... ok
+test util::siphash::tests::word_updates_match_bytes_with_partial_buffers_and_length_wraparound ... ok
+test symbol::tests::gather_preserves_identity_across_sparse_and_repeated_batches ... ok
+test util::parallel::tests::preserves_both_groups_across_blocks ... ok
+
+test result: ok. 34 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests lib.rs (/target/debug/deps/mold_tests-da7bcb5d00beaf61)
+
+running 2 tests
+test tests::canonicalizes_machine_names ... ok
+test tests::selects_generic_and_target_tests ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized] target(s) in 0.02s
+     Running integration.rs (/target/debug/deps/integration-33a606dd6509ad01)
+completed 100/9054
+completed 200/9054
+completed 300/9054
+completed 400/9054
+completed 500/9054
+completed 600/9054
+completed 700/9054
+completed 800/9054
+completed 900/9054
+completed 1000/9054
+completed 1100/9054
+completed 1200/9054
+completed 1300/9054
+completed 1400/9054
+completed 1500/9054
+completed 1600/9054
+completed 1700/9054
+completed 1800/9054
+completed 1900/9054
+completed 2000/9054
+completed 2100/9054
+completed 2200/9054
+completed 2300/9054
+completed 2400/9054
+completed 2500/9054
+completed 2600/9054
+completed 2700/9054
+completed 2800/9054
+completed 2900/9054
+completed 3000/9054
+completed 3100/9054
+completed 3200/9054
+completed 3300/9054
+completed 3400/9054
+completed 3500/9054
+completed 3600/9054
+completed 3700/9054
+completed 3800/9054
+completed 3900/9054
+completed 4000/9054
+completed 4100/9054
+completed 4200/9054
+completed 4300/9054
+completed 4400/9054
+completed 4500/9054
+completed 4600/9054
+completed 4700/9054
+completed 4800/9054
+completed 4900/9054
+completed 5000/9054
+completed 5100/9054
+completed 5200/9054
+completed 5300/9054
+completed 5400/9054
+completed 5500/9054
+completed 5600/9054
+completed 5700/9054
+completed 5800/9054
+completed 5900/9054
+completed 6000/9054
+completed 6100/9054
+completed 6200/9054
+completed 6300/9054
+completed 6400/9054
+completed 6500/9054
+completed 6600/9054
+completed 6700/9054
+completed 6800/9054
+completed 6900/9054
+completed 7000/9054
+completed 7100/9054
+completed 7200/9054
+completed 7300/9054
+completed 7400/9054
+completed 7500/9054
+completed 7600/9054
+completed 7700/9054
+completed 7800/9054
+completed 7900/9054
+completed 8000/9054
+completed 8100/9054
+completed 8200/9054
+completed 8300/9054
+completed 8400/9054
+completed 8500/9054
+completed 8600/9054
+completed 8700/9054
+completed 8800/9054
+completed 8900/9054
+completed 9000/9054
+completed 9054/9054
+aarch64: pass=459 skip=46 fail=0
+aarch64_be: pass=443 skip=51 fail=0
+arm: pass=449 skip=59 fail=0
+armeb: pass=435 skip=62 fail=0
+i686: pass=451 skip=48 fail=0
+loongarch64: pass=450 skip=57 fail=0
+m68k: pass=424 skip=72 fail=0
+ppc: pass=438 skip=57 fail=0
+ppc64: pass=431 skip=68 fail=0
+ppc64le: pass=438 skip=59 fail=0
+ppc64le-power10: pass=434 skip=63 fail=0
+riscv32: pass=437 skip=57 fail=0
+riscv64: pass=464 skip=56 fail=0
+s390x: pass=441 skip=55 fail=0
+sh4: pass=422 skip=72 fail=0
+sh4aeb: pass=421 skip=73 fail=0
+sparc64: pass=440 skip=57 fail=0
+x86_64: pass=551 skip=14 fail=0
+total: pass=8028 skip=1026 fail=0

@@ -1,0 +1,7 @@
+     Removed 36 files, 157.8MiB total
+   Compiling libmold v3.0.0 (/work)
+   Compiling mold-mimalloc-sys v0.1.49
+   Compiling mold v3.0.0 (/work/cli)
+   Compiling mold-mimalloc v0.1.52
+   Compiling mold-arch-x86_64 v3.0.0 (/work/arch/x86_64)
+    Finished `release` profile [optimized + debuginfo] target(s) in 24.13s

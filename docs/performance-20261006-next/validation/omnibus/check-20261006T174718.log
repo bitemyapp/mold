@@ -1,0 +1,64 @@
+   Compiling libc v0.2.189
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.11
+   Compiling pkg-config v0.3.34
+   Compiling crossbeam-utils v0.8.22
+   Compiling crossbeam-epoch v0.9.20
+    Checking cfg-if v1.0.4
+   Compiling crossbeam-deque v0.8.7
+   Compiling getrandom v0.4.3
+   Compiling rayon-core v1.13.0
+   Compiling zstd-safe v7.2.4
+   Compiling portable-atomic v1.15.0
+   Compiling cpp_demangle v0.5.1
+    Checking zlib-rs v0.6.8
+   Compiling crc32fast v1.5.1
+    Checking constant_time_eq v0.4.2
+    Checking foldhash v0.2.0
+    Checking regex-automata v0.4.18
+    Checking either v1.18.0
+    Checking arrayvec v0.7.8
+    Checking cpufeatures v0.3.1
+    Checking allocator-api2 v0.2.21
+    Checking memchr v2.8.3
+    Checking equivalent v1.0.2
+    Checking hashbrown v0.17.1
+    Checking memmap2 v0.9.11
+    Checking rayon v1.12.0
+    Checking libz-rs-sys v0.6.8
+    Checking bstr v1.13.1
+   Compiling jobserver v0.1.35
+    Checking uuid v1.27.0
+    Checking flate2 v1.1.10
+    Checking rustc-demangle v0.1.28
+    Checking xxhash-rust v0.8.18
+   Compiling cc v1.4.4
+   Compiling mold-cli v3.0.0 (/work/cli)
+    Checking mold-tests v3.0.0 (/work/tests)
+   Compiling zstd-sys v2.0.16+zstd.1.5.7
+   Compiling blake3 v1.8.7
+   Compiling mold v3.0.0 (/work)
+   Compiling libmimalloc-sys v0.1.49 (https://github.com/rui314/mimalloc_rust?rev=3979460494f1cd1e7f936cb8e10f41e927c9f698#39794604)
+    Checking mimalloc v0.1.52 (https://github.com/rui314/mimalloc_rust?rev=3979460494f1cd1e7f936cb8e10f41e927c9f698#39794604)
+    Checking zstd v0.13.3
+    Checking mold-arch-ppc32 v3.0.0 (/work/arch/ppc32)
+    Checking mold-arch-ppc64v1 v3.0.0 (/work/arch/ppc64v1)
+    Checking mold-arch-loongarch64 v3.0.0 (/work/arch/loongarch64)
+    Checking mold-arch-riscv32be v3.0.0 (/work/arch/riscv32be)
+    Checking mold-arch-i386 v3.0.0 (/work/arch/i386)
+    Checking mold-arch-arm64be v3.0.0 (/work/arch/arm64be)
+    Checking mold-arch-sh4be v3.0.0 (/work/arch/sh4be)
+    Checking mold-arch-riscv64 v3.0.0 (/work/arch/riscv64)
+    Checking mold-arch-loongarch32 v3.0.0 (/work/arch/loongarch32)
+    Checking mold-arch-sh4 v3.0.0 (/work/arch/sh4)
+    Checking mold-arch-sparc64 v3.0.0 (/work/arch/sparc64)
+    Checking mold-arch-s390x v3.0.0 (/work/arch/s390x)
+    Checking mold-arch-riscv64be v3.0.0 (/work/arch/riscv64be)
+    Checking mold-arch-riscv32 v3.0.0 (/work/arch/riscv32)
+    Checking mold-arch-m68k v3.0.0 (/work/arch/m68k)
+    Checking mold-arch-x86_64 v3.0.0 (/work/arch/x86_64)
+    Checking mold-arch-arm32be v3.0.0 (/work/arch/arm32be)
+    Checking mold-arch-ppc64v2 v3.0.0 (/work/arch/ppc64v2)
+    Checking mold-arch-arm64 v3.0.0 (/work/arch/arm64)
+    Checking mold-arch-arm32 v3.0.0 (/work/arch/arm32)
+    Finished `dev` profile [unoptimized] target(s) in 4.60s

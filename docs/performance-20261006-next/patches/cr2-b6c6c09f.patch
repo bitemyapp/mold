@@ -1,0 +1,50 @@
+diff --git a/src/input_sections.rs b/src/input_sections.rs
+index f34b97ff6c8520449b1837396b7011bbe0f1e3dd..15a2a585bc6b92acb25411746c59dd0167287922 100644
+--- a/src/input_sections.rs
++++ b/src/input_sections.rs
+@@ -1643,13 +1643,26 @@ impl MergeInfo {
+ 
+     #[inline]
+     fn fragment_with_hint(&self, offset: u64, next: &mut usize) -> Option<(EntryId, i64)> {
+-        let mut idx = *next;
+-        if idx >= self.frag_offsets.len()
+-            || offset < self.frag_offsets[idx] as u64
+-            || self.frag_offsets.get(idx + 1).is_some_and(|&o| o as u64 <= offset)
++        static NEXT: Counter = Counter::new("fragment_hint_next");
++        static PREVIOUS: Counter = Counter::new("fragment_hint_previous");
++        static FALLBACK: Counter = Counter::new("fragment_hint_fallback");
++        let contains = |idx: usize| {
++            idx < self.frag_offsets.len()
++                && self.frag_offsets[idx] as u64 <= offset
++                && self.frag_offsets.get(idx + 1).is_none_or(|&o| offset < o as u64)
++        };
++        let idx = if contains(*next) {
++            NEXT.increment();
++            *next
++        } else if let Some(previous) = next.checked_sub(1)
++            && contains(previous)
+         {
+-            idx = self.frag_offsets.partition_point(|&o| o as u64 <= offset).checked_sub(1)?;
+-        }
++            PREVIOUS.increment();
++            previous
++        } else {
++            FALLBACK.increment();
++            self.frag_offsets.partition_point(|&o| o as u64 <= offset).checked_sub(1)?
++        };
+         *next = idx + 1;
+         Some((self.fragments[idx], offset as i64 - self.frag_offsets[idx] as i64))
+     }
+@@ -1867,6 +1880,12 @@ mod tests {
+         for offset in [0, 5, 8, 11, 11, 6, 35, 38, 35, 5, 4, 8] {
+             assert_eq!(info.fragment_with_hint(offset, &mut next), info.fragment(offset));
+         }
++        for initial_hint in 0..=info.fragments.len() + 1 {
++            for offset in 0..64 {
++                let mut hint = initial_hint;
++                assert_eq!(info.fragment_with_hint(offset, &mut hint), info.fragment(offset));
++            }
++        }
+         let empty = MergeInfo { fragments: Vec::new(), frag_offsets: Vec::new(), ..info };
+         assert_eq!(empty.fragment_with_hint(0, &mut next), None);
+     }

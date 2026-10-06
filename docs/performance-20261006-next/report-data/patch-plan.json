@@ -1,0 +1,527 @@
+{
+  "scope": "Second campaign sources only. Frozen plan captures source revisions before the evidence bundle is committed; later documentation-only bundle commits do not redefine measured sources.",
+  "public_anchors": [
+    "b2e5a7084f7391fca5c13631d20d36f64f72fe3a",
+    "1347ca95c906db060ecfbf838a792c5739970294",
+    "75200f107ee958227e87a96e67ad491567a4854a"
+  ],
+  "patches": [
+    {
+      "name": "original-topic-baseline",
+      "base_commit": "b2e5a7084f7391fca5c13631d20d36f64f72fe3a",
+      "source_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "role": "Bridge from public upstream ancestor to the frozen original topic baseline",
+      "topics": [],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "529467bd57e056195fb71065d51881e0265e4bfabd6d879b2563a2ec9172f184",
+          "instrumented": false,
+          "evidence": "parent frozen baseline"
+        }
+      ]
+    },
+    {
+      "name": "rebased-control",
+      "base_commit": "1347ca95c906db060ecfbf838a792c5739970294",
+      "source_commit": "d5f03691582bc6e425d122c5592d0b33448ff7eb",
+      "role": "Prior1347 stage: Bridge from latest public upstream to the rebased PR1696 control",
+      "topics": [],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "11b05349574ccca4347d85b24540d5e0b7f11066b9768d971994088f3c14d0da",
+          "instrumented": false,
+          "evidence": "parent final control rebased onto upstream1347ca95"
+        }
+      ]
+    },
+    {
+      "name": "ms1-f8bb8d52",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "f8bb8d521df7f478c453e8a4d79c41a7c8dd8832",
+      "role": "Frozen production revision",
+      "topics": [
+        "ms1"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "930881d2798b67c8c87b3dcf9bd21b2a6033bf6105a35235144635e41bae7c42",
+          "instrumented": false,
+          "evidence": "MS1 owner build"
+        }
+      ]
+    },
+    {
+      "name": "ms2-10fcda6c",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "10fcda6c688f474571b79c63f6c23c16e7d89269",
+      "role": "Frozen production revision",
+      "topics": [
+        "ms2"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "9204becb1de90c9d8d5c0871cb350050282b10bc5aa4b9d3b459d18f24cc780e",
+          "instrumented": false,
+          "evidence": "MS2 v1 owner build"
+        }
+      ]
+    },
+    {
+      "name": "ms2-3ef1d72d",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "3ef1d72da621bebe186476692b5570b83c2a163b",
+      "role": "Frozen production revision",
+      "topics": [
+        "ms2"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "b563006f96559de44ba351ad51c80b46fa84f7e1709cfc7e78a072cbfa517db7",
+          "instrumented": false,
+          "evidence": "MS2 owner v2 build; frozen bin/ms2-v2, v1 unchanged"
+        }
+      ]
+    },
+    {
+      "name": "ms3-8db6b722",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "8db6b72248d04d4feefc0d788fea9f9c0cfbab0f",
+      "role": "Frozen production revision",
+      "topics": [
+        "ms3"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "c906164968f14eb8db38c6c713f5d94f4a25d2974074a3555cab52baf5a20871",
+          "instrumented": false,
+          "evidence": "MS3 owner build"
+        }
+      ]
+    },
+    {
+      "name": "ms4-d33ea550",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "d33ea5505f71adb604f660174bed64a3cb68c682",
+      "role": "Frozen production revision",
+      "topics": [
+        "ms4"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "01563d19f361d3bdedd870da6f32226a11d47e7392dddfe8908c6a6c9a47c5b1",
+          "instrumented": false,
+          "evidence": "MS4 owner build"
+        }
+      ]
+    },
+    {
+      "name": "cr1-62fa0761",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "62fa0761f75dc7a1f273749b640b6f48cfb28ca6",
+      "role": "Frozen production revision",
+      "topics": [
+        "cr1"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "bdfa8b02e0ee324575cbf8ef5c2ea4aee63fa4f2791eddc7dc592b2b7e01fd6b",
+          "instrumented": false,
+          "evidence": "CR owner message v1"
+        }
+      ]
+    },
+    {
+      "name": "cr1-24be8a79",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "24be8a795e466c363d05b6d86bd3537371be3efb",
+      "role": "Frozen production revision",
+      "topics": [
+        "cr1"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "261750bd3f2be8a590150bac3c5426a502d927405e1765e9c202ea0852f910de",
+          "instrumented": false,
+          "evidence": "CR1 owner message v2"
+        }
+      ]
+    },
+    {
+      "name": "cr2-b6c6c09f",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "b6c6c09f58f9c7d83a5257b573df57dc6ea6f0e3",
+      "role": "Frozen instrumentation revision",
+      "topics": [
+        "cr2"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "a9101dcbe9eb6e336f06c6fbb3e2439a0ef345c82889186559e9aa98962f521f",
+          "instrumented": true,
+          "evidence": "CR2 owner message instrumented, untimed only"
+        }
+      ]
+    },
+    {
+      "name": "cr2-7f9e54ce",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "7f9e54cee5c55fb729107a7827d80aa84158868a",
+      "role": "Frozen production revision",
+      "topics": [
+        "cr2"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "78ed4a2db7d8b0fe21c00dbab63a5db24ef8869a908ccd1641de3a334e07cdf8",
+          "instrumented": false,
+          "evidence": "CR owner message clean production"
+        }
+      ]
+    },
+    {
+      "name": "cr3-f7608357",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "f760835736645b1ba7e3d24a1e48b301376ef7a6",
+      "role": "Frozen production revision",
+      "topics": [
+        "cr3"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "65922b71ffec0cc17fbb22438433176ea3403a1f84cb00203bb13ebb80edc591",
+          "instrumented": false,
+          "evidence": "CR owner message"
+        }
+      ]
+    },
+    {
+      "name": "cr4-168ca9f5",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "168ca9f55e530d841adce2d89e25682b84391a3a",
+      "role": "Frozen production revision",
+      "topics": [
+        "cr4"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "e7c08c342d0cfdd2174a302c7c6603c32345ff54563adcca68a2f18046f356bd",
+          "instrumented": false,
+          "evidence": "CR owner message code commit; a14c236e corrects test only"
+        }
+      ]
+    },
+    {
+      "name": "cr4-final-a14c236e",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "a14c236e2bdc2d19eaf16f87361cde2282953ef0",
+      "role": "Final topic head; may include test-only changes beyond the frozen production revision",
+      "topics": [
+        "cr4"
+      ],
+      "frozen_binaries": []
+    },
+    {
+      "name": "cr5-6789e6c5",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "6789e6c53fa9a82e27bc8295d88f212575a030e0",
+      "role": "Frozen production revision",
+      "topics": [
+        "cr5"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "1624bcf787c69f7f18892497037b23b7f29b0738e28fd37c346edc0f45fc99b2",
+          "instrumented": false,
+          "evidence": "CR5 owner message"
+        }
+      ]
+    },
+    {
+      "name": "s1-70291748",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "70291748b5ce53e366d93ecfb4102df9e71eb0a0",
+      "role": "Frozen production revision",
+      "topics": [
+        "s1"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "66e147addb1201a8f94e13e183dc88ea2f109cdae56b4570f8338f7d9813c7b8",
+          "instrumented": false,
+          "evidence": "S1 owner message; environment distinguishes phase caps"
+        }
+      ]
+    },
+    {
+      "name": "s2-412974f6",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "412974f6cb927e2a35c2827b28ac371f4d5c9b5b",
+      "role": "Frozen production revision",
+      "topics": [
+        "s2"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "1d42f1118e4fe4551406da5e6fcea0e96835fea50ae6a42c5f202522d80d6bd1",
+          "instrumented": false,
+          "evidence": "S2 owner message"
+        }
+      ]
+    },
+    {
+      "name": "g1-25c7f28f",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "25c7f28ff8360e5aeba3c1a8880eb318dbf39d5c",
+      "role": "Frozen production revision",
+      "topics": [
+        "g1"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "83c8aa3650b328a8e8c44fbc07d08d7d73452ca20a166b04196c0a7ba1f0a57d",
+          "instrumented": false,
+          "evidence": "topics/g1.md"
+        }
+      ]
+    },
+    {
+      "name": "p1-871cfa70",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "871cfa702559c162bd7ff9ee50a6b16610416d9f",
+      "role": "Frozen production revision",
+      "topics": [
+        "p1"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "b5728f858fcea4d121c1400817d5fa738c61181e22256fb932d9ecf9fb5b27b7",
+          "instrumented": false,
+          "evidence": "topics/p1.md v1"
+        }
+      ]
+    },
+    {
+      "name": "p1-e0f2d3e9",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "e0f2d3e942fc9985b202f8d2f9327d79acd90e78",
+      "role": "Frozen production revision",
+      "topics": [
+        "p1"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "be6e3fab81c17a0fc5234823845a45418ab9f2cb64e7d11acfe43f539fd82cc4",
+          "instrumented": false,
+          "evidence": "parent message P1 v2"
+        }
+      ]
+    },
+    {
+      "name": "p1-final-45934a7b",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "45934a7b546408ecebbdfa5a4ad8c5a6f96ebd3f",
+      "role": "Final topic head; may include test-only changes beyond the frozen production revision",
+      "topics": [
+        "p1"
+      ],
+      "frozen_binaries": []
+    },
+    {
+      "name": "h1-e3347c30",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "e3347c30bc6d4827a62357599fb9ac5ae528d08f",
+      "role": "Frozen production revision",
+      "topics": [
+        "h1"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "63323bbb928fc45b6b090c9f6e2e3aad23170c9401f239ca289e37d9c5614d6b",
+          "instrumented": false,
+          "evidence": "topics/h1.md"
+        }
+      ]
+    },
+    {
+      "name": "h1-c35c2fbb",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "c35c2fbbb6de046c41df90a3d03464fb1e0619b1",
+      "role": "Frozen production revision",
+      "topics": [
+        "h1"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "0fd060bfbb6d88038ba977feb142dc3682243b7eebb78e5a7377774ae969878e",
+          "instrumented": false,
+          "evidence": "H1 cleaned parent frozen candidate"
+        }
+      ]
+    },
+    {
+      "name": "h2-2790a988",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "2790a9882afd3f580249d727c910f382a9900b3f",
+      "role": "Frozen production revision",
+      "topics": [
+        "h2"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "50c2ca9372565b00411f352f1053f1e2227984a9a53b9cd83713edb37d23d370",
+          "instrumented": false,
+          "evidence": "topics/h2.md"
+        }
+      ]
+    },
+    {
+      "name": "k1-6d24b45a",
+      "base_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "source_commit": "6d24b45ab5604dae0f59ef9a937cd603ebb9d9d9",
+      "role": "Frozen production revision",
+      "topics": [
+        "k1"
+      ],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "a1c023acfe43a21a24f38f225beaca6b9502a9b0b6f2096b93696454b12f36e0",
+          "instrumented": false,
+          "evidence": "K1 parent frozen screen candidate"
+        }
+      ]
+    },
+    {
+      "name": "omnibus-measured",
+      "base_commit": "d5f03691582bc6e425d122c5592d0b33448ff7eb",
+      "source_commit": "80f062238e88d941a6b16e175477dff42e2ace4c",
+      "role": "Prior1347 stage: Measured P1+H1 composition on the rebased control",
+      "topics": [],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "4422ead1df414794d40e4a4aee1e5af3696d2fcec6d118bf965fe36f465f41b7",
+          "instrumented": false,
+          "evidence": "parent provisional omnibus rebased onto upstream1347ca95"
+        }
+      ]
+    },
+    {
+      "name": "omnibus-final-tests",
+      "base_commit": "80f062238e88d941a6b16e175477dff42e2ace4c",
+      "source_commit": "007ca03cff5a8a232aa6757291fbd651b9ab6fe2",
+      "role": "Prior1347 stage: Test-only follow-up; production source and measured binary unchanged",
+      "topics": [],
+      "frozen_binaries": []
+    },
+    {
+      "name": "pr1696_p1-publication",
+      "base_commit": "d5f03691582bc6e425d122c5592d0b33448ff7eb",
+      "source_commit": "3b5caf8a2db31dd4278268eaa9218e96f391d21e",
+      "role": "Prior1347 stage: Publication source head, not directly measured at this new head",
+      "topics": [],
+      "frozen_binaries": []
+    },
+    {
+      "name": "h1_upstream-publication",
+      "base_commit": "1347ca95c906db060ecfbf838a792c5739970294",
+      "source_commit": "b29d960523eff28b41d30c4feb0969ac93ea061b",
+      "role": "Prior1347 stage: Final H1 publication head including regression test and formatting-only follow-up; not directly measured as a new binary",
+      "topics": [],
+      "frozen_binaries": []
+    },
+    {
+      "name": "control-profile",
+      "base_commit": "d5f03691582bc6e425d122c5592d0b33448ff7eb",
+      "source_commit": "d048c042adb4131449fb4462e724d5b7b0fa6f40",
+      "role": "Measurement-only diagnostic intervals; never substitute for production timings",
+      "topics": [],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "c93e0ce3a99f4de74d0bb2c16465286b4a0d89b288bbd5813376320d622b7c52",
+          "instrumented": true,
+          "evidence": "Coordinator frozen final phase diagnostic binary; separate interval/input-cleanup instrumentation commit"
+        }
+      ]
+    },
+    {
+      "name": "omnibus-profile",
+      "base_commit": "80f062238e88d941a6b16e175477dff42e2ace4c",
+      "source_commit": "88b76de5f7c0f649179ae9997f9c3ae955309e2a",
+      "role": "Measurement-only diagnostic intervals; never substitute for production timings",
+      "topics": [],
+      "frozen_binaries": [
+        {
+          "binary_sha256": "90661b040627894ee5e112b2b12b302460222df3bdde49a9f3dd3e677c86eb16",
+          "instrumented": true,
+          "evidence": "Coordinator frozen final phase diagnostic binary; separate interval/input-cleanup instrumentation commit"
+        }
+      ]
+    },
+    {
+      "name": "omnibus-final-review",
+      "base_commit": "80f062238e88d941a6b16e175477dff42e2ace4c",
+      "source_commit": "839f4e4bea0c9b6f1a2df6814859fd3714137d52",
+      "role": "Prior1347 stage: Final review head: regression test plus formatting-only follow-up over measured production source",
+      "topics": [
+        "p1",
+        "h1"
+      ],
+      "frozen_binaries": []
+    },
+    {
+      "name": "latest-upstream-bridge",
+      "base_commit": "1347ca95c906db060ecfbf838a792c5739970294",
+      "source_commit": "75200f107ee958227e87a96e67ad491567a4854a",
+      "role": "Public upstream bridge from prior1347 stage to latest752 stage",
+      "topics": [],
+      "frozen_binaries": []
+    },
+    {
+      "name": "latest-control",
+      "base_commit": "75200f107ee958227e87a96e67ad491567a4854a",
+      "source_commit": "f1dec0f067198959a1339e761f27f27ccc4179d1",
+      "role": "Latest752 same-base control, separately frozen",
+      "topics": [],
+      "frozen_binaries": []
+    },
+    {
+      "name": "latest-omnibus",
+      "base_commit": "f1dec0f067198959a1339e761f27f27ccc4179d1",
+      "source_commit": "8e522e5217adea17329e8e2eeb753fc482de4b16",
+      "role": "Latest752 P1+H1 composition with tests and formatting, separately frozen",
+      "topics": [],
+      "frozen_binaries": []
+    },
+    {
+      "name": "pr1696_p1-publication-latest",
+      "base_commit": "f1dec0f067198959a1339e761f27f27ccc4179d1",
+      "source_commit": "e41a4bd5ecfd23d318d4ce4a0a089f2e35a60e95",
+      "role": "Latest752 P1 publication source and separately frozen P1-only isolation candidate",
+      "topics": [],
+      "frozen_binaries": []
+    },
+    {
+      "name": "h1_upstream-publication-latest",
+      "base_commit": "75200f107ee958227e87a96e67ad491567a4854a",
+      "source_commit": "626776e2087adff62d442c4e5fff1a824fe39446",
+      "role": "Latest752 independent H1 publication source, no standalone timing at this head",
+      "topics": [],
+      "frozen_binaries": []
+    },
+    {
+      "name": "latest-control-profile",
+      "base_commit": "f1dec0f067198959a1339e761f27f27ccc4179d1",
+      "source_commit": "9acc87021b8923bb8562178ee3410d62852f0e62",
+      "role": "Latest752 diagnostic instrumentation only; not production speedup source",
+      "topics": [],
+      "frozen_binaries": []
+    },
+    {
+      "name": "latest-omnibus-profile",
+      "base_commit": "8e522e5217adea17329e8e2eeb753fc482de4b16",
+      "source_commit": "5edabcfadbd9ff94ff4d9c778882e200f185a34a",
+      "role": "Latest752 diagnostic instrumentation only; not production speedup source",
+      "topics": [],
+      "frozen_binaries": []
+    }
+  ]
+}

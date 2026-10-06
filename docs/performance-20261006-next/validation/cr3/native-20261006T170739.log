@@ -1,0 +1,19 @@
+    Updating git repository `https://github.com/rui314/mimalloc_rust`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+    Updating git submodule `https://github.com/microsoft/mimalloc`
+   Compiling mold v3.0.0 (/work)
+   Compiling libmimalloc-sys v0.1.49 (https://github.com/rui314/mimalloc_rust?rev=3979460494f1cd1e7f936cb8e10f41e927c9f698#39794604)
+   Compiling mold-tests v3.0.0 (/work/tests)
+   Compiling mimalloc v0.1.52 (https://github.com/rui314/mimalloc_rust?rev=3979460494f1cd1e7f936cb8e10f41e927c9f698#39794604)
+   Compiling mold-arch-x86_64 v3.0.0 (/work/arch/x86_64)
+   Compiling mold-cli v3.0.0 (/work/cli)
+    Finished `release` profile [optimized + debuginfo] target(s) in 32.92s
+     Running integration.rs (/target/release/deps/integration-ab4a631a85b09c7b)
+completed 100/565
+completed 200/565
+completed 300/565
+completed 400/565
+completed 500/565
+completed 565/565
+x86_64: pass=551 skip=14 fail=0
+pass=551 skip=14 fail=0

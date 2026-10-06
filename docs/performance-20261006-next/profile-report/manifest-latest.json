@@ -1,0 +1,23 @@
+{
+  "purpose": "Instrumented attribution only; excluded from production performance comparisons",
+  "upstream_commit": "75200f107ee958227e87a96e67ad491567a4854a",
+  "host": "wx-workstation",
+  "cpu_affinity": "32-63",
+  "worker_policy": "existing adaptive default",
+  "labels": {
+    "latest-control": {
+      "source_commit": "f1dec0f067198959a1339e761f27f27ccc4179d1",
+      "profile_commit": "9acc87021b8923bb8562178ee3410d62852f0e62",
+      "profile_binary_sha256": "d15be68a45325b7a1708ff14b87c0ec4ac7b8e1a143c232832b19076606fe12e",
+      "profile_binary": "/home/callen/work/mold-next-20261006/bin/latest-control-profile",
+      "profile_worktree": "/Users/callen/.codex/worktrees/mold-latest-control-profile/mold"
+    },
+    "latest-omnibus": {
+      "source_commit": "8e522e5217adea17329e8e2eeb753fc482de4b16",
+      "profile_commit": "5edabcfadbd9ff94ff4d9c778882e200f185a34a",
+      "profile_binary_sha256": "077b9de49b3ef25e46128bc78da9c9977efc9ba6e0a131389d6474ee37881155",
+      "profile_binary": "/home/callen/work/mold-next-20261006/bin/latest-omnibus-profile",
+      "profile_worktree": "/Users/callen/.codex/worktrees/mold-latest-omnibus-profile/mold"
+    }
+  }
+}

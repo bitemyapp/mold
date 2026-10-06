@@ -1,0 +1,22 @@
+{
+  "purpose": "untimed explanatory Vec allocation counts; separate from production timing",
+  "threads": 8,
+  "cpus": "0-7",
+  "cases": 8,
+  "runs_per_case_variant": 3,
+  "total_links": 48,
+  "golden_matches": 48,
+  "binaries": {
+    "baseline": {
+      "source_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+      "instrumented_binary_sha256": "2bd1efd6402296690cac4631bf31cc161a4074c037155339cd7ecd051c7a268e"
+    },
+    "candidate": {
+      "source_commit": "8db6b72248d04d4feefc0d788fea9f9c0cfbab0f",
+      "instrumented_binary_sha256": "5f13c29d187133b6215adc643dbf5a0fc82b0697d391a2d0b9b62c5f891cdae8"
+    }
+  },
+  "capacity_definition": "sum of individual section capacities at end of split; not simultaneous peak RSS",
+  "moved_bytes_definition": "live payload size when Vec capacity and pointer both change; not measured hardware traffic",
+  "limits": "instrumentation, allocator state and worker count may affect realloc movement; no durations collected"
+}

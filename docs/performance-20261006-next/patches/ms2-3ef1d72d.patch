@@ -1,0 +1,371 @@
+diff --git a/src/chunks/merged.rs b/src/chunks/merged.rs
+index 0ec571f9d555a167e66f96dc8fb51022661e4c23..b7e2e62f53b948433a53c8a449120778389f0b87 100644
+--- a/src/chunks/merged.rs
++++ b/src/chunks/merged.rs
+@@ -24,7 +24,7 @@ use crate::input_sections::{MergeInfo, SectionFragment, SectionRef};
+ use crate::out;
+ use crate::output_file::split_at_offsets;
+ use crate::util::align_to;
+-use crate::util::concurrent_map::{ConcurrentMap, EntryId, FrozenMap, NUM_SHARDS};
++use crate::util::concurrent_map::{ConcurrentMap, EntryId, FrozenMap, NUM_SHARDS, ShardCounts};
+ use crate::util::hyperloglog::HyperLogLog;
+ use crate::util::perf::Timers;
+ 
+@@ -224,18 +224,21 @@ impl<E: Target> MergedSection<E> {
+         remember(MergedSectionId(sections.len() as u32 - 1), name)
+     }
+ 
+-    pub fn insert(
++    pub(crate) fn insert(
+         &self,
+         data: &'static [u8],
+         hash: u64,
+         p2align: u8,
+         gc_sections: bool,
++        counts: &mut ShardCounts,
+     ) -> EntryId {
+         // Even if GC is enabled, we garbage-collect only memory-mapped strings.
+         // Non-memory-allocated strings are typically identifiers used by debug info.
+         // To remove such strings, use the `strip` command.
+         let is_alive = !gc_sections || !self.is_alloc();
+-        let (id, frag, _) = self.map.insert_with(data, hash, || SectionFragment::new(is_alive));
++        let (id, frag, inserted) =
++            self.map.insert_with(data, hash, || SectionFragment::new(is_alive));
++        counts.record(id, inserted);
+         // Most insertions find the fragment there already, so the alignment
+         // is only written when it grows: an atomic update on every insertion
+         // would bounce the cache line of a popular fragment between cores.
+@@ -294,25 +297,31 @@ pub fn resolve<E: Target>(ctx: &mut Context<E>, id: MergedSectionId) {
+     drop(t);
+ 
+     let t = timers.start("resolve_contents");
+-    objs.par_iter_mut()
++    let mut counts = objs
++        .par_iter_mut()
+         .filter_map(|file| {
+             let shndx = &member_shndx[file.id().index()];
+             (!shndx.is_empty()).then_some((file, shndx))
+         })
+-        .for_each(|(file, shndx)| {
+-            for &i in shndx {
+-                let (m, isec) = file
+-                    .sections
+-                    .merge_info_with_section_mut(i as usize)
+-                    .expect("a mergeable section");
+-                m.resolve_contents(isec.contents(), msec, gc_sections);
+-            }
+-        });
++        .fold(
++            || msec.map.shard_counts(),
++            |mut counts, (file, shndx)| {
++                for &i in shndx {
++                    let (m, isec) = file
++                        .sections
++                        .merge_info_with_section_mut(i as usize)
++                        .expect("a mergeable section");
++                    m.resolve_contents(isec.contents(), msec, gc_sections, &mut counts);
++                }
++                counts
++            },
++        )
++        .reduce(|| msec.map.shard_counts(), ShardCounts::combine);
+     drop(t);
+ 
+     if ctx.comment == Some(id) {
+         let msec = &ctx.merged_sections[id.index()];
+-        add_comment_strings(msec, ctx.args.gc_sections, &ctx.cmdline_args);
++        add_comment_strings(msec, ctx.args.gc_sections, &ctx.cmdline_args, &mut counts);
+     }
+ 
+     // Compute section alignment
+@@ -327,7 +336,7 @@ pub fn resolve<E: Target>(ctx: &mut Context<E>, id: MergedSectionId) {
+ 
+     let msec = &mut ctx.merged_sections[id.index()];
+     msec.hdr.shdr.sh_addralign.set(1 << p2align);
+-    msec.fragments = std::mem::take(&mut msec.map).freeze();
++    msec.fragments = std::mem::take(&mut msec.map).freeze_counted(counts);
+     msec.resolved = true;
+     if !msec.is_alloc() {
+         layout(msec);
+@@ -378,36 +387,48 @@ pub fn resolve_sections<E: Target>(
+     drop(t);
+ 
+     let t = timers.start("resolve_contents");
+-    sections
++    let counts: Vec<Option<ShardCounts>> = sections
+         .par_iter()
+         .zip(members.par_iter_mut())
+-        .filter(|(section, _)| !section.resolved && (!allocated_only || section.is_alloc()))
+-        .for_each(|(section, members)| {
+-            members.par_iter_mut().for_each(|member| {
+-                member.merge_info.resolve_contents(member.data, section, gc_sections);
+-            });
+-        });
++        .map(|(section, members)| {
++            (!section.resolved && (!allocated_only || section.is_alloc())).then(|| {
++                members
++                    .par_iter_mut()
++                    .fold(
++                        || section.map.shard_counts(),
++                        |mut counts, member| {
++                            member.merge_info.resolve_contents(
++                                member.data,
++                                section,
++                                gc_sections,
++                                &mut counts,
++                            );
++                            counts
++                        },
++                    )
++                    .reduce(|| section.map.shard_counts(), ShardCounts::combine)
++            })
++        })
++        .collect();
+     drop(t);
+ 
+-    sections
+-        .par_iter_mut()
+-        .zip(members.par_iter())
+-        .enumerate()
+-        .filter(|(_, (section, _))| !section.resolved && (!allocated_only || section.is_alloc()))
+-        .for_each(|(i, (section, members))| {
++    sections.par_iter_mut().zip(members.par_iter()).zip(counts).enumerate().for_each(
++        |(i, ((section, members), counts))| {
++            let Some(mut counts) = counts else { return };
+             if comment == Some(MergedSectionId(i as u32)) {
+-                add_comment_strings(section, gc_sections, cmdline_args);
++                add_comment_strings(section, gc_sections, cmdline_args, &mut counts);
+             }
+ 
+             // Compute section alignment
+             let p2align = members.iter().map(|member| member.merge_info.p2align).max().unwrap_or(0);
+             section.hdr.shdr.sh_addralign.set(1 << p2align);
+-            section.fragments = std::mem::take(&mut section.map).freeze();
++            section.fragments = std::mem::take(&mut section.map).freeze_counted(counts);
+             section.resolved = true;
+             if !section.is_alloc() {
+                 layout(section);
+             }
+-        });
++        },
++    );
+ }
+ 
+ // Add strings to .comment
+@@ -415,11 +436,12 @@ fn add_comment_strings<E: Target>(
+     msec: &MergedSection<E>,
+     gc_sections: bool,
+     cmdline_args: &[Cow<'static, OsStr>],
++    counts: &mut ShardCounts,
+ ) {
+-    let add = |mut bytes: Vec<u8>| {
++    let mut add = |mut bytes: Vec<u8>| {
+         bytes.push(0);
+         let data = crate::util::leak_bytes(bytes);
+-        msec.insert(data, xxhash_rust::xxh3::xxh3_64(data), 0, gc_sections);
++        msec.insert(data, xxhash_rust::xxh3::xxh3_64(data), 0, gc_sections, counts);
+     };
+     // Add an identification string to .comment.
+     add(crate::cmdline::VERSION.as_bytes().to_vec());
+diff --git a/src/input_sections.rs b/src/input_sections.rs
+index f34b97ff6c8520449b1837396b7011bbe0f1e3dd..6496221eb56de1d057288c6eb7d3f30a719a2e59 100644
+--- a/src/input_sections.rs
++++ b/src/input_sections.rs
+@@ -1607,11 +1607,12 @@ impl MergeInfo {
+     }
+ 
+     /// Inserts the pieces into the parent section's fragment map.
+-    pub fn resolve_contents<E: Target>(
++    pub(crate) fn resolve_contents<E: Target>(
+         &mut self,
+         data: &'static [u8],
+         parent: &crate::chunks::merged::MergedSection<E>,
+         gc_sections: bool,
++        counts: &mut crate::util::concurrent_map::ShardCounts,
+     ) {
+         let n = self.frag_offsets.len();
+         self.fragments.reserve(n);
+@@ -1625,8 +1626,13 @@ impl MergeInfo {
+             if let Some(&hash) = self.hashes.get(i + LOOKAHEAD) {
+                 parent.map.prefetch(hash);
+             }
+-            let id =
+-                parent.insert(self.contents(data, i), self.hashes[i], self.p2align, gc_sections);
++            let id = parent.insert(
++                self.contents(data, i),
++                self.hashes[i],
++                self.p2align,
++                gc_sections,
++                counts,
++            );
+             self.fragments.push(id);
+         }
+ 
+diff --git a/src/util/concurrent_map.rs b/src/util/concurrent_map.rs
+index 87b47c063863229e7e8e03ccbea1917e8f56b4d3..5c0f3007f52c8bd64d2e4f41953592c3e99b6419 100644
+--- a/src/util/concurrent_map.rs
++++ b/src/util/concurrent_map.rs
+@@ -116,6 +116,30 @@ impl EntryId {
+     }
+ }
+ 
++/// Local unique-insertion counts for one table. A Rayon fold owns each
++/// instance; combining folds needs no shared counters or additional scan.
++#[derive(Clone)]
++pub(crate) struct ShardCounts {
++    counts: [usize; NUM_SHARDS],
++    shift: u32,
++}
++
++impl ShardCounts {
++    pub(crate) fn record(&mut self, id: EntryId, inserted: bool) {
++        if inserted {
++            self.counts[(id.raw() >> self.shift) as usize] += 1;
++        }
++    }
++
++    pub(crate) fn combine(mut self, other: Self) -> Self {
++        debug_assert_eq!(self.shift, other.shift);
++        for (left, right) in self.counts.iter_mut().zip(other.counts) {
++            *left += right;
++        }
++        self
++    }
++}
++
+ /// A map under construction. Freeze it once concurrent insertion is complete
+ /// to look up and traverse its entries.
+ pub struct ConcurrentMap<T> {
+@@ -300,7 +324,18 @@ impl<T> ConcurrentMap<T> {
+ 
+     /// Finishes insertion and returns the map for lookup and traversal.
+     pub fn freeze(self) -> FrozenMap<T> {
+-        FrozenMap(self)
++        FrozenMap(self, None)
++    }
++
++    pub(crate) fn shard_counts(&self) -> ShardCounts {
++        ShardCounts {
++            counts: [0; NUM_SHARDS],
++            shift: (self.nbuckets / NUM_SHARDS).trailing_zeros(),
++        }
++    }
++
++    pub(crate) fn freeze_counted(self, counts: ShardCounts) -> FrozenMap<T> {
++        FrozenMap(self, Some(Box::new(counts.counts)))
+     }
+ }
+ 
+@@ -332,11 +367,11 @@ impl<T> std::fmt::Debug for ConcurrentMap<T> {
+ /// A map after all insertions, whose values can be updated from a
+ /// unique reference.
+ #[derive(Debug)]
+-pub struct FrozenMap<T>(ConcurrentMap<T>);
++pub struct FrozenMap<T>(ConcurrentMap<T>, Option<Box<[usize; NUM_SHARDS]>>);
+ 
+ impl<T> Default for FrozenMap<T> {
+     fn default() -> Self {
+-        Self(ConcurrentMap::default())
++        Self(ConcurrentMap::default(), None)
+     }
+ }
+ 
+@@ -388,7 +423,10 @@ impl<T> FrozenMap<T> {
+         let mut end = begin + shard_size;
+         let occupied = |idx: usize| self.0.is_occupied(idx);
+ 
+-        let size = (begin..end).filter(|&idx| occupied(idx)).count();
++        let size = self.1.as_ref().map_or_else(
++            || (begin..end).filter(|&idx| occupied(idx)).count(),
++            |counts| counts[shard],
++        );
+         let mut vec: Vec<EntryId> = Vec::with_capacity(size);
+ 
+         // Since the shard is circular, we need to handle the last entries
+@@ -431,7 +469,7 @@ impl<T> FrozenMap<T> {
+     }
+ 
+     pub(crate) fn len(&self) -> usize {
+-        self.0.len()
++        self.1.as_ref().map_or_else(|| self.0.len(), |counts| counts.iter().sum())
+     }
+ }
+ 
+@@ -439,6 +477,52 @@ impl<T> FrozenMap<T> {
+ mod tests {
+     use super::*;
+ 
++    #[test]
++    fn collision_wrap_preserves_canonical_order() {
++        let keys: [&'static [u8]; 8] = [b"bbb", b"a", b"cc", b"dd", b"ab", b"c", b"aaaa", b"z"];
++        let mut expected = keys.to_vec();
++        expected.sort_unstable_by(|a, b| a.len().cmp(&b.len()).then_with(|| a.cmp(b)));
++        for reverse in [false, true] {
++            let map = ConcurrentMap::with_capacity(100);
++            for i in 0..keys.len() {
++                let key = keys[if reverse { keys.len() - i - 1 } else { i }];
++                map.insert_with(key, 255, || ());
++            }
++            let map = map.freeze();
++            assert_eq!(
++                map.sorted_entries(0).iter().map(|&id| map.key(id)).collect::<Vec<_>>(),
++                expected
++            );
++            assert!(map.sorted_entries(NUM_SHARDS - 1).is_empty());
++        }
++    }
++
++    #[test]
++    fn counted_freeze_tracks_unique_winners_across_folds() {
++        let map = ConcurrentMap::with_capacity(1000);
++        let keys: Vec<&'static [u8]> = (0..1000)
++            .map(|i| &*Box::leak(format!("counted{i}").into_bytes().into_boxed_slice()))
++            .collect();
++        let counts = (0..16000usize)
++            .into_par_iter()
++            .fold(
++                || map.shard_counts(),
++                |mut counts, i| {
++                    let key = keys[i % keys.len()];
++                    let (id, _, inserted) =
++                        map.insert_with(key, xxhash_rust::xxh3::xxh3_64(key), || ());
++                    counts.record(id, inserted);
++                    counts
++                },
++            )
++            .reduce(|| map.shard_counts(), ShardCounts::combine);
++        let map = map.freeze_counted(counts);
++        assert_eq!(map.len(), keys.len());
++        for shard in 0..NUM_SHARDS {
++            assert_eq!(map.sorted_entries(shard).len(), map.1.as_ref().unwrap()[shard]);
++        }
++    }
++
+     #[test]
+     fn insert_and_lookup() {
+         let map: ConcurrentMap<u32> = ConcurrentMap::with_capacity(100);
+diff --git a/tests/mergeable-comment-counts.sh b/tests/mergeable-comment-counts.sh
+new file mode 100755
+index 0000000000000000000000000000000000000000..b9ba67504c7ae125b97abbe7c7d89333ed06abba
+--- /dev/null
++++ b/tests/mergeable-comment-counts.sh
+@@ -0,0 +1,19 @@
++#!/usr/bin/env bash
++. $(dirname $0)/common.inc
++unset MOLD_DEBUG
++
++# Input comments may already contain the linker's own identification.
++# Synthetic insertion must count only its unique winner, plus the optional
++# command-line comment, after parallel input merging has joined.
++version=$(./mold --version)
++cat <<EOF2 | $CC -c -o $t/a.o -x assembler -
++.section .comment,"MS",%progbits,1
++.asciz "$version"
++.asciz "$version"
++EOF2
++
++./mold -shared -o $t/a.so $t/a.o --stats > $t/plain
++MOLD_DEBUG=1 ./mold -shared -o $t/b.so $t/a.o --stats > $t/debug
++grep -E '^\.comment estimation=[0-9]+ actual=1$' $t/plain
++grep -E '^\.comment estimation=[0-9]+ actual=2$' $t/debug
++readelf -p .comment $t/b.so | grep 'mold command line:'

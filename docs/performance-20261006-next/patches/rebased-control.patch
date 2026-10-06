@@ -1,0 +1,491 @@
+diff --git a/src/chunks/got.rs b/src/chunks/got.rs
+index 5c76f5e7cf7dcaee4a1a05f1f4383d3028605dbe..c500bbb0f2bae47406558340becffef25b2370e5 100644
+--- a/src/chunks/got.rs
++++ b/src/chunks/got.rs
+@@ -1,13 +1,14 @@
+ //! `.got`, addresses and thread-local offsets used at runtime.
+ 
+ use rayon::prelude::*;
++use std::sync::atomic::Ordering;
+ 
+ use crate::arch::{Family, Target};
+ use crate::chunks::ChunkHeader;
+ use crate::context::Context;
+ use crate::elf::*;
+ use crate::input_files::SymtabBlock;
+-use crate::symbol::{AddrFlags, SymbolId};
++use crate::symbol::{AddrFlags, NEEDS_GOT, NEEDS_GOTTP, NEEDS_TLSDESC, NEEDS_TLSGD, SymbolId};
+ 
+ // .got is a linker-synthesized constant pool whose entry size is the same
+ // as the pointer size. It is used to store runtime addresses of global
+@@ -61,12 +62,110 @@ fn word<E: Target>() -> u64 {
+     E::WORD_SIZE as u64
+ }
+ 
++/// Assigns GOT entries in file and symbol order, filling each file's range
++/// in parallel. Returns requests that also need the ordered dynamic-table
++/// pass (PLT entries, copy relocations, or dynamic symbols).
++pub fn allocate_entries<E: Target>(
++    ctx: &mut Context<E>,
++    groups: Vec<Vec<SymbolId>>,
++) -> Vec<(SymbolId, u8)> {
++    const GOT_FLAGS: u8 = NEEDS_GOT | NEEDS_GOTTP | NEEDS_TLSGD | NEEDS_TLSDESC;
++    struct Request {
++        id: SymbolId,
++        flags: u8,
++        extra_slot: bool,
++        ordered: bool,
++    }
++    let ctx_ref: &Context<E> = ctx;
++    let groups: Vec<_> = groups
++        .into_par_iter()
++        .map(|ids| {
++            let mut words = 0;
++            let requests: Vec<_> = ids
++                .into_iter()
++                .map(|id| {
++                    let sym = &ctx_ref.symbols[id];
++                    // A symbol belongs to one file group. Repeated ids within
++                    // that group consume the request only on their first use.
++                    let flags = sym.take_flags();
++                    let extra_slot = flags & NEEDS_GOT != 0 && sym.is_pde_ifunc(ctx_ref);
++                    words += u64::from(flags & NEEDS_GOT != 0)
++                        + u64::from(extra_slot)
++                        + u64::from(flags & NEEDS_GOTTP != 0)
++                        + 2 * u64::from(flags & NEEDS_TLSGD != 0)
++                        + 2 * u64::from(flags & NEEDS_TLSDESC != 0);
++                    let ordered = flags & !GOT_FLAGS != 0
++                        || (ctx_ref.dynamic.is_some() && (sym.is_imported() || sym.is_exported()));
++                    Request { id, flags, extra_slot, ordered }
++                })
++                .collect();
++            (requests, words)
++        })
++        .collect();
++
++    let mut next = ctx.got.hdr.shdr.sh_size.get() / word::<E>();
++    let groups: Vec<_> = groups
++        .into_iter()
++        .map(|(requests, words)| {
++            let first = next;
++            next += words;
++            (requests, first)
++        })
++        .collect();
++    let tables: Vec<_> = groups
++        .into_par_iter()
++        .map(|(requests, mut next)| {
++            let mut got = Vec::new();
++            let mut gottp = Vec::new();
++            let mut tlsgd = Vec::new();
++            let mut tlsdesc = Vec::new();
++            let mut ordered = Vec::new();
++            for Request { id, flags, extra_slot, ordered: needs_order } in requests {
++                let aux = ctx_ref.symbols[id].aux(&ctx_ref.symbols).unwrap();
++                let mut assign =
++                    |flag, index: &std::sync::atomic::AtomicU32, words, out: &mut Vec<_>| {
++                        if flags & flag != 0 {
++                            assert!(next < u32::MAX as u64);
++                            index.store(next as u32, Ordering::Relaxed);
++                            next += words;
++                            out.push(id);
++                        }
++                    };
++                assign(NEEDS_GOT, &aux.got_idx, 1 + u64::from(extra_slot), &mut got);
++                assign(NEEDS_GOTTP, &aux.gottp_idx, 1, &mut gottp);
++                assign(NEEDS_TLSGD, &aux.tlsgd_idx, 2, &mut tlsgd);
++                assign(NEEDS_TLSDESC, &aux.tlsdesc_idx, 2, &mut tlsdesc);
++                if flags & NEEDS_TLSDESC != 0 {
++                    // Static links relax TLSDESC relocations because the
++                    // runtime cannot initialize their GOT entries.
++                    debug_assert!(E::SUPPORTS_TLSDESC);
++                    debug_assert!(!ctx_ref.args.is_static);
++                }
++                if needs_order {
++                    ordered.push((id, flags));
++                }
++            }
++            (got, gottp, tlsgd, tlsdesc, ordered)
++        })
++        .collect();
++    ctx.got.hdr.shdr.sh_size.set(next * word::<E>());
++    let mut ordered = Vec::new();
++    for (got, gottp, tlsgd, tlsdesc, requests) in tables {
++        ctx.got.got_syms.extend(got);
++        ctx.got.gottp_syms.extend(gottp);
++        ctx.got.tlsgd_syms.extend(tlsgd);
++        ctx.got.tlsdesc_syms.extend(tlsdesc);
++        ordered.extend(requests);
++    }
++    ordered
++}
++
+ pub fn add_got_symbol<E: Target>(ctx: &mut Context<E>, sym: SymbolId) {
+     let size = ctx.got.hdr.shdr.sh_size.get();
+     let idx = (size / word::<E>()) as u32;
+     let is_pde_ifunc = ctx.symbols[sym].is_pde_ifunc(ctx);
+     assert_ne!(idx, u32::MAX);
+-    ctx.symbols.aux_mut(sym).got_idx = idx;
++    *ctx.symbols.aux_mut(sym).got_idx.get_mut() = idx;
+     // An IFUNC symbol uses two GOT slots in a position-dependent
+     // executable.
+     let increment = if is_pde_ifunc { 2 * word::<E>() } else { word::<E>() };
+@@ -78,7 +177,7 @@ pub fn add_gottp_symbol<E: Target>(ctx: &mut Context<E>, sym: SymbolId) {
+     let size = ctx.got.hdr.shdr.sh_size.get();
+     let idx = (size / word::<E>()) as u32;
+     assert_ne!(idx, u32::MAX);
+-    ctx.symbols.aux_mut(sym).gottp_idx = idx;
++    *ctx.symbols.aux_mut(sym).gottp_idx.get_mut() = idx;
+     ctx.got.hdr.shdr.sh_size.set(size + word::<E>());
+     ctx.got.gottp_syms.push(sym);
+ }
+@@ -87,7 +186,7 @@ pub fn add_tlsgd_symbol<E: Target>(ctx: &mut Context<E>, sym: SymbolId) {
+     let size = ctx.got.hdr.shdr.sh_size.get();
+     let idx = (size / word::<E>()) as u32;
+     assert_ne!(idx, u32::MAX);
+-    ctx.symbols.aux_mut(sym).tlsgd_idx = idx;
++    *ctx.symbols.aux_mut(sym).tlsgd_idx.get_mut() = idx;
+     ctx.got.hdr.shdr.sh_size.set(size + 2 * word::<E>());
+     ctx.got.tlsgd_syms.push(sym);
+ }
+@@ -104,7 +203,7 @@ pub fn add_tlsdesc_symbol<E: Target>(ctx: &mut Context<E>, sym: SymbolId) {
+     let size = ctx.got.hdr.shdr.sh_size.get();
+     let idx = (size / word::<E>()) as u32;
+     assert_ne!(idx, u32::MAX);
+-    ctx.symbols.aux_mut(sym).tlsdesc_idx = idx;
++    *ctx.symbols.aux_mut(sym).tlsdesc_idx.get_mut() = idx;
+     ctx.got.hdr.shdr.sh_size.set(size + 2 * word::<E>());
+     ctx.got.tlsdesc_syms.push(sym);
+ }
+@@ -422,3 +521,85 @@ pub fn populate_symtab<E: Target>(ctx: &Context<E>, block: &mut SymtabBlock<'_>)
+         block.push_synthetic::<E>(b"", b"$tlsld", object(got.tlsld_addr()));
+     }
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use crate::arch::{I386, X86_64};
++    use crate::cmdline::Args;
++    use crate::symbol::NEEDS_PLT;
++
++    fn check_layout<E: Target>(pic: bool, repeats: usize) {
++        let args = Args { pic, ..Args::default() };
++        let mut ctx = Context::<E>::new(args, Vec::new());
++        ctx.dynamic = Some(crate::chunks::dynamic::new_header(&ctx.args));
++        let a = ctx.symbols.intern(b"a");
++        let b = ctx.symbols.intern(b"b");
++        let c = ctx.symbols.intern(b"c");
++        let d = ctx.symbols.intern(b"d");
++        let e = ctx.symbols.intern(b"e");
++        let f = ctx.symbols.intern(b"f");
++        ctx.symbols[a].add_flags(NEEDS_GOT | NEEDS_PLT);
++        ctx.symbols[a].set_write_to_symtab();
++        ctx.symbols[b].add_flags(NEEDS_GOT | NEEDS_GOTTP | NEEDS_TLSGD | NEEDS_TLSDESC);
++        ctx.symbols[c].add_flags(NEEDS_GOT | NEEDS_PLT);
++        let mut esym = ElfSym::<E>::default();
++        esym.set_type(STT_GNU_IFUNC);
++        ctx.symbols[c].set_esym(&esym);
++        ctx.symbols[d].add_flags(NEEDS_TLSDESC);
++        ctx.symbols[e].set_exported(true);
++        ctx.symbols[f].set_imported(true);
++        ctx.symbols[f].add_flags(NEEDS_GOT);
++        ctx.symbols.aux_mut(b).plt_idx = 17;
++
++        // Mix single- and double-word entries, repeats, an empty file and
++        // existing auxiliary data. TLSLD occupies the first two free slots.
++        add_tlsld(&mut ctx);
++        let mut first = vec![a, b];
++        first.extend(std::iter::repeat_n(a, repeats));
++        let groups = vec![first, vec![], vec![c, d, e, f]];
++        ctx.symbols.allocate_aux(&groups);
++        let ordered = allocate_entries(&mut ctx, groups);
++        assert_eq!(
++            ordered,
++            [(a, NEEDS_GOT | NEEDS_PLT), (c, NEEDS_GOT | NEEDS_PLT), (e, 0), (f, NEEDS_GOT)]
++        );
++        assert_eq!(ctx.got.tlsld_idx, Some(1));
++        assert_eq!(ctx.symbols[a].got_idx(&ctx.symbols), Some(3));
++        assert_eq!(ctx.symbols[b].got_idx(&ctx.symbols), Some(4));
++        assert_eq!(ctx.symbols[b].gottp_idx(&ctx.symbols), Some(5));
++        assert_eq!(ctx.symbols[b].tlsgd_idx(&ctx.symbols), Some(6));
++        assert_eq!(ctx.symbols[b].tlsdesc_idx(&ctx.symbols), Some(8));
++        assert_eq!(ctx.symbols[b].plt_idx(&ctx.symbols), Some(17));
++        assert_eq!(ctx.symbols[c].got_idx(&ctx.symbols), Some(10));
++        let extra = u32::from(!pic);
++        assert_eq!(ctx.symbols[d].tlsdesc_idx(&ctx.symbols), Some(11 + extra));
++        assert_eq!(ctx.symbols[f].got_idx(&ctx.symbols), Some(13 + extra));
++        assert_eq!(ctx.got.hdr.shdr.sh_size.get(), (14 + extra as u64) * E::WORD_SIZE as u64);
++        assert_eq!(ctx.got.got_syms, [a, b, c, f]);
++        assert_eq!(ctx.got.gottp_syms, [b]);
++        assert_eq!(ctx.got.tlsgd_syms, [b]);
++        assert_eq!(ctx.got.tlsdesc_syms, [b, d]);
++        assert!(ctx.symbols[a].write_to_symtab());
++        for id in [a, b, c, d, e, f] {
++            assert_eq!(ctx.symbols[id].flags(), 0);
++        }
++        assert!(allocate_entries(&mut ctx, vec![]).is_empty());
++        assert_eq!(ctx.got.got_syms, [a, b, c, f]);
++    }
++
++    #[test]
++    fn got_ranges_preserve_order_and_ifunc_width() {
++        for threads in [1, 4] {
++            let pool = rayon::ThreadPoolBuilder::new().num_threads(threads).build().unwrap();
++            pool.install(|| {
++                for pic in [false, true] {
++                    for repeats in [1, 4096] {
++                        check_layout::<X86_64>(pic, repeats);
++                        check_layout::<I386>(pic, repeats);
++                    }
++                }
++            });
++        }
++    }
++}
+diff --git a/src/driver.rs b/src/driver.rs
+index 514b21d4b3f13ad852553342296c2371a758e91b..143001187cc46e9e4c502925946a4518ff40b1f7 100644
+--- a/src/driver.rs
++++ b/src/driver.rs
+@@ -74,6 +74,60 @@ fn target_traits<E: Target>() -> TargetTraits {
+     TargetTraits { name: E::NAME, is_rela: E::IS_RELA, family: E::FAMILY, page_size: E::PAGE_SIZE }
+ }
+ 
++// The input size that keeps one thread busy. Splitting a pass among more
++// threads than this costs more than it saves, so small links are faster on
++// fewer threads.
++const BYTES_PER_THREAD: u64 = 8 << 20;
++
++/// The thread count to use when --threads is not given: one per CPU up to
++/// 32, but only about one per 8 MiB of input.
++fn default_thread_count(args: &Args, jobs: &[cmdline::ReaderJob]) -> usize {
++    // mold doesn't scale well with too many threads, so limit it to 32.
++    let max = std::thread::available_parallelism().map_or(1, |n| n.get()).min(32);
++    let size = input_size(args, jobs, max as u64 * BYTES_PER_THREAD);
++    max.min((size / BYTES_PER_THREAD).max(1) as usize)
++}
++
++/// Estimates the total size of the input files, up to `limit`, from their
++/// metadata. A library given by -l is looked up as `find_library` does.
++fn input_size(args: &Args, jobs: &[cmdline::ReaderJob], limit: u64) -> u64 {
++    let size = |path: &std::path::Path| {
++        let path = crate::mapped_file::apply_chroot(&args.chroot, path);
++        std::fs::metadata(path).map_or(0, |m| m.len())
++    };
++    let library_size = |job: &cmdline::ReaderJob| {
++        let name = job.name.as_os_str();
++        let filenames: Vec<OsString> =
++            if let Some(exact) = name.as_encoded_bytes().strip_prefix(b":") {
++                vec![crate::util::os_str(exact).into()]
++            } else {
++                let stem = |ext: &str| {
++                    let mut filename = OsString::from("lib");
++                    filename.push(name);
++                    filename.push(ext);
++                    filename
++                };
++                let shared = (!job.rctx.is_static).then(|| stem(".so"));
++                shared.into_iter().chain(std::iter::once(stem(".a"))).collect()
++            };
++        args.library_paths
++            .iter()
++            .flat_map(|dir| filenames.iter().map(move |filename| dir.join(filename)))
++            .map(|path| size(&path))
++            .find(|&n| n != 0)
++            .unwrap_or(0)
++    };
++
++    let mut total = 0;
++    for job in jobs {
++        total += if job.is_lib { library_size(job) } else { size(&job.name) };
++        if total >= limit {
++            break;
++        }
++    }
++    total
++}
++
+ fn thread_count(args: &Args) -> usize {
+     // mold doesn't scale well with too many threads, so limit it to 32.
+     args.thread_count
+@@ -97,6 +151,10 @@ pub fn link<E: Target>(cmdline: Cmdline) -> LinkResult {
+         return Err(ctx.args.emulation);
+     }
+ 
++    if ctx.args.thread_count.is_none() {
++        ctx.args.thread_count = Some(default_thread_count(&ctx.args, &jobs));
++    }
++
+     let t_all = ctx.timer("all");
+     crate::subprocess::install_signal_handler();
+     error::install_panic_hook();
+diff --git a/src/passes.rs b/src/passes.rs
+index 4587c853a8d5de96585bd4eed31da6cabb8c1f3e..8d096424bc323d5d60976891efcc99b2ef782c7f 100644
+--- a/src/passes.rs
++++ b/src/passes.rs
+@@ -2548,23 +2548,27 @@ pub fn scan_relocations<E: Target>(ctx: &mut Context<E>) {
+         crate::chunks::got::add_tlsld(ctx);
+     }
+ 
+-    // Every dynamic symbol gets its auxiliary record. The loop below
+-    // assigns table entries in order and so runs on one thread; the
+-    // records are allocated beforehand in the side vector.
++    // Every dynamic symbol gets its auxiliary record before assigning
++    // GOT entries in parallel and the remaining table entries in order.
+     ctx.symbols.allocate_aux(&groups);
+-    let mut syms = Vec::with_capacity(groups.iter().map(Vec::len).sum());
+-    syms.extend(groups.into_iter().flatten());
++    // Small tables do not repay the extra passes needed to assign ranges.
++    let parallel_got = groups.iter().map(Vec::len).sum::<usize>() >= 4096;
++    let syms = if parallel_got {
++        crate::chunks::got::allocate_entries(ctx, groups)
++    } else {
++        groups.into_iter().flatten().map(|id| (id, 0)).collect()
++    };
+ 
+     // Fetch symbols before their auxiliary records to hide both loads.
+     // Assign table entries in command-line order.
+-    for (i, &id) in syms.iter().enumerate() {
+-        if let Some(&next) = syms.get(i + 64) {
++    for (i, &(id, flags)) in syms.iter().enumerate() {
++        if let Some(&(next, _)) = syms.get(i + 64) {
+             crate::util::prefetch(std::ptr::from_ref(&ctx.symbols[next]).cast());
+         }
+-        if let Some(aux) = syms.get(i + 16).and_then(|&id| ctx.symbols[id].aux(&ctx.symbols)) {
++        if let Some(aux) = syms.get(i + 16).and_then(|&(id, _)| ctx.symbols[id].aux(&ctx.symbols)) {
+             crate::util::prefetch(std::ptr::from_ref(aux).cast());
+         }
+-        let flags = ctx.symbols[id].flags();
++        let flags = if parallel_got { flags } else { ctx.symbols[id].flags() };
+         let (is_imported, is_exported, ty) = {
+             let sym = &ctx.symbols[id];
+             (sym.is_imported(), sym.is_exported(), sym.ty())
+@@ -2575,7 +2579,7 @@ pub fn scan_relocations<E: Target>(ctx: &mut Context<E>) {
+         if (is_imported || is_exported) && ctx.dynamic.is_some() {
+             ctx.dynsym.add_symbol(&mut ctx.symbols, id);
+         }
+-        if flags & NEEDS_GOT != 0 {
++        if !parallel_got && flags & NEEDS_GOT != 0 {
+             crate::chunks::got::add_got_symbol(ctx, id);
+         }
+         if flags & NEEDS_CANONICAL != 0 && ty == STT_FUNC {
+@@ -2596,14 +2600,16 @@ pub fn scan_relocations<E: Target>(ctx: &mut Context<E>) {
+                 crate::chunks::plt::add_symbol(ctx, id);
+             }
+         }
+-        if flags & NEEDS_GOTTP != 0 {
+-            crate::chunks::got::add_gottp_symbol(ctx, id);
+-        }
+-        if flags & NEEDS_TLSGD != 0 {
+-            crate::chunks::got::add_tlsgd_symbol(ctx, id);
+-        }
+-        if flags & NEEDS_TLSDESC != 0 {
+-            crate::chunks::got::add_tlsdesc_symbol(ctx, id);
++        if !parallel_got {
++            if flags & NEEDS_GOTTP != 0 {
++                crate::chunks::got::add_gottp_symbol(ctx, id);
++            }
++            if flags & NEEDS_TLSGD != 0 {
++                crate::chunks::got::add_tlsgd_symbol(ctx, id);
++            }
++            if flags & NEEDS_TLSDESC != 0 {
++                crate::chunks::got::add_tlsdesc_symbol(ctx, id);
++            }
+         }
+         if flags & NEEDS_CANONICAL != 0 && ty != STT_FUNC {
+             let relro = ctx.args.z_relro
+@@ -2616,7 +2622,9 @@ pub fn scan_relocations<E: Target>(ctx: &mut Context<E>) {
+         if E::FAMILY == Family::Ppc64V1 && flags & NEEDS_PPC_OPD != 0 {
+             crate::chunks::opd::add_symbol(ctx, id);
+         }
+-        ctx.symbols[id].clear_flags();
++        if !parallel_got {
++            ctx.symbols[id].clear_flags();
++        }
+     }
+ 
+     if ctx.has_textrel.load(Ordering::Relaxed) && ctx.args.warn_textrel {
+diff --git a/src/symbol.rs b/src/symbol.rs
+index f2cd524e0e499865c99cb8adc97352f34d8fc74c..77b7a74e4c71b30bbcfeccfd7a6fc4b635f4a942 100644
+--- a/src/symbol.rs
++++ b/src/symbol.rs
+@@ -160,10 +160,11 @@ impl AddrFlags {
+ #[derive(Debug)]
+ pub struct SymbolAux {
+     // Zero-based table indices, with u32::MAX meaning no entry.
+-    pub got_idx: u32,
+-    pub gottp_idx: u32,
+-    pub tlsgd_idx: u32,
+-    pub tlsdesc_idx: u32,
++    // GOT ranges are assigned in parallel through shared symbol records.
++    pub got_idx: AtomicU32,
++    pub gottp_idx: AtomicU32,
++    pub tlsgd_idx: AtomicU32,
++    pub tlsdesc_idx: AtomicU32,
+     pub plt_idx: u32,
+     pub pltgot_idx: u32,
+     pub opd_idx: u32,
+@@ -181,10 +182,10 @@ const _: () = assert!(size_of::<SymbolAux>() == 64);
+ impl Default for SymbolAux {
+     fn default() -> Self {
+         Self {
+-            got_idx: u32::MAX,
+-            gottp_idx: u32::MAX,
+-            tlsgd_idx: u32::MAX,
+-            tlsdesc_idx: u32::MAX,
++            got_idx: AtomicU32::new(u32::MAX),
++            gottp_idx: AtomicU32::new(u32::MAX),
++            tlsgd_idx: AtomicU32::new(u32::MAX),
++            tlsdesc_idx: AtomicU32::new(u32::MAX),
+             plt_idx: u32::MAX,
+             pltgot_idx: u32::MAX,
+             opd_idx: u32::MAX,
+@@ -718,6 +719,12 @@ impl Symbol {
+         self.flags.fetch_and(WRITE_TO_SYMTAB, Ordering::Relaxed);
+     }
+ 
++    #[inline]
++    /// Consumes relocation requests, retaining the output-symbol-table bit.
++    pub fn take_flags(&self) -> u8 {
++        self.flags.fetch_and(WRITE_TO_SYMTAB, Ordering::Relaxed) & NEEDS_MASK
++    }
++
+     /// Marks the symbol, returning true if it wasn't marked yet. Once the
+     /// NEEDS_* flags have been turned into GOT and PLT entries, the field
+     /// is free to serve as a scratch mark, which thunk creation uses.
+@@ -750,22 +757,22 @@ impl Symbol {
+     }
+ 
+     pub fn got_idx(&self, symbols: &SymbolTable) -> Option<u32> {
+-        let idx = self.aux(symbols)?.got_idx;
++        let idx = self.aux(symbols)?.got_idx.load(Ordering::Relaxed);
+         (idx != u32::MAX).then_some(idx)
+     }
+ 
+     pub fn gottp_idx(&self, symbols: &SymbolTable) -> Option<u32> {
+-        let idx = self.aux(symbols)?.gottp_idx;
++        let idx = self.aux(symbols)?.gottp_idx.load(Ordering::Relaxed);
+         (idx != u32::MAX).then_some(idx)
+     }
+ 
+     pub fn tlsgd_idx(&self, symbols: &SymbolTable) -> Option<u32> {
+-        let idx = self.aux(symbols)?.tlsgd_idx;
++        let idx = self.aux(symbols)?.tlsgd_idx.load(Ordering::Relaxed);
+         (idx != u32::MAX).then_some(idx)
+     }
+ 
+     pub fn tlsdesc_idx(&self, symbols: &SymbolTable) -> Option<u32> {
+-        let idx = self.aux(symbols)?.tlsdesc_idx;
++        let idx = self.aux(symbols)?.tlsdesc_idx.load(Ordering::Relaxed);
+         (idx != u32::MAX).then_some(idx)
+     }
+ 
+@@ -1891,7 +1898,7 @@ mod tests {
+         let b = table.intern(b"b");
+         let c = table.intern(b"c");
+         let old = table.intern(b"old");
+-        table.aux_mut(old).got_idx = 17;
++        *table.aux_mut(old).got_idx.get_mut() = 17;
+ 
+         table.allocate_aux(&[vec![b, a, b], vec![old, c, c]]);
+         let aux_idx = |id: SymbolId| table[id].aux_idx.load(Ordering::Relaxed);

@@ -1,0 +1,98 @@
+--- /home/callen/work/mold-next-20261006/logs/s2-counts/input_sections.before.rs	2026-10-06 17:21:50.516213563 -0500
++++ /home/callen/work/mold-next-20261006/src/s2-counts/src/input_sections.rs	2026-10-06 17:21:50.530058291 -0500
+@@ -1506,6 +1506,9 @@
+     pub fragments: Vec<EntryId>,
+     frag_offsets: Vec<u32>,
+     hashes: Vec<u64>,
++    // Measurement-only split-to-resolve handoff metadata.
++    profile_split_cpu: i32,
++    profile_split_worker: usize,
+ }
+ 
+ /// Cached section-symbol lookup for one non-allocated relocation stream.
+@@ -1537,6 +1540,8 @@
+             fragments: Vec::new(),
+             frag_offsets: Vec::new(),
+             hashes: Vec::new(),
++            profile_split_cpu: -1,
++            profile_split_worker: usize::MAX,
+         }
+     }
+ 
+@@ -1565,6 +1570,8 @@
+         parent: &MergedSection<E>,
+         sketch: &mut HyperLogLog,
+     ) {
++        // SAFETY: sched_getcpu does not access Rust-owned memory.
++        let profile_start_cpu = unsafe { libc::sched_getcpu() };
+         if data.len() > u32::MAX as usize {
+             fatal!("{}: mergeable section too large", format_args!("{file}:({name})"));
+         }
+@@ -1604,6 +1611,13 @@
+ 
+         static COUNTER: Counter = Counter::new("string_fragments");
+         COUNTER.add(self.frag_offsets.len() as i64);
++        // SAFETY: sched_getcpu does not access Rust-owned memory.
++        self.profile_split_cpu = unsafe { libc::sched_getcpu() };
++        self.profile_split_worker = rayon::current_thread_index().unwrap_or(usize::MAX);
++        if profile_start_cpu != self.profile_split_cpu {
++            static MIGRATIONS: Counter = Counter::new("s2_split_endpoint_migrations");
++            MIGRATIONS.increment();
++        }
+     }
+ 
+     /// Inserts the pieces into the parent section's fragment map.
+@@ -1614,6 +1628,32 @@
+         gc_sections: bool,
+     ) {
+         let n = self.frag_offsets.len();
++        // SAFETY: sched_getcpu does not access Rust-owned memory.
++        let profile_cpu = unsafe { libc::sched_getcpu() };
++        let profile_worker = rayon::current_thread_index().unwrap_or(usize::MAX);
++        static SECTIONS: Counter = Counter::new("s2_handoff_sections");
++        static FRAGMENTS: Counter = Counter::new("s2_handoff_fragments");
++        SECTIONS.increment();
++        FRAGMENTS.add(n as i64);
++        if profile_worker == self.profile_split_worker {
++            static SAME_WORKER: Counter = Counter::new("s2_same_worker_fragments");
++            SAME_WORKER.add(n as i64);
++        }
++        if profile_cpu == self.profile_split_cpu {
++            static SAME_CPU: Counter = Counter::new("s2_same_cpu_fragments");
++            SAME_CPU.add(n as i64);
++        }
++        // Exact topology for wx-workstation's current CPU numbering, captured
++        // with lscpu: CPUs0..63 are physical cores,64..127 their SMT siblings;
++        // each consecutive group of8 physical cores shares one L3.
++        let domain = |cpu: i32| if (0..128).contains(&cpu) { (cpu % 64) / 8 } else { -1 };
++        if domain(profile_cpu) >= 0 && domain(profile_cpu) == domain(self.profile_split_cpu) {
++            static SAME_L3: Counter = Counter::new("s2_same_l3_fragments");
++            SAME_L3.add(n as i64);
++        } else {
++            static CROSS_L3: Counter = Counter::new("s2_cross_l3_fragments");
++            CROSS_L3.add(n as i64);
++        }
+         self.fragments.reserve(n);
+ 
+         // The hash table is typically much larger than the cache, so each
+@@ -1630,6 +1670,11 @@
+             self.fragments.push(id);
+         }
+ 
++        // SAFETY: sched_getcpu does not access Rust-owned memory.
++        if profile_cpu != unsafe { libc::sched_getcpu() } {
++            static MIGRATIONS: Counter = Counter::new("s2_resolve_endpoint_migrations");
++            MIGRATIONS.increment();
++        }
+         // Reclaim memory as we'll never use this vector again.
+         self.hashes = Vec::new();
+     }
+@@ -1862,6 +1907,8 @@
+             fragments,
+             frag_offsets: (0..12).map(|i| 5 + i * 3).collect(),
+             hashes: Vec::new(),
++            profile_split_cpu: -1,
++            profile_split_worker: usize::MAX,
+         };
+         let mut next = 0;
+         for offset in [0, 5, 8, 11, 11, 6, 35, 38, 35, 5, 4, 8] {

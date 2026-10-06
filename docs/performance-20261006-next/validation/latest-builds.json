@@ -1,0 +1,72 @@
+{
+  "upstream_commit": "75200f107ee958227e87a96e67ad491567a4854a",
+  "helper": "run-latest.sh",
+  "host": "wx-workstation",
+  "build_flags": {
+    "jobs": 8,
+    "memory_gib": 24,
+    "pids_limit": 2048,
+    "docker_init": true,
+    "cargo_net_offline": false,
+    "release_debug": "line-tables-only",
+    "rustflags": "-Cforce-frame-pointers=yes -Cllvm-args=-addrsig"
+  },
+  "labels": {
+    "latest-control": {
+      "source_commit": "f1dec0f067198959a1339e761f27f27ccc4179d1",
+      "binary_sha256": "7bbec3c1526448e4e5426c2dada974e9c2017bfb531ca91de7b70dd6769b06ef",
+      "cpu_set": "8-15"
+    },
+    "latest-omnibus": {
+      "source_commit": "8e522e5217adea17329e8e2eeb753fc482de4b16",
+      "binary_sha256": "0257d93ddd1a92d5990d92294b8ae6d252bacff30dcb492f8755a8905d90d60b",
+      "cpu_set": "24-31"
+    },
+    "latest-p1": {
+      "source_commit": "e41a4bd5ecfd23d318d4ce4a0a089f2e35a60e95",
+      "binary_sha256": "8179754f5ed1dbdea1b6310fea377e78faafc3098bd15b6a95824596962d9a5e",
+      "cpu_set": "8-15"
+    }
+  },
+  "cargo_lock_sha256": "e11293521c6cf5adbb4abf011f2f1fc03686687e44563fff60fd3ce295d12763",
+  "new_registry_dependencies": {
+    "mold-mimalloc": "0.1.52",
+    "mold-mimalloc-sys": "0.1.49"
+  },
+  "validation": {
+    "latest-control": {
+      "build": "passed"
+    },
+    "latest-omnibus": {
+      "build": "passed",
+      "unit": "passed",
+      "native": {
+        "passed": 551,
+        "skipped": 14,
+        "failed": 0
+      },
+      "check": "passed",
+      "fmt": "passed",
+      "full": {
+        "passed": 8028,
+        "skipped": 1026,
+        "failed": 0,
+        "scope": "18 architecture test variants; coordinator run",
+        "log": "latest-omnibus/full-20261006T182934.log"
+      },
+      "hosts": {
+        "passed": [
+          "armv7-unknown-linux-gnueabihf",
+          "i686-unknown-linux-gnu",
+          "powerpc-unknown-linux-gnu"
+        ],
+        "scope": "cargo check --workspace --all-targets, coordinator run",
+        "log": "latest-omnibus/hosts-20261006T183708.log"
+      }
+    },
+    "latest-p1": {
+      "build": "passed",
+      "unit": "passed"
+    }
+  }
+}

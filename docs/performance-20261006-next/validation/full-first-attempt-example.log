@@ -1,0 +1,17 @@
+/work/tests/common.inc: fork: retry: Resource temporarily unavailable
+/work/tests/common.inc: fork: retry: Resource temporarily unavailable
+/work/tests/common.inc: fork: retry: Resource temporarily unavailable
+/work/tests/common.inc: fork: retry: Resource temporarily unavailable
+/work/tests/common.inc: fork: Resource temporarily unavailable
+Testing linker-script ... + cat
++ aarch64-linux-gnu-gcc -o out/test//linker-script/a.o -c -xc -
++ cat
++ aarch64-linux-gnu-gcc -B. -o out/test//linker-script/exe out/test//linker-script/script
+mold: fork failed
+collect2: error: ld returned 1 exit status
+++ on_error 15
+++ code=1
+++ echo 'command failed: 15: $CC -B. -o $t/exe $t/script'
+command failed: 15: $CC -B. -o $t/exe $t/script
+++ trap - EXIT
+++ exit 1

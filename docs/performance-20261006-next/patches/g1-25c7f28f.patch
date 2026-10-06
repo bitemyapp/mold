@@ -1,0 +1,179 @@
+diff --git a/src/gc_sections.rs b/src/gc_sections.rs
+index 6ea96ecc784db258eecdf933472f4352fa97e9f1..b150ad86c5dddacc9a36aa7cad0c92baaf5c0637 100644
+--- a/src/gc_sections.rs
++++ b/src/gc_sections.rs
+@@ -9,8 +9,8 @@ use rayon::prelude::*;
+ use crate::arch::{Family, Target};
+ use crate::context::Context;
+ use crate::elf::*;
+-use crate::input_files::{FileId, ObjectFile};
+-use crate::input_sections::{InputSection, SectionRef};
++use crate::input_files::{DsoId, FileId, ObjectFile};
++use crate::input_sections::{InputSection, SectionFragment, SectionRef};
+ use crate::symbol::{OriginValue, SymbolId, is_c_identifier};
+ 
+ fn should_keep<E: Target>(file: &ObjectFile<E>, isec: &InputSection<E>) -> bool {
+@@ -130,11 +130,57 @@ fn start_stop_name(name: &[u8]) -> Option<&[u8]> {
+     name.strip_prefix(b"__start_").or_else(|| name.strip_prefix(b"__stop_"))
+ }
+ 
++/// GC repeatedly follows symbol origins while traversing relocations. Keep
++/// only the resolved target needed by this pass, rather than revisiting the
++/// larger symbol record and its owner/section lookup on every graph edge.
++/// References remain valid until marking and sweeping have completed.
++#[derive(Clone, Copy)]
++enum GcTarget<'a, E: Target> {
++    None,
++    Section(&'a InputSection<E>),
++    Fragment(&'a SectionFragment),
++    Dso(DsoId),
++    // Start/stop references can both name an ordinary section and retain a
++    // whole section-name group. Keep their existing path intact.
++    Special(SymbolId),
++}
++
++fn build_targets<'a, E: Target>(
++    ctx: &'a Context<E>,
++    map: &StartStopMap<'a, E>,
++) -> Vec<GcTarget<'a, E>> {
++    let _t = ctx.timer("build_gc_targets");
++    (0..ctx.symbols.len())
++        .into_par_iter()
++        .map(|index| {
++            let id = SymbolId(index as u32);
++            let sym = &ctx.symbols[id];
++            if let Some(FileId::Dso(dso)) = sym.file() {
++                return GcTarget::Dso(dso);
++            }
++            let origin = sym.origin();
++            if let OriginValue::Fragment(fragment) = origin {
++                return GcTarget::Fragment(ctx.fragment(fragment));
++            }
++            if !map.is_empty()
++                && start_stop_name(sym.name()).is_some_and(|name| map.contains_key(name))
++            {
++                return GcTarget::Special(id);
++            }
++            match origin {
++                OriginValue::InputSection(section) => GcTarget::Section(ctx.input_section(section)),
++                _ => GcTarget::None,
++            }
++        })
++        .collect()
++}
++
+ fn visit_section<'scope, E: Target>(
+     ctx: &'scope Context<E>,
+     isec: &'scope InputSection<E>,
+     depth: usize,
+     map: &'scope StartStopMap<'scope, E>,
++    targets: &'scope [GcTarget<'scope, E>],
+     scope: &rayon::Scope<'scope>,
+     next: &mut Vec<&'scope InputSection<E>>,
+ ) {
+@@ -146,7 +192,7 @@ fn visit_section<'scope, E: Target>(
+     let mut mark = |target: &'scope InputSection<E>| {
+         if mark_section(target) {
+             if depth < 3 {
+-                visit_section(ctx, target, depth + 1, map, scope, next);
++                visit_section(ctx, target, depth + 1, map, targets, scope, next);
+             } else {
+                 next.push(target);
+             }
+@@ -167,21 +213,26 @@ fn visit_section<'scope, E: Target>(
+     }
+ 
+     for rel in isec.rels(file) {
+-        let sym = &ctx.symbols[file.base.symbols[rel.r_sym() as usize]];
+-        if let Some(FileId::Dso(dso)) = sym.file() {
+-            ctx.dsos[dso.index()].base.mark_reachable();
+-            continue;
+-        }
+-        // Symbol can refer to either a section fragment or an input section.
+-        match sym.origin() {
+-            OriginValue::Fragment(frag) => {
+-                ctx.fragment(frag).set_alive();
++        let id = file.base.symbols[rel.r_sym() as usize];
++        let special = match targets[id.index()] {
++            GcTarget::None => continue,
++            GcTarget::Section(target) => {
++                mark(target);
+                 continue;
+             }
+-            OriginValue::InputSection(section) => {
+-                mark(ctx.input_section(section));
++            GcTarget::Fragment(fragment) => {
++                fragment.set_alive();
++                continue;
+             }
+-            _ => {}
++            GcTarget::Dso(dso) => {
++                ctx.dsos[dso.index()].base.mark_reachable();
++                continue;
++            }
++            GcTarget::Special(id) => id,
++        };
++        let sym = &ctx.symbols[special];
++        if let Some(target) = sym.input_section_ref(ctx) {
++            mark(target);
+         }
+ 
+         // A reference to __start_<name> or __stop_<name> keeps every
+@@ -203,7 +254,7 @@ fn visit_section<'scope, E: Target>(
+                     }
+                 }
+                 if !found.is_empty() {
+-                    visit_batch(ctx, &found, map, scope);
++                    visit_batch(ctx, &found, map, targets, scope);
+                 }
+             });
+         }
+@@ -224,20 +275,21 @@ fn visit_batch<'scope, E: Target>(
+     ctx: &'scope Context<E>,
+     batch: &[&'scope InputSection<E>],
+     map: &'scope StartStopMap<'scope, E>,
++    targets: &'scope [GcTarget<'scope, E>],
+     scope: &rayon::Scope<'scope>,
+ ) {
+     // Exported symbols can make most sections roots already. Such batches
+     // discover no new work and do not need a heap allocation.
+     let mut next = Vec::new();
+     for &isec in batch {
+-        visit_section(ctx, isec, 0, map, scope, &mut next);
++        visit_section(ctx, isec, 0, map, targets, scope, &mut next);
+         if next.len() >= GC_BATCH {
+             let found = std::mem::take(&mut next);
+-            scope.spawn(move |scope| visit_batch(ctx, &found, map, scope));
++            scope.spawn(move |scope| visit_batch(ctx, &found, map, targets, scope));
+         }
+     }
+     if !next.is_empty() {
+-        scope.spawn(move |scope| visit_batch(ctx, &next, map, scope));
++        scope.spawn(move |scope| visit_batch(ctx, &next, map, targets, scope));
+     }
+ }
+ 
+@@ -246,11 +298,12 @@ fn mark<'a, E: Target>(
+     ctx: &'a Context<E>,
+     roots: Vec<&'a InputSection<E>>,
+     map: &'a StartStopMap<'a, E>,
++    targets: &'a [GcTarget<'a, E>],
+ ) {
+     let _t = ctx.timer("mark");
+ 
+     rayon::scope(|scope| {
+-        roots.par_chunks(GC_BATCH).for_each(|batch| visit_batch(ctx, batch, map, scope));
++        roots.par_chunks(GC_BATCH).for_each(|batch| visit_batch(ctx, batch, map, targets, scope));
+     });
+ }
+ 
+@@ -305,7 +358,8 @@ pub fn gc_sections<E: Target>(ctx: &mut Context<E>) {
+     let t = ctx.timer("build_start_stop_map");
+     let map = build_start_stop_map(ctx);
+     drop(t);
+-    mark(ctx, roots, &map);
++    let targets = build_targets(ctx, &map);
++    mark(ctx, roots, &map, &targets);
+     sweep(ctx);
+ 
+     crate::passes::remove_unreachable_dsos(ctx);

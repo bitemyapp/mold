@@ -1,0 +1,1436 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 7e6c4d4e9b141c8d8429b54d232167cd86f4740e..48b9725e5d999b683ab87a88ff41d72e17b62c7e 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -31,12 +31,12 @@ jobs:
+         cargo check --locked --workspace --all-targets --target powerpc-unknown-linux-gnu
+     - name: verify all target toolchains are available
+       run: |
+-        cargo test --locked -p mold-cli --test integration -- --list |
++        cargo test --locked -p mold --test integration -- --list |
+           tee "$RUNNER_TEMP/test-inventory.txt"
+         ! grep -q '^unavailable:' "$RUNNER_TEMP/test-inventory.txt"
+     # All workspace crates were built above. Avoid linking empty test binaries
+     # for the target crates and command.
+-    - run: cargo test --locked -p mold -p mold-tests -p mold-cli --lib --test integration
++    - run: cargo test --locked -p libmold -p mold-tests -p mold --lib --test integration
+     - name: archive test results
+       uses: actions/upload-artifact@v7
+       if: failure()
+@@ -71,14 +71,14 @@ jobs:
+       with:
+         components: rust-src
+     - run: sudo ./install-test-deps.sh
+-    - run: cargo +nightly build --locked -Zbuild-std --target x86_64-unknown-linux-gnu -p mold-cli --no-default-features --features system-allocator,x86_64
++    - run: cargo +nightly build --locked -Zbuild-std --target x86_64-unknown-linux-gnu -p mold --no-default-features --features system-allocator,x86_64
+     - run: |
+         if [ '${{ matrix.sanitizer }}' = address ]; then
+           export ASAN_OPTIONS='${{ matrix.runtime-options }}'
+         else
+           export TSAN_OPTIONS='${{ matrix.runtime-options }}'
+         fi
+-        ${{ matrix.test-prefix }} cargo +nightly test --locked -Zbuild-std --target x86_64-unknown-linux-gnu -p mold-cli --no-default-features --features system-allocator,x86_64 --test integration -- --native --test-threads 1 --timeout ${{ matrix.test-timeout }}
++        ${{ matrix.test-prefix }} cargo +nightly test --locked -Zbuild-std --target x86_64-unknown-linux-gnu -p mold --no-default-features --features system-allocator,x86_64 --test integration -- --native --test-threads 1 --timeout ${{ matrix.test-timeout }}
+     - name: archive test results
+       uses: actions/upload-artifact@v7
+       if: failure()
+@@ -127,8 +127,8 @@ jobs:
+     - uses: actions/checkout@v6
+     - run: ./install-test-deps.sh
+     - uses: dtolnay/rust-toolchain@stable
+-    - run: cargo build --locked -p mold-cli --no-default-features --features x86_64
+-    - run: cargo test --locked -p mold-cli --no-default-features --features x86_64 --test integration -- --native
++    - run: cargo build --locked -p mold --no-default-features --features x86_64
++    - run: cargo test --locked -p mold --no-default-features --features x86_64 --test integration -- --native
+     - name: sanitize distro name
+       if: failure()
+       id: sanitize
+@@ -146,7 +146,7 @@ jobs:
+     steps:
+     - uses: actions/checkout@v6
+     - uses: dtolnay/rust-toolchain@stable
+-    - run: cargo build --locked -p mold-cli --no-default-features --features x86_64
++    - run: cargo build --locked -p mold --no-default-features --features x86_64
+ 
+   build-windows:
+     runs-on: windows-latest
+@@ -154,7 +154,7 @@ jobs:
+     steps:
+     - uses: actions/checkout@v6
+     - uses: dtolnay/rust-toolchain@stable
+-    - run: cargo build --locked -p mold-cli --no-default-features --features x86_64
++    - run: cargo build --locked -p mold --no-default-features --features x86_64
+ 
+   build-msys:
+     runs-on: windows-latest
+@@ -170,7 +170,7 @@ jobs:
+         install: git
+         pacboy: rust:p cc:p dlfcn:p
+     - shell: msys2 {0}
+-      run: cargo build --locked -p mold-cli --no-default-features --features x86_64
++      run: cargo build --locked -p mold --no-default-features --features x86_64
+ 
+   build-freebsd:
+     runs-on: ubuntu-latest
+@@ -188,5 +188,5 @@ jobs:
+         run: |
+           pkg install -y rust
+           ./install-test-deps.sh
+-          cargo build --locked -p mold-cli --no-default-features --features x86_64
+-          cargo test --locked -p mold-cli --no-default-features --features x86_64 --test integration -- --native
++          cargo build --locked -p mold --no-default-features --features x86_64
++          cargo test --locked -p mold --no-default-features --features x86_64 --test integration -- --native
+diff --git a/.github/workflows/run-msan.sh b/.github/workflows/run-msan.sh
+index 54d9bfc0e1b698ff9d6cc854bff44c5bed8ee41d..5163303f49b9f3df2eb47912050e2526702f8d90 100755
+--- a/.github/workflows/run-msan.sh
++++ b/.github/workflows/run-msan.sh
+@@ -17,11 +17,11 @@ export MSAN_OPTIONS=halt_on_error=1
+ export CARGO_PROFILE_DEV_OPT_LEVEL=1
+ 
+ # Use instrumentable implementations instead of BLAKE3/Zstd assembly, and
+-# select mold as well as mold-cli so Cargo enables its dependency features.
++# select libmold as well as mold so Cargo enables its dependency features.
+ args=(
+   --locked -Zbuild-std --target x86_64-unknown-linux-gnu
+-  --package mold --package mold-cli --no-default-features
+-  --features mold-cli/system-allocator,mold-cli/x86_64,blake3/pure,zstd/no_asm
++  --package libmold --package mold --no-default-features
++  --features mold/system-allocator,mold/x86_64,blake3/pure,zstd/no_asm
+   --test integration
+ )
+ cargo +nightly test "${args[@]}" -- --native --test-threads 1 --timeout 60 "$@"
+diff --git a/Cargo.lock b/Cargo.lock
+index e99434eccf99018d17fafa4a81686bd6d33cf60e..427b20b959bbaebbcd30a23b97b92ef21e4560a7 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -186,11 +186,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
+ 
+ [[package]]
+-name = "libmimalloc-sys"
+-version = "0.1.49"
+-source = "git+https://github.com/rui314/mimalloc_rust?rev=3979460494f1cd1e7f936cb8e10f41e927c9f698#3979460494f1cd1e7f936cb8e10f41e927c9f698"
++name = "libmold"
++version = "3.0.0"
+ dependencies = [
++ "blake3",
++ "bstr",
+  "cc",
++ "cpp_demangle",
++ "crc32fast",
++ "flate2",
++ "getrandom",
++ "hashbrown",
++ "libc",
++ "libz-rs-sys",
++ "memchr",
++ "memmap2",
++ "portable-atomic",
++ "rayon",
++ "rustc-demangle",
++ "uuid",
++ "xxhash-rust",
++ "zlib-rs",
++ "zstd",
+ ]
+ 
+ [[package]]
+@@ -217,206 +234,191 @@ dependencies = [
+  "libc",
+ ]
+ 
+-[[package]]
+-name = "mimalloc"
+-version = "0.1.52"
+-source = "git+https://github.com/rui314/mimalloc_rust?rev=3979460494f1cd1e7f936cb8e10f41e927c9f698#3979460494f1cd1e7f936cb8e10f41e927c9f698"
+-dependencies = [
+- "libmimalloc-sys",
+-]
+-
+ [[package]]
+ name = "mold"
+ version = "3.0.0"
+ dependencies = [
+- "blake3",
+- "bstr",
+- "cc",
+- "cpp_demangle",
+- "crc32fast",
+- "flate2",
+- "getrandom",
+- "hashbrown",
+- "libc",
+- "libz-rs-sys",
+- "memchr",
+- "memmap2",
+- "portable-atomic",
+- "rayon",
+- "rustc-demangle",
+- "uuid",
+- "xxhash-rust",
+- "zlib-rs",
+- "zstd",
++ "libmold",
++ "mold-arch-arm32",
++ "mold-arch-arm32be",
++ "mold-arch-arm64",
++ "mold-arch-arm64be",
++ "mold-arch-i386",
++ "mold-arch-loongarch32",
++ "mold-arch-loongarch64",
++ "mold-arch-m68k",
++ "mold-arch-ppc32",
++ "mold-arch-ppc64v1",
++ "mold-arch-ppc64v2",
++ "mold-arch-riscv32",
++ "mold-arch-riscv32be",
++ "mold-arch-riscv64",
++ "mold-arch-riscv64be",
++ "mold-arch-s390x",
++ "mold-arch-sh4",
++ "mold-arch-sh4be",
++ "mold-arch-sparc64",
++ "mold-arch-x86_64",
++ "mold-mimalloc",
++ "mold-tests",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-arm32"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-arm32be"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-arm64"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-arm64be"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-i386"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-loongarch32"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-loongarch64"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-m68k"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-ppc32"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-ppc64v1"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-ppc64v2"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-riscv32"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-riscv32be"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-riscv64"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-riscv64be"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-s390x"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-sh4"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-sh4be"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-sparc64"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+ name = "mold-arch-x86_64"
+ version = "3.0.0"
+ dependencies = [
+- "mold",
++ "libmold",
+ ]
+ 
+ [[package]]
+-name = "mold-cli"
+-version = "3.0.0"
++name = "mold-mimalloc"
++version = "0.1.52"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "7b7efd1b6c74e7a09c1d296af4875b79118a5ea32d70736601a8323ddcbcb4c2"
+ dependencies = [
+- "mimalloc",
+- "mold",
+- "mold-arch-arm32",
+- "mold-arch-arm32be",
+- "mold-arch-arm64",
+- "mold-arch-arm64be",
+- "mold-arch-i386",
+- "mold-arch-loongarch32",
+- "mold-arch-loongarch64",
+- "mold-arch-m68k",
+- "mold-arch-ppc32",
+- "mold-arch-ppc64v1",
+- "mold-arch-ppc64v2",
+- "mold-arch-riscv32",
+- "mold-arch-riscv32be",
+- "mold-arch-riscv64",
+- "mold-arch-riscv64be",
+- "mold-arch-s390x",
+- "mold-arch-sh4",
+- "mold-arch-sh4be",
+- "mold-arch-sparc64",
+- "mold-arch-x86_64",
+- "mold-tests",
++ "mold-mimalloc-sys",
++]
++
++[[package]]
++name = "mold-mimalloc-sys"
++version = "0.1.49"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "66a79c372cdbf45bf4548fd4aa40a0b2805ef2ee8e25e5185e11bf2b5c5de366"
++dependencies = [
++ "cc",
+ ]
+ 
+ [[package]]
+diff --git a/Cargo.toml b/Cargo.toml
+index 78a6b7d1c51bdff257fcf95795e83a0d2103ebf8..1526e470f3dc07cdcfd7587840d261afe3e3cfed 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -1,12 +1,14 @@
+ [package]
+-name = "mold"
++name = "libmold"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "A high-performance ELF linker, rewritten in Rust"
++description = "The internal library of the mold linker, whose API is not stable"
+ license.workspace = true
++repository.workspace = true
+ # tests/lib.rs belongs to the mold-tests workspace crate.
+ autotests = false
++include = ["/src", "/c", "/build.rs", "/LICENSE", "/README.md"]
+ 
+ # The linker is generic over the target. Instantiating it for all twenty
+ # targets in one crate keeps the compiler on a single core for minutes, so
+@@ -21,10 +23,34 @@ version = "3.0.0"
+ edition = "2024"
+ rust-version = "1.95"
+ license = "MIT"
++repository = "https://github.com/rui314/mold"
+ 
++# The workspace crates are published together and depend on each other's
++# internals, so each one requires the exact version of the others. Keep
++# these versions equal to the workspace version above.
+ [workspace.dependencies]
+ libc = "0.2"
+-mold = { path = "." }
++libmold = { path = ".", version = "=3.0.0" }
++mold-arch-x86_64 = { path = "arch/x86_64", version = "=3.0.0" }
++mold-arch-i386 = { path = "arch/i386", version = "=3.0.0" }
++mold-arch-arm32 = { path = "arch/arm32", version = "=3.0.0" }
++mold-arch-arm32be = { path = "arch/arm32be", version = "=3.0.0" }
++mold-arch-arm64 = { path = "arch/arm64", version = "=3.0.0" }
++mold-arch-arm64be = { path = "arch/arm64be", version = "=3.0.0" }
++mold-arch-riscv64 = { path = "arch/riscv64", version = "=3.0.0" }
++mold-arch-riscv64be = { path = "arch/riscv64be", version = "=3.0.0" }
++mold-arch-riscv32 = { path = "arch/riscv32", version = "=3.0.0" }
++mold-arch-riscv32be = { path = "arch/riscv32be", version = "=3.0.0" }
++mold-arch-ppc64v2 = { path = "arch/ppc64v2", version = "=3.0.0" }
++mold-arch-ppc32 = { path = "arch/ppc32", version = "=3.0.0" }
++mold-arch-ppc64v1 = { path = "arch/ppc64v1", version = "=3.0.0" }
++mold-arch-s390x = { path = "arch/s390x", version = "=3.0.0" }
++mold-arch-sparc64 = { path = "arch/sparc64", version = "=3.0.0" }
++mold-arch-m68k = { path = "arch/m68k", version = "=3.0.0" }
++mold-arch-sh4 = { path = "arch/sh4", version = "=3.0.0" }
++mold-arch-sh4be = { path = "arch/sh4be", version = "=3.0.0" }
++mold-arch-loongarch64 = { path = "arch/loongarch64", version = "=3.0.0" }
++mold-arch-loongarch32 = { path = "arch/loongarch32", version = "=3.0.0" }
+ 
+ [dependencies]
+ blake3 = "1.8.7"
+diff --git a/arch/arm32/Cargo.toml b/arch/arm32/Cargo.toml
+index 55a1f6f3c8e6cb5c3859fad37f5265b4a30bb9e7..cbb53d3cb8a0425bbe750473bdc24e2f0e93c9ce 100644
+--- a/arch/arm32/Cargo.toml
++++ b/arch/arm32/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-arm32"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for arm32"
++description = "An internal crate of the mold linker, which instantiates it for arm32"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/arm32/lib.rs b/arch/arm32/lib.rs
+index f54521a2b8992b09b2e5bd617c1e0091c007e559..55dfb1dfe48269e29eaa6353fa115c8fdb41fb06 100644
+--- a/arch/arm32/lib.rs
++++ b/arch/arm32/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::Arm32>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::Arm32>(cmdline)
+ }
+diff --git a/arch/arm32be/Cargo.toml b/arch/arm32be/Cargo.toml
+index 69d530f34216fa80988ec0c6e1387c07c3d18408..7fbeacad9e33e93e3742f9652a06498d4a9a62df 100644
+--- a/arch/arm32be/Cargo.toml
++++ b/arch/arm32be/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-arm32be"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for arm32be"
++description = "An internal crate of the mold linker, which instantiates it for arm32be"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/arm32be/lib.rs b/arch/arm32be/lib.rs
+index 321943652f4b5a318f23da0885be8645d650a9bf..6fa6aca598650d4da123ac9dfd720b1958006a98 100644
+--- a/arch/arm32be/lib.rs
++++ b/arch/arm32be/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::Arm32Be>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::Arm32Be>(cmdline)
+ }
+diff --git a/arch/arm64/Cargo.toml b/arch/arm64/Cargo.toml
+index c28530a970061a7eb017a261b147d41ff41c8d52..8ac8404a45fa4bb13ff600867680b9861e9e20e6 100644
+--- a/arch/arm64/Cargo.toml
++++ b/arch/arm64/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-arm64"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for arm64"
++description = "An internal crate of the mold linker, which instantiates it for arm64"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/arm64/lib.rs b/arch/arm64/lib.rs
+index 84139a936b5c2e4c616e9a2f787300b89b975d0b..c45c810dc06540b032e1d129fc7a25aa9b65c6c3 100644
+--- a/arch/arm64/lib.rs
++++ b/arch/arm64/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::Arm64>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::Arm64>(cmdline)
+ }
+diff --git a/arch/arm64be/Cargo.toml b/arch/arm64be/Cargo.toml
+index 610b07635984c9bcb005c2483843c8fe5a9acccf..7448441ecfaef134a3f0d028ae76e443c07396d9 100644
+--- a/arch/arm64be/Cargo.toml
++++ b/arch/arm64be/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-arm64be"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for arm64be"
++description = "An internal crate of the mold linker, which instantiates it for arm64be"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/arm64be/lib.rs b/arch/arm64be/lib.rs
+index 380c0ed0c380353d5f0feb9e692ebe7a12d68318..3d4aee06bbe421632b42245fcff427ea4e84f146 100644
+--- a/arch/arm64be/lib.rs
++++ b/arch/arm64be/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::Arm64Be>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::Arm64Be>(cmdline)
+ }
+diff --git a/arch/i386/Cargo.toml b/arch/i386/Cargo.toml
+index e261fca89f8e7fc394ce834eeed9e154637c82b1..0ecba971ad6a078101767237381ed7c8673e5ac9 100644
+--- a/arch/i386/Cargo.toml
++++ b/arch/i386/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-i386"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for i386"
++description = "An internal crate of the mold linker, which instantiates it for i386"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/i386/lib.rs b/arch/i386/lib.rs
+index 08239fc9abe0e9de1705170666ef5f631c2ba8bc..1144c8cbc75868183f2fb31ffd5abf098864c2ce 100644
+--- a/arch/i386/lib.rs
++++ b/arch/i386/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::I386>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::I386>(cmdline)
+ }
+diff --git a/arch/loongarch32/Cargo.toml b/arch/loongarch32/Cargo.toml
+index 8f26a6f9040eabc94f4d4560a6a7b07d59aa062d..3411664c453166735ade63eaa8ee500dd6cbe322 100644
+--- a/arch/loongarch32/Cargo.toml
++++ b/arch/loongarch32/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-loongarch32"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for loongarch32"
++description = "An internal crate of the mold linker, which instantiates it for loongarch32"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/loongarch32/lib.rs b/arch/loongarch32/lib.rs
+index ab5f572407dac60b73e84d4d5355443a1eb24f54..964cd098c3968097ca2cafa0df3065afad3e5cb4 100644
+--- a/arch/loongarch32/lib.rs
++++ b/arch/loongarch32/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::LoongArch32>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::LoongArch32>(cmdline)
+ }
+diff --git a/arch/loongarch64/Cargo.toml b/arch/loongarch64/Cargo.toml
+index a75073e3cd06692da3f74561bac7cdef8d002e57..b5ed9ed7ed315481a1172260d1ca9b90daa4aeb4 100644
+--- a/arch/loongarch64/Cargo.toml
++++ b/arch/loongarch64/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-loongarch64"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for loongarch64"
++description = "An internal crate of the mold linker, which instantiates it for loongarch64"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/loongarch64/lib.rs b/arch/loongarch64/lib.rs
+index 04a9303bf2a5e18ede0789bbace1daa3aafb9f07..4ff40de1a76aaf74ded63ee885437776cefcc69a 100644
+--- a/arch/loongarch64/lib.rs
++++ b/arch/loongarch64/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::LoongArch64>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::LoongArch64>(cmdline)
+ }
+diff --git a/arch/m68k/Cargo.toml b/arch/m68k/Cargo.toml
+index c10b792ea42a0337d6a01a43383de2890fd21157..5ed123c5b4210dd40fe509e3abd52f7677b94b8c 100644
+--- a/arch/m68k/Cargo.toml
++++ b/arch/m68k/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-m68k"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for m68k"
++description = "An internal crate of the mold linker, which instantiates it for m68k"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/m68k/lib.rs b/arch/m68k/lib.rs
+index c332f3a0a85138f3446d9cb6804a5779e0f59412..e008f2cd10733c34f406bfff5d03ee2c6998b562 100644
+--- a/arch/m68k/lib.rs
++++ b/arch/m68k/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::M68k>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::M68k>(cmdline)
+ }
+diff --git a/arch/ppc32/Cargo.toml b/arch/ppc32/Cargo.toml
+index a079333ebdd04f1c3bbdf30a40c8a82af42d3984..0702d5073b7b10403a901e26c64f694b47cc989d 100644
+--- a/arch/ppc32/Cargo.toml
++++ b/arch/ppc32/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-ppc32"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for ppc32"
++description = "An internal crate of the mold linker, which instantiates it for ppc32"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/ppc32/lib.rs b/arch/ppc32/lib.rs
+index b6ff1d64b3b3724ff5624ed7431796fd04559e8d..9942e0359cd34c09c38bb771f11dc68613207ccd 100644
+--- a/arch/ppc32/lib.rs
++++ b/arch/ppc32/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::Ppc32>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::Ppc32>(cmdline)
+ }
+diff --git a/arch/ppc64v1/Cargo.toml b/arch/ppc64v1/Cargo.toml
+index c4d2ae3569fbd88567b006681c0eec84a104d5ca..346f9f4f91c9efdcf57ddd6399c13b1979b8e50e 100644
+--- a/arch/ppc64v1/Cargo.toml
++++ b/arch/ppc64v1/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-ppc64v1"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for ppc64v1"
++description = "An internal crate of the mold linker, which instantiates it for ppc64v1"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/ppc64v1/lib.rs b/arch/ppc64v1/lib.rs
+index 919189231e741e7c044f3c4621956319327d13a8..5683a6f45ef22dd0b79c48e4370d3c92a0794f83 100644
+--- a/arch/ppc64v1/lib.rs
++++ b/arch/ppc64v1/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::Ppc64V1>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::Ppc64V1>(cmdline)
+ }
+diff --git a/arch/ppc64v2/Cargo.toml b/arch/ppc64v2/Cargo.toml
+index 831679b08d3cd6b72478a70fdfd674685661bc42..f5f706f1f7e57320cd498cd1b58887b211bacfd6 100644
+--- a/arch/ppc64v2/Cargo.toml
++++ b/arch/ppc64v2/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-ppc64v2"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for ppc64v2"
++description = "An internal crate of the mold linker, which instantiates it for ppc64v2"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/ppc64v2/lib.rs b/arch/ppc64v2/lib.rs
+index 696e5e557ec6b95337504f3c647831a4be0ddf8a..c9414290ecb6f9748cc9c290f0e6b45884cdbfa7 100644
+--- a/arch/ppc64v2/lib.rs
++++ b/arch/ppc64v2/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::Ppc64V2>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::Ppc64V2>(cmdline)
+ }
+diff --git a/arch/riscv32/Cargo.toml b/arch/riscv32/Cargo.toml
+index f701417304f7de5cd01ff48a3f0046ae29cf5af5..7972c13d6b62f9c7db2993a18a0bc6a70fd14620 100644
+--- a/arch/riscv32/Cargo.toml
++++ b/arch/riscv32/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-riscv32"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for riscv32"
++description = "An internal crate of the mold linker, which instantiates it for riscv32"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/riscv32/lib.rs b/arch/riscv32/lib.rs
+index 1367d8f965e9291590fbb671fc00056f81c55a6b..74d0627fc42bcc8202a9813803f739f4d0a27f83 100644
+--- a/arch/riscv32/lib.rs
++++ b/arch/riscv32/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::Riscv32>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::Riscv32>(cmdline)
+ }
+diff --git a/arch/riscv32be/Cargo.toml b/arch/riscv32be/Cargo.toml
+index 12e2c8059a2e7593886895db80e79fc249b145e2..7817e6149fca1b50b5f879a65c0ea73ff529ae78 100644
+--- a/arch/riscv32be/Cargo.toml
++++ b/arch/riscv32be/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-riscv32be"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for riscv32be"
++description = "An internal crate of the mold linker, which instantiates it for riscv32be"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/riscv32be/lib.rs b/arch/riscv32be/lib.rs
+index 01ef7eeab068ea9483b8fd7afc31eb3fec8569ea..0337ced4f8d2af31183b30c8657160f4a7b720f6 100644
+--- a/arch/riscv32be/lib.rs
++++ b/arch/riscv32be/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::Riscv32Be>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::Riscv32Be>(cmdline)
+ }
+diff --git a/arch/riscv64/Cargo.toml b/arch/riscv64/Cargo.toml
+index 89ec0c95c9702dba0439c3f6c596238af4934723..b9691c1101113cd74eadfb147c774e7c8557e144 100644
+--- a/arch/riscv64/Cargo.toml
++++ b/arch/riscv64/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-riscv64"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for riscv64"
++description = "An internal crate of the mold linker, which instantiates it for riscv64"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/riscv64/lib.rs b/arch/riscv64/lib.rs
+index 923f9f70179e7bc5f6a045f94ecfbc37973e406b..4e63fd1b7bced3c709f44ef16c5c8569b74946aa 100644
+--- a/arch/riscv64/lib.rs
++++ b/arch/riscv64/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::Riscv64>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::Riscv64>(cmdline)
+ }
+diff --git a/arch/riscv64be/Cargo.toml b/arch/riscv64be/Cargo.toml
+index f05f0bb80e2e53886cd20dd254a561f94e4ed1ff..7e1af023cc1fd57292c2e68fa6477a83e922cc7f 100644
+--- a/arch/riscv64be/Cargo.toml
++++ b/arch/riscv64be/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-riscv64be"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for riscv64be"
++description = "An internal crate of the mold linker, which instantiates it for riscv64be"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/riscv64be/lib.rs b/arch/riscv64be/lib.rs
+index 52293beb319390fc6f2f2f68bb6968cbc1f84bb2..e6f92bb574a1d32a2d3e8f71f32ebda34af6b6ef 100644
+--- a/arch/riscv64be/lib.rs
++++ b/arch/riscv64be/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::Riscv64Be>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::Riscv64Be>(cmdline)
+ }
+diff --git a/arch/s390x/Cargo.toml b/arch/s390x/Cargo.toml
+index b7ea2ad7ada6a998032a9e45fb611c0ba48f8002..0adca2ad81d3f9755e3af12843b3546a3dc2bb82 100644
+--- a/arch/s390x/Cargo.toml
++++ b/arch/s390x/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-s390x"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for s390x"
++description = "An internal crate of the mold linker, which instantiates it for s390x"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/s390x/lib.rs b/arch/s390x/lib.rs
+index 4d2e124468a1378fa8d7ca8e09d27a25460d70a8..b29a190a0a1ed7a30bb9b4c3b5e805187f428f86 100644
+--- a/arch/s390x/lib.rs
++++ b/arch/s390x/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::S390x>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::S390x>(cmdline)
+ }
+diff --git a/arch/sh4/Cargo.toml b/arch/sh4/Cargo.toml
+index c00968aabcccb7a0024c84cf342465b58da2a10c..f45108024e3991176009de5c46a4566b9f9fa80a 100644
+--- a/arch/sh4/Cargo.toml
++++ b/arch/sh4/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-sh4"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for sh4"
++description = "An internal crate of the mold linker, which instantiates it for sh4"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/sh4/lib.rs b/arch/sh4/lib.rs
+index 9600b086b8bf159773023b0274c18d648002488a..272b059e78834b9d3c1cc2ce3c7943e2d09b81a9 100644
+--- a/arch/sh4/lib.rs
++++ b/arch/sh4/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::Sh4>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::Sh4>(cmdline)
+ }
+diff --git a/arch/sh4be/Cargo.toml b/arch/sh4be/Cargo.toml
+index 2afa8705f092831dbf084a2dee7a6c47578c21cd..f1784834b847f16420a14aa3e95c38e2facd3412 100644
+--- a/arch/sh4be/Cargo.toml
++++ b/arch/sh4be/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-sh4be"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for sh4be"
++description = "An internal crate of the mold linker, which instantiates it for sh4be"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/sh4be/lib.rs b/arch/sh4be/lib.rs
+index 968ec72cf38da30d78fb33162142e8edc2aad3fd..4abe9de69b427307bd3292d7b19c49f823d48d12 100644
+--- a/arch/sh4be/lib.rs
++++ b/arch/sh4be/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::Sh4Be>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::Sh4Be>(cmdline)
+ }
+diff --git a/arch/sparc64/Cargo.toml b/arch/sparc64/Cargo.toml
+index 583f27641b0dc3696786200e4e7b83e106516194..53550e63344c5d3db311e22d58e6d06030ffe7ca 100644
+--- a/arch/sparc64/Cargo.toml
++++ b/arch/sparc64/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-sparc64"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for sparc64"
++description = "An internal crate of the mold linker, which instantiates it for sparc64"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/sparc64/lib.rs b/arch/sparc64/lib.rs
+index 6b4693ee33ed5c74dedde47a835a052215de9bd6..c558eb3cb1ef740798378449976cfe380814331a 100644
+--- a/arch/sparc64/lib.rs
++++ b/arch/sparc64/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::Sparc64>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::Sparc64>(cmdline)
+ }
+diff --git a/arch/x86_64/Cargo.toml b/arch/x86_64/Cargo.toml
+index d07345dbd9acfc411389327e936de7d53c508919..e3a6609f1319273e7e511b0e631eee4eaf7e9f76 100644
+--- a/arch/x86_64/Cargo.toml
++++ b/arch/x86_64/Cargo.toml
+@@ -3,11 +3,12 @@ name = "mold-arch-x86_64"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold linker instantiated for x86_64"
++description = "An internal crate of the mold linker, which instantiates it for x86_64"
+ license.workspace = true
++repository.workspace = true
+ 
+ [lib]
+ path = "lib.rs"
+ 
+ [dependencies]
+-mold.workspace = true
++libmold.workspace = true
+diff --git a/arch/x86_64/lib.rs b/arch/x86_64/lib.rs
+index 54d12bf76ac7bff5ca67de43a021f51527fd471d..6fc6b0814cc336e05c3441a1baf2306518236438 100644
+--- a/arch/x86_64/lib.rs
++++ b/arch/x86_64/lib.rs
+@@ -1,3 +1,3 @@
+-pub fn link(cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
+-    mold::driver::link::<mold::arch::X86_64>(cmdline)
++pub fn link(cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
++    libmold::driver::link::<libmold::arch::X86_64>(cmdline)
+ }
+diff --git a/build.rs b/build.rs
+index 6b96a3d698002130a3559bb807ca11f72a8d07bc..3f71c83566af85a294c6b106144336f123f343eb 100644
+--- a/build.rs
++++ b/build.rs
+@@ -106,6 +106,11 @@ fn main() {
+             .filter(|arg| !arg.to_str().is_some_and(|arg| arg.starts_with("-fsanitize"))),
+     );
+ 
++    // The executable embeds the library as plain bytes, which strip and
++    // debuginfo extraction tools cannot see, so we omit debug info even if
++    // CFLAGS asks for it. -g0 overrides any -g option that comes before it.
++    command.arg("-g0");
++
+     let wrapper = out_dir.join("mold-wrapper.so");
+     command.args(["-shared", "-o"]);
+     command.arg(&wrapper).arg("c/mold-wrapper.c");
+diff --git a/cli/Cargo.toml b/cli/Cargo.toml
+index 2dc7de767849f487f02119026e5babd9124e2c47..c14d4a86e1c416401f341d36d14871b9ae7aaf78 100644
+--- a/cli/Cargo.toml
++++ b/cli/Cargo.toml
+@@ -1,10 +1,14 @@
+ [package]
+-name = "mold-cli"
++name = "mold"
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+-description = "The mold executable"
++description = "A high-performance ELF linker, rewritten in Rust"
+ license.workspace = true
++repository.workspace = true
++readme = "../README.md"
++keywords = ["linker", "elf"]
++categories = ["command-line-utilities", "development-tools::build-utils"]
+ 
+ [[bin]]
+ name = "mold"
+@@ -16,28 +20,28 @@ path = "integration.rs"
+ harness = false
+ 
+ [dependencies]
+-mimalloc = { git = "https://github.com/rui314/mimalloc_rust", rev = "3979460494f1cd1e7f936cb8e10f41e927c9f698" }
+-mold.workspace = true
+-mold-arch-x86_64 = { path = "../arch/x86_64", optional = true }
+-mold-arch-i386 = { path = "../arch/i386", optional = true }
+-mold-arch-arm32 = { path = "../arch/arm32", optional = true }
+-mold-arch-arm32be = { path = "../arch/arm32be", optional = true }
+-mold-arch-arm64 = { path = "../arch/arm64", optional = true }
+-mold-arch-arm64be = { path = "../arch/arm64be", optional = true }
+-mold-arch-riscv64 = { path = "../arch/riscv64", optional = true }
+-mold-arch-riscv64be = { path = "../arch/riscv64be", optional = true }
+-mold-arch-riscv32 = { path = "../arch/riscv32", optional = true }
+-mold-arch-riscv32be = { path = "../arch/riscv32be", optional = true }
+-mold-arch-ppc64v2 = { path = "../arch/ppc64v2", optional = true }
+-mold-arch-ppc32 = { path = "../arch/ppc32", optional = true }
+-mold-arch-ppc64v1 = { path = "../arch/ppc64v1", optional = true }
+-mold-arch-s390x = { path = "../arch/s390x", optional = true }
+-mold-arch-sparc64 = { path = "../arch/sparc64", optional = true }
+-mold-arch-m68k = { path = "../arch/m68k", optional = true }
+-mold-arch-sh4 = { path = "../arch/sh4", optional = true }
+-mold-arch-sh4be = { path = "../arch/sh4be", optional = true }
+-mold-arch-loongarch64 = { path = "../arch/loongarch64", optional = true }
+-mold-arch-loongarch32 = { path = "../arch/loongarch32", optional = true }
++mimalloc = { package = "mold-mimalloc", version = "0.1.52" }
++libmold.workspace = true
++mold-arch-x86_64 = { workspace = true, optional = true }
++mold-arch-i386 = { workspace = true, optional = true }
++mold-arch-arm32 = { workspace = true, optional = true }
++mold-arch-arm32be = { workspace = true, optional = true }
++mold-arch-arm64 = { workspace = true, optional = true }
++mold-arch-arm64be = { workspace = true, optional = true }
++mold-arch-riscv64 = { workspace = true, optional = true }
++mold-arch-riscv64be = { workspace = true, optional = true }
++mold-arch-riscv32 = { workspace = true, optional = true }
++mold-arch-riscv32be = { workspace = true, optional = true }
++mold-arch-ppc64v2 = { workspace = true, optional = true }
++mold-arch-ppc32 = { workspace = true, optional = true }
++mold-arch-ppc64v1 = { workspace = true, optional = true }
++mold-arch-s390x = { workspace = true, optional = true }
++mold-arch-sparc64 = { workspace = true, optional = true }
++mold-arch-m68k = { workspace = true, optional = true }
++mold-arch-sh4 = { workspace = true, optional = true }
++mold-arch-sh4be = { workspace = true, optional = true }
++mold-arch-loongarch64 = { workspace = true, optional = true }
++mold-arch-loongarch32 = { workspace = true, optional = true }
+ 
+ [dev-dependencies]
+ mold-tests = { path = "../tests" }
+diff --git a/cli/main.rs b/cli/main.rs
+index 2ab792286fee77b0e3bf1c4ff438ef103998b359..2e83be32484e6d78c2a3bfc7fef0f0db34e1b6c9 100644
+--- a/cli/main.rs
++++ b/cli/main.rs
+@@ -9,7 +9,7 @@
+ #[global_allocator]
+ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+ 
+-type LinkFn = fn(mold::driver::Cmdline) -> mold::driver::LinkResult;
++type LinkFn = fn(libmold::driver::Cmdline) -> libmold::driver::LinkResult;
+ 
+ // Each target has its own monomorphized link function. Start with the first
+ // enabled target and switch to the matching function if the inputs differ.
+@@ -56,7 +56,7 @@ const TARGETS: &[(&str, LinkFn)] = &[
+     ("loongarch32", mold_arch_loongarch32::link),
+ ];
+ 
+-fn link_for_target(target: &str, cmdline: mold::driver::Cmdline) -> mold::driver::LinkResult {
++fn link_for_target(target: &str, cmdline: libmold::driver::Cmdline) -> libmold::driver::LinkResult {
+     for &(name, link) in TARGETS {
+         if name == target {
+             return link(cmdline);
+@@ -74,6 +74,6 @@ fn main() {
+         std::process::exit(1);
+     };
+     let args = std::env::args_os().collect();
+-    let status = mold::driver::main(args, initial_target, link_for_target);
++    let status = libmold::driver::main(args, initial_target, link_for_target);
+     std::process::exit(status);
+ }
+diff --git a/dist.sh b/dist.sh
+index a74b0a7d6e3df4f0b75b0c77a8c174868a874e0d..091e811ec62e8a1382add68350dbdf979826e910 100755
+--- a/dist.sh
++++ b/dist.sh
+@@ -187,7 +187,7 @@ podman run --arch "$arch" -it --rm --userns=host --pids-limit=-1 --network=none
+ set -e
+ export CARGO_TARGET_DIR=/build/target
+ cd /mold
+-cargo build --release --frozen --config /vendor/config.toml --package mold-cli
++cargo build --release --frozen --config /vendor/config.toml --package mold
+ 
+ # Link mold again with the mold just built, so that every release binary
+ # gets Identical Code Folding (see cli/build.rs). The default linker for
+@@ -197,7 +197,7 @@ cargo build --release --frozen --config /vendor/config.toml --package mold-cli
+ mkdir /build/stage1
+ cp $CARGO_TARGET_DIR/release/mold /build/stage1
+ /build/stage1/mold -run cargo rustc --release --frozen --config /vendor/config.toml \
+-  --package mold-cli --bin mold -- -Clink-arg=-Wl,--icf=all
++  --package mold --bin mold -- -Clink-arg=-Wl,--icf=all
+ 
+ stage=/build/$DEST
+ DESTDIR=/build PREFIX=/$DEST ./install-mold.sh
+diff --git a/src/chunks/compressed.rs b/src/chunks/compressed.rs
+index c7a98b362d5dc19970105e10a1737219bee9a247..37dcf1d73dc3c32d7a8d81990bfa146711d45d5a 100644
+--- a/src/chunks/compressed.rs
++++ b/src/chunks/compressed.rs
+@@ -2,10 +2,9 @@
+ 
+ use crate::arch::Target;
+ use crate::chunks::{self, ChunkHeader, ChunkId};
+-use crate::cmdline::DebugCompression;
+ use crate::context::Context;
+ use crate::elf::*;
+-use crate::util::compress::{Compressor, ZstdCompressors};
++use crate::util::compress::{CompressedData, Compressor};
+ 
+ // Debug sections can be compressed with zlib or zstd to reduce the
+ // overall size of an ELF file. CompressedSection represents a compressed
+@@ -14,7 +13,7 @@ use crate::util::compress::{Compressor, ZstdCompressors};
+ pub struct CompressedSection<E: Target> {
+     pub hdr: ChunkHeader<E>,
+     pub chdr: ElfChdr<E>,
+-    pub compressor: Compressor,
++    pub data: CompressedData,
+     /// Retained only for sections whose contents --gdb-index reads.
+     pub uncompressed_data: Option<Vec<u8>>,
+ }
+@@ -22,7 +21,7 @@ pub struct CompressedSection<E: Target> {
+ pub fn new<E: Target>(
+     ctx: &Context<E>,
+     original: ChunkId,
+-    compressors: &ZstdCompressors,
++    compressor: &Compressor,
+ ) -> CompressedSection<E> {
+     let hdr = ctx.chunk_header(original);
+ 
+@@ -34,21 +33,18 @@ pub fn new<E: Target>(
+     // Write uncompressed contents and then compress them
+     chunks::write_to(ctx, original, &mut buf);
+ 
+-    let (kind, compressor) = match ctx.args.compress_debug_sections {
+-        DebugCompression::Zlib(level) => (ELFCOMPRESS_ZLIB, Compressor::zlib(&buf, level)),
+-        DebugCompression::Zstd(level) => {
+-            (ELFCOMPRESS_ZSTD, Compressor::zstd(&buf, level, compressors))
+-        }
+-        DebugCompression::None => unreachable!("debug compression is disabled"),
+-    };
++    let data = compressor.compress(&buf);
+ 
+     // Compute header field values
+     let mut chdr = ElfChdr::<E>::default();
+-    chdr.set_ch_type(kind);
++    chdr.set_ch_type(match data {
++        CompressedData::Zlib { .. } => ELFCOMPRESS_ZLIB,
++        CompressedData::Zstd { .. } => ELFCOMPRESS_ZSTD,
++    });
+     chdr.set_ch_size(hdr.shdr.sh_size.get());
+     chdr.set_ch_addralign(hdr.shdr.sh_addralign.get());
+     let flags = hdr.shdr.sh_flags.get() | SHF_COMPRESSED as u64;
+-    let size = (size_of::<ElfChdr<E>>() + compressor.compressed_size()) as u64;
++    let size = (size_of::<ElfChdr<E>>() + data.compressed_size()) as u64;
+     let mut new_hdr = ChunkHeader::<E>::with_name(hdr.name, hdr.shdr.sh_type.get(), flags);
+     new_hdr.shndx = hdr.shndx;
+     new_hdr.shdr = hdr.shdr;
+@@ -57,16 +53,11 @@ pub fn new<E: Target>(
+     new_hdr.shdr.sh_size.set(size);
+ 
+     let keep_contents = ctx.args.gdb_index && crate::gdb_index::needs_section_contents(hdr.name);
+-    CompressedSection {
+-        hdr: new_hdr,
+-        chdr,
+-        compressor,
+-        uncompressed_data: keep_contents.then_some(buf),
+-    }
++    CompressedSection { hdr: new_hdr, chdr, data, uncompressed_data: keep_contents.then_some(buf) }
+ }
+ 
+ pub fn copy_buf<E: Target>(ctx: &Context<E>, i: u32, buf: &mut [u8]) {
+     let sec = &ctx.compressed_sections[i as usize];
+     sec.chdr.write(buf);
+-    sec.compressor.write_to(&mut buf[size_of::<ElfChdr<E>>()..]);
++    sec.data.write_to(&mut buf[size_of::<ElfChdr<E>>()..]);
+ }
+diff --git a/src/passes.rs b/src/passes.rs
+index 4587c853a8d5de96585bd4eed31da6cabb8c1f3e..a47e66b059e8c066fa15c6833306d77cdd58b889 100644
+--- a/src/passes.rs
++++ b/src/passes.rs
+@@ -22,8 +22,8 @@ use crate::chunks::{
+     self, ChunkHeader, ChunkId, OutputPhdr, OutputSectionId, compressed, copyrel, dynsym, reloc,
+ };
+ use crate::cmdline::{
+-    BsymbolicKind, BuildId, CetReportKind, DefsymValue, ReportOutput, SectionOrder,
+-    SeparateCodeKind, ShuffleSections, UnresolvedKind,
++    BsymbolicKind, BuildId, CetReportKind, DebugCompression, DefsymValue, ReportOutput,
++    SectionOrder, SeparateCodeKind, ShuffleSections, UnresolvedKind,
+ };
+ use crate::context::Context;
+ use crate::elf::*;
+@@ -39,7 +39,7 @@ use crate::symbol::{
+     Bins, NEEDS_CANONICAL, NEEDS_GOT, NEEDS_GOTTP, NEEDS_PLT, NEEDS_PPC_OPD, NEEDS_TLSDESC,
+     NEEDS_TLSGD, Symbol, SymbolId, is_c_identifier,
+ };
+-use crate::util::compress::ZstdCompressors;
++use crate::util::compress::Compressor;
+ use crate::util::glob::GlobBuilder;
+ use crate::util::perf::Counter;
+ use crate::util::{align_to, leak_bytes};
+@@ -4059,7 +4059,11 @@ pub fn fix_synthetic_symbols<E: Target>(ctx: &mut Context<E>) {
+ pub fn compress_debug_sections<E: Target>(ctx: &mut Context<E>) {
+     let _t = ctx.timer("compress_debug_sections");
+ 
+-    let compressors = ZstdCompressors::new(|| None);
++    let compressor = match ctx.args.compress_debug_sections {
++        DebugCompression::Zlib(level) => Compressor::zlib(level),
++        DebugCompression::Zstd(level) => Compressor::zstd(level),
++        DebugCompression::None => unreachable!("debug compression is disabled"),
++    };
+ 
+     // Since this pass is embarrassingly parallel, we want to use all
+     // available cores by default.
+@@ -4071,7 +4075,7 @@ pub fn compress_debug_sections<E: Target>(ctx: &mut Context<E>) {
+             let hdr = ctx.chunk_header(id);
+             !hdr.is_alloc() && hdr.shdr.sh_size.get() != 0 && hdr.name.starts_with(b".debug_")
+         })
+-        .map(|(i, &id)| (i, compressed::new(ctx, id, &compressors)))
++        .map(|(i, &id)| (i, compressed::new(ctx, id, &compressor)))
+         .collect();
+     for (i, sec) in compressed {
+         ctx.compressed_sections.push(sec);
+@@ -4261,7 +4265,7 @@ pub fn write_separate_debug_file<E: Target>(ctx: &mut Context<E>) {
+     sort_debug_info_sections(ctx);
+ 
+     // Handle --compress-debug-info
+-    if ctx.args.compress_debug_sections != crate::cmdline::DebugCompression::None {
++    if ctx.args.compress_debug_sections != DebugCompression::None {
+         compress_debug_sections(ctx);
+     }
+ 
+diff --git a/src/util/compress.rs b/src/util/compress.rs
+index 3fa0c18a1e6cb88c4e7a870ed35395211f852659..b55c0d74d5aed1337987b316ca8c5f887ab4653a 100644
+--- a/src/util/compress.rs
++++ b/src/util/compress.rs
+@@ -24,22 +24,33 @@ use crate::util::worker_local::WorkerLocal;
+ 
+ const SHARD_SIZE: usize = 1024 * 1024;
+ 
+-pub type ZstdCompressors = WorkerLocal<Option<zstd::bulk::Compressor<'static>>>;
++/// Compresses data with zlib or zstd at a fixed level, using all threads.
++pub struct Compressor(Method);
+ 
+-pub enum Compressor {
++enum Method {
++    Zlib(u32),
++    Zstd(i32, ZstdContexts),
++}
++
++// Creating a zstd context costs nearly as much as compressing a shard at
++// higher levels, so each Rayon worker reuses one for all shards.
++type ZstdContexts = WorkerLocal<Option<zstd::bulk::Compressor<'static>>>;
++
++/// Compressed data, kept as shards until it is written to the output.
++pub enum CompressedData {
+     Zlib { shards: Vec<Vec<u8>>, checksum: u32 },
+     Zstd { shards: Vec<Vec<u8>> },
+ }
+ 
+-impl std::fmt::Debug for Compressor {
++impl std::fmt::Debug for CompressedData {
+     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+-        write!(f, "Compressor({} bytes)", self.compressed_size())
++        write!(f, "CompressedData({} bytes)", self.compressed_size())
+     }
+ }
+ 
+ /// Compresses a shard as a raw deflate stream ending with a sync flush,
+ /// so that the stream ends on a byte boundary and can be concatenated.
+-fn zlib_compress(input: &[u8], level: u32) -> Vec<u8> {
++fn zlib_compress_shard(input: &[u8], level: u32) -> Vec<u8> {
+     // Initialize zlib stream. Since debug info is generally compressed
+     // pretty well with lower compression levels, the default level is 1.
+     let mut stream = libz_rs_sys::z_stream::default();
+@@ -117,36 +128,53 @@ fn zlib_compress(input: &[u8], level: u32) -> Vec<u8> {
+ }
+ 
+ impl Compressor {
+-    pub fn zlib(input: &[u8], level: u32) -> Self {
+-        // Compress each shard
+-        let (shards, adlers): (Vec<Vec<u8>>, Vec<u32>) = input
+-            .par_chunks(SHARD_SIZE)
+-            .map(|shard| (zlib_compress(shard, level), adler32(1, shard)))
+-            .unzip();
+-
+-        // Combine checksums
+-        let mut checksum = adlers.first().copied().unwrap_or(1);
+-        for (adler, shard) in adlers.iter().zip(input.chunks(SHARD_SIZE)).skip(1) {
+-            checksum = adler32_combine(checksum, *adler, shard.len() as u64);
++    pub fn zlib(level: u32) -> Self {
++        Self(Method::Zlib(level))
++    }
++
++    pub fn zstd(level: i32) -> Self {
++        Self(Method::Zstd(level, WorkerLocal::new(|| None)))
++    }
++
++    pub fn compress(&self, input: &[u8]) -> CompressedData {
++        match &self.0 {
++            Method::Zlib(level) => zlib_compress(input, *level),
++            Method::Zstd(level, contexts) => zstd_compress(input, *level, contexts),
+         }
+-        Self::Zlib { shards, checksum }
+     }
++}
++
++fn zlib_compress(input: &[u8], level: u32) -> CompressedData {
++    // Compress each shard
++    let (shards, adlers): (Vec<Vec<u8>>, Vec<u32>) = input
++        .par_chunks(SHARD_SIZE)
++        .map(|shard| (zlib_compress_shard(shard, level), adler32(1, shard)))
++        .unzip();
+ 
+-    pub fn zstd(input: &[u8], level: i32, compressors: &ZstdCompressors) -> Self {
+-        // Compress each shard
+-        let shards = input
+-            .par_chunks(SHARD_SIZE)
+-            .map(|shard| {
+-                let mut slot = compressors.get();
+-                let compressor = slot.get_or_insert_with(|| {
+-                    zstd::bulk::Compressor::new(level).expect("zstd compression failed")
+-                });
+-                compressor.compress(shard).expect("zstd compression failed")
+-            })
+-            .collect();
+-        Self::Zstd { shards }
++    // Combine checksums
++    let mut checksum = adlers.first().copied().unwrap_or(1);
++    for (adler, shard) in adlers.iter().zip(input.chunks(SHARD_SIZE)).skip(1) {
++        checksum = adler32_combine(checksum, *adler, shard.len() as u64);
+     }
++    CompressedData::Zlib { shards, checksum }
++}
++
++fn zstd_compress(input: &[u8], level: i32, contexts: &ZstdContexts) -> CompressedData {
++    // Compress each shard
++    let shards = input
++        .par_chunks(SHARD_SIZE)
++        .map(|shard| {
++            let mut slot = contexts.get();
++            let cctx = slot.get_or_insert_with(|| {
++                zstd::bulk::Compressor::new(level).expect("cannot create a zstd context")
++            });
++            cctx.compress(shard).expect("zstd compression failed")
++        })
++        .collect();
++    CompressedData::Zstd { shards }
++}
+ 
++impl CompressedData {
+     pub fn compressed_size(&self) -> usize {
+         // Compute the total size
+         match self {

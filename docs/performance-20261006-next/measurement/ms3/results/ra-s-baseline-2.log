@@ -1,0 +1,36 @@
+      reloc_nonalloc=0
+      unique_comdats=1
+     num_unique_cies=2
+            num_dsos=4
+       output_chunks=47
+ms3_vec_reallocations=2144
+ms3_vec_moving_reallocations=2144
+             comdats=3284
+            dso_syms=4912
+            num_objs=5672
+  removed_comdat_mem=6566
+         parsed_objs=6737
+      merged_strings=7728
+            num_cies=8691
+    ms3_vec_sections=11921
+ ms3_vec_allocations=25986
+    string_fragments=32571
+ms3_vec_live_bytes_moved=90480
+            num_fdes=297663
+ms3_vec_final_live_bytes=390852
+    regular_sections=557238
+        defined_syms=677315
+ms3_vec_final_capacity_bytes=712692
+      undefined_syms=757735
+      input_sections=1007794
+            all_syms=1406253
+         reloc_alloc=1511706
+   total_input_bytes=2148820666
+.comment estimation=1627 actual=4
+.rodata.str1.1 estimation=4152 actual=3514
+.rodata.cst4 estimation=2388 actual=1250
+.rodata.cst8 estimation=2183 actual=963
+.rodata.cst16 estimation=2632 actual=1591
+.rodata.cst32 estimation=1773 actual=269
+.rodata.str1.2 estimation=1696 actual=136
+.rodata.str1.8 estimation=1626 actual=1

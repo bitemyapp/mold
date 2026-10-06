@@ -1,0 +1,20 @@
+{
+  "s1-merge8": {
+    "MOLD_PHASE_BUDGET": "merge:8"
+  },
+  "s1-merge16": {
+    "MOLD_PHASE_BUDGET": "merge:16"
+  },
+  "s1-copy8": {
+    "MOLD_PHASE_BUDGET": "copy:8"
+  },
+  "s1-copy16": {
+    "MOLD_PHASE_BUDGET": "copy:16"
+  },
+  "s1-gc8": {
+    "MOLD_PHASE_BUDGET": "gc:8"
+  },
+  "s1-gc16": {
+    "MOLD_PHASE_BUDGET": "gc:16"
+  }
+}

@@ -1,0 +1,169 @@
+{
+  "source_commit": "6789e6c53fa9a82e27bc8295d88f212575a030e0",
+  "purpose": "untimed eligibility/work counts; instrumentation changes execution cost",
+  "cases": {
+    "hello": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/cr5",
+        "@response.txt",
+        "-o",
+        "codex-cr5-counts.out",
+        "--no-fork",
+        "--stats"
+      ],
+      "counts": {
+        "copy_flat_sections": 0,
+        "copy_flat_bytes": 0,
+        "copy_flat_groups": 0
+      },
+      "output_sha256": "7277a7318c05b3cb221c9ddc1995bba0deea7b291589fb6ce0ccf8f3857e3d80",
+      "golden_matches": true
+    },
+    "rhello": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/cr5",
+        "@response.txt",
+        "-o",
+        "codex-cr5-counts.out",
+        "--no-fork",
+        "--stats"
+      ],
+      "counts": {
+        "copy_flat_sections": 0,
+        "copy_flat_bytes": 0,
+        "copy_flat_groups": 0
+      },
+      "output_sha256": "967631a389972f215d294980db400e57627ca2a4fdc60a7316b5bbeb7cf998b6",
+      "golden_matches": true
+    },
+    "tblgen": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/cr5",
+        "@response.txt",
+        "-o",
+        "codex-cr5-counts.out",
+        "--no-fork",
+        "--stats"
+      ],
+      "counts": {
+        "copy_flat_sections": 0,
+        "copy_flat_bytes": 0,
+        "copy_flat_groups": 0
+      },
+      "output_sha256": "63b068abefeb622662818685a0794d8e5c7e8a5d651213eda3577810ea3369cd",
+      "golden_matches": true
+    },
+    "lld": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/cr5",
+        "@response.txt",
+        "-o",
+        "codex-cr5-counts.out",
+        "--no-fork",
+        "--stats"
+      ],
+      "counts": {
+        "copy_flat_sections": 19,
+        "copy_flat_groups": 3328,
+        "copy_flat_bytes": 499407638
+      },
+      "output_sha256": "5de7d2ef5dc164818fdbdb3d53d1f433c4bf90a9755bdce13b88e694fafcb763",
+      "golden_matches": true
+    },
+    "clang": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/cr5",
+        "@response.txt",
+        "-o",
+        "codex-cr5-counts.out",
+        "--no-fork",
+        "--stats"
+      ],
+      "counts": {
+        "copy_flat_sections": 18,
+        "copy_flat_groups": 5930,
+        "copy_flat_bytes": 905590018
+      },
+      "output_sha256": "3fa34d9efa75ab05e4a553e9116f5943bd6a3defa8ba3b3c017b1aef37216c88",
+      "golden_matches": true
+    },
+    "clang-s": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/cr5",
+        "@response.txt",
+        "-o",
+        "codex-cr5-counts.out",
+        "--no-fork",
+        "--stats",
+        "--strip-debug"
+      ],
+      "counts": {
+        "copy_flat_sections": 10,
+        "copy_flat_groups": 2940,
+        "copy_flat_bytes": 85240286
+      },
+      "output_sha256": "982ccb2f6847c86c8c5fc9e63631c3b3fb4276b3ecf4a808c55100a032a80c28",
+      "golden_matches": true
+    },
+    "ra": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/cr5",
+        "@response.txt",
+        "-o",
+        "codex-cr5-counts.out",
+        "--no-fork",
+        "--stats"
+      ],
+      "counts": {
+        "copy_flat_sections": 18,
+        "copy_flat_groups": 7818,
+        "copy_flat_bytes": 140930233
+      },
+      "output_sha256": "c54bb48368d1b75376996429c790ab2e8895d835a4a9c466d93bfa77274d4947",
+      "golden_matches": true
+    },
+    "ra-s": {
+      "command": [
+        "taskset",
+        "-c",
+        "32-63",
+        "/home/callen/work/mold-next-20261006/bin/cr5",
+        "@response.txt",
+        "-o",
+        "codex-cr5-counts.out",
+        "--no-fork",
+        "--stats",
+        "--strip-debug"
+      ],
+      "counts": {
+        "copy_flat_sections": 13,
+        "copy_flat_groups": 7177,
+        "copy_flat_bytes": 67261726
+      },
+      "output_sha256": "5b7b53af257f19a253831ab081923075b0f10190728da4aa399eab3b15860b6c",
+      "golden_matches": true
+    }
+  },
+  "binary_sha256": "1624bcf787c69f7f18892497037b23b7f29b0738e28fd37c346edc0f45fc99b2"
+}

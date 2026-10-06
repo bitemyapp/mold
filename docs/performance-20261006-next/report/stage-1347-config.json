@@ -1,0 +1,308 @@
+{
+  "title": "Mold efficiency: sixteen independent experiments",
+  "subtitle": "Paired evidence, rejected revisions, and the combined result",
+  "campaign": "next-20261006",
+  "baseline_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+  "selection_status": "Complete: P1 and H1 retained",
+  "overview": "The combined branch retains two changes: P1 reduces symbol-allocation overhead, and H1 batches output-mapping advice. In the final 50-pair comparisons, C hello links are about 11% faster in both output modes; Rust hello improves by 4.3% with reused outputs. The larger cases show no reliable improvement in the final filesystem state. H1\u2019s earlier large-link wins are conditional, not a universal speedup.",
+  "omnibus": {
+    "file": "omnibus.json",
+    "label": "omnibus",
+    "baseline": "current",
+    "title": "P1 + H1",
+    "commit": "80f062238e88d941a6b16e175477dff42e2ace4c",
+    "output_mode": "reused"
+  },
+  "s1": {
+    "file": "s1-sweep.json",
+    "baseline": "s1-control"
+  },
+  "topics": [
+    {
+      "id": "ms1",
+      "title": "Separate compact probe keys",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-ms1.json",
+        "label": "ms1"
+      }
+    },
+    {
+      "id": "ms2",
+      "title": "Reuse exact layout counts",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-fifth.json",
+        "label": "ms2-v2"
+      },
+      "revisions": [
+        {
+          "file": "screen-second.json",
+          "label": "ms2",
+          "title": "Upper-bound reservation, v1",
+          "status": "Rejected"
+        }
+      ]
+    },
+    {
+      "id": "ms3",
+      "title": "Density-guided input reservation",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-third.json",
+        "label": "ms3"
+      }
+    },
+    {
+      "id": "ms4",
+      "title": "Dense unique fragment records",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-fourth.json",
+        "label": "ms4"
+      }
+    },
+    {
+      "id": "cr1",
+      "title": "Compact final fragment offsets",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-fourth.json",
+        "label": "cr1-v2"
+      },
+      "revisions": [
+        {
+          "file": "screen-cr1.json",
+          "label": "cr1",
+          "title": "Separate offset-array scan, v1",
+          "status": "Rejected"
+        }
+      ]
+    },
+    {
+      "id": "cr2",
+      "title": "Repeated-fragment range hint",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-second.json",
+        "label": "cr2"
+      }
+    },
+    {
+      "id": "cr3",
+      "title": "Actual-target relocation prefetch",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-third.json",
+        "label": "cr3"
+      }
+    },
+    {
+      "id": "cr4",
+      "title": "Input-local final fragment offsets",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-fourth.json",
+        "label": "cr4"
+      }
+    },
+    {
+      "id": "cr5",
+      "title": "Copy jobs across output sections",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-fourth.json",
+        "label": "cr5"
+      }
+    },
+    {
+      "id": "s1",
+      "title": "Copy phase worker cap (8)",
+      "status": "Rejected as a general default; CPU/latency tradeoff",
+      "primary": {
+        "file": "screen-fifth.json",
+        "label": "s1-copy8",
+        "baseline": "s1-control",
+        "output_mode": "reused"
+      },
+      "confirmations": [
+        {
+          "file": "screen-fifth.json",
+          "label": "s1-copy16",
+          "baseline": "s1-control",
+          "title": "Copy cap 16; separate fixed policy",
+          "output_mode": "reused"
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "title": "Retain merge-worker locality",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-fourth.json",
+        "label": "s2"
+      }
+    },
+    {
+      "id": "p1",
+      "title": "Demand-sized symbol blocks",
+      "status": "Selected for combined candidate",
+      "primary": {
+        "file": "screen-fifth.json",
+        "label": "p1",
+        "output_mode": "reused"
+      },
+      "revisions": [
+        {
+          "file": "screen-p1.json",
+          "label": "p1",
+          "title": "Shard-major count scan, v1",
+          "status": "Superseded"
+        }
+      ],
+      "confirmations": [
+        {
+          "file": "screen-second.json",
+          "label": "p1",
+          "title": "Earlier screen"
+        },
+        {
+          "file": "screen-fresh.json",
+          "label": "p1",
+          "title": "Fresh output-file screen",
+          "output_mode": "fresh"
+        }
+      ]
+    },
+    {
+      "id": "g1",
+      "title": "Compact resolved GC targets",
+      "status": "Not selected",
+      "primary": {
+        "file": "screen-g1-h1.json",
+        "label": "g1"
+      },
+      "confirmations": [
+        {
+          "file": "confirm-g1-h1.json",
+          "label": "g1"
+        }
+      ]
+    },
+    {
+      "id": "h1",
+      "title": "Batch output mapping advice",
+      "status": "Selected for combined candidate",
+      "primary": {
+        "file": "screen-fifth.json",
+        "label": "h1-clean",
+        "output_mode": "reused"
+      },
+      "confirmations": [
+        {
+          "file": "screen-g1-h1.json",
+          "label": "h1",
+          "title": "Earlier screen"
+        },
+        {
+          "file": "confirm-g1-h1.json",
+          "label": "h1"
+        },
+        {
+          "file": "screen-fresh.json",
+          "label": "h1-clean",
+          "title": "Fresh output-file screen",
+          "output_mode": "fresh"
+        }
+      ]
+    },
+    {
+      "id": "h2",
+      "title": "Hash completed copy shards",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-second.json",
+        "label": "h2"
+      }
+    },
+    {
+      "id": "k1",
+      "title": "Prepare output write mappings",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-fifth.json",
+        "label": "k1"
+      },
+      "confirmations": [
+        {
+          "file": "screen-fresh.json",
+          "label": "k1",
+          "title": "Fresh output-file screen",
+          "output_mode": "fresh"
+        }
+      ]
+    }
+  ],
+  "final_control": {
+    "label": "current",
+    "commit": "d5f03691582bc6e425d122c5592d0b33448ff7eb",
+    "upstream_commit": "1347ca95c906db060ecfbf838a792c5739970294",
+    "branch": "codex/mold-next-baseline"
+  },
+  "profiles": {
+    "file": "final-phases.json",
+    "summary_file": "profile-report/phase-summary.json",
+    "labels": [
+      "current",
+      "omnibus"
+    ],
+    "status": "Complete: 12 diagnostic runs per case and variant"
+  },
+  "omnibus_confirmations": [
+    {
+      "file": "omnibus-fresh.json",
+      "label": "omnibus",
+      "baseline": "current",
+      "title": "Fresh output files: separate paired comparison",
+      "output_mode": "fresh"
+    }
+  ],
+  "output_mode_note": "Earlier paired H1 campaigns found substantial kernel-contention savings. Later reused-output links also became much cheaper after the fresh-output campaigns, so output-file reuse alone is not established as the cause. All historical pairs remain visible for their observed state, while the latest combined measurements are primary. The earlier small fresh-output stripped-Rust regression did not repeat in the final 50-pair check. Both modes use warm inputs, not cold-input benchmarks.",
+  "review_head": {
+    "commit": "839f4e4bea0c9b6f1a2df6814859fd3714137d52",
+    "tested_commit": "007ca03cff5a8a232aa6757291fbd651b9ab6fe2",
+    "branch": "codex/mold-next-omnibus",
+    "change": "Compared with measured source 80f0622, adds the large mapped-output build-ID regression test and formatting only. The full suite ran at 007ca03; the later expression wrapping does not change the production implementation or frozen binary."
+  },
+  "validation": {
+    "summary": "On wx-workstation, the full rerun passed 8,028 integration tests across 18 target configurations with 1,026 skips and no failures, including the new large mapped-output build-ID test in all 18 configurations. All 36 unit tests passed (34 linker, 2 test-runner). ARMv7, i686, and PowerPC host compile checks and final formatting verification passed. Output-oracle checks cover the final output of every measured case/label group. All 192 profile samples passed accounting/provenance checks; all 16 final profile outputs matched the eight case oracles.",
+    "limits": "The full suite tested 007ca03; final code revision 839f4e4b adds formatting only. An initial container run exhausted its process-ID limit and was discarded as an infrastructure failure; the complete rerun used an init process. Missing i686/PowerPC Rust standard-library targets were installed inside a disposable test container before their successful compile checks. Skips and target coverage remain visible in the full log.",
+    "links": [
+      {
+        "path": "topics/omnibus.md",
+        "label": "Combined-source and validation notes"
+      },
+      {
+        "path": "validation/omnibus/full-20261006T180839.log",
+        "label": "Complete unit and 18-target integration log"
+      },
+      {
+        "path": "validation/full-first-attempt-environment-failure.txt",
+        "label": "Initial infrastructure failure record"
+      },
+      {
+        "path": "patches/README.md",
+        "label": "Source reproduction and retained revisions"
+      },
+      {
+        "path": "validation/omnibus/shell-20261006T181314.log",
+        "label": "ARMv7 check and first target setup attempt"
+      },
+      {
+        "path": "validation/omnibus/shell-20261006T181551.log",
+        "label": "Completed i686/PowerPC compile checks"
+      }
+    ]
+  }
+}

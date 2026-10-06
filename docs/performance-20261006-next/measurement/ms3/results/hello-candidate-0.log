@@ -1,0 +1,30 @@
+ms3_vec_reallocations=0
+ms3_vec_moving_reallocations=0
+ms3_vec_live_bytes_moved=0
+      reloc_nonalloc=0
+             comdats=0
+  removed_comdat_mem=0
+      unique_comdats=0
+     num_unique_cies=1
+            num_dsos=1
+            num_cies=2
+            num_fdes=2
+    ms3_vec_sections=4
+      merged_strings=4
+    string_fragments=7
+            num_objs=7
+ ms3_vec_allocations=8
+        defined_syms=18
+         reloc_alloc=19
+    regular_sections=36
+       output_chunks=36
+      undefined_syms=42
+      input_sections=79
+ms3_vec_final_live_bytes=84
+ms3_vec_final_capacity_bytes=192
+         parsed_objs=540
+            dso_syms=3419
+            all_syms=3916
+   total_input_bytes=15068536
+.comment estimation=1627 actual=3
+.rodata.cst4 estimation=1626 actual=1

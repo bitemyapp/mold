@@ -1,0 +1,431 @@
+{
+  "title": "Mold efficiency: sixteen independent experiments",
+  "subtitle": "Paired evidence, rejected revisions, and the combined result",
+  "campaign": "next-20261006",
+  "baseline_commit": "f8638be95ae14954ec3b1029e6008128d7a27f1b",
+  "selection_status": "Complete: P1 + H1 retained as an experimental combined branch",
+  "overview": "The latest-upstream experimental branch combines P1 and H1. C hello improves by 9.9% with reused outputs and 11.7% with fresh outputs. Reused-output Clang is 1.75% slower in the primary 50-pair campaign (95% interval +0.30% to +3.13%). In a later, higher-CPU state, an 80-pair repeat improves Clang by 7.5%. That conditional benefit does not erase the earlier regression.",
+  "omnibus": {
+    "file": "omnibus-latest.json",
+    "label": "latest-omnibus",
+    "baseline": "latest-control",
+    "title": "Latest-upstream P1 + H1 candidate",
+    "commit": "8e522e5217adea17329e8e2eeb753fc482de4b16",
+    "output_mode": "reused",
+    "chart_title": "The experimental combined branch, against its paired control"
+  },
+  "s1": {
+    "file": "s1-sweep.json",
+    "baseline": "s1-control"
+  },
+  "topics": [
+    {
+      "id": "ms1",
+      "title": "Separate compact probe keys",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-ms1.json",
+        "label": "ms1"
+      }
+    },
+    {
+      "id": "ms2",
+      "title": "Reuse exact layout counts",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-fifth.json",
+        "label": "ms2-v2"
+      },
+      "revisions": [
+        {
+          "file": "screen-second.json",
+          "label": "ms2",
+          "title": "Upper-bound reservation, v1",
+          "status": "Rejected"
+        }
+      ]
+    },
+    {
+      "id": "ms3",
+      "title": "Density-guided input reservation",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-third.json",
+        "label": "ms3"
+      }
+    },
+    {
+      "id": "ms4",
+      "title": "Dense unique fragment records",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-fourth.json",
+        "label": "ms4"
+      }
+    },
+    {
+      "id": "cr1",
+      "title": "Compact final fragment offsets",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-fourth.json",
+        "label": "cr1-v2"
+      },
+      "revisions": [
+        {
+          "file": "screen-cr1.json",
+          "label": "cr1",
+          "title": "Separate offset-array scan, v1",
+          "status": "Rejected"
+        }
+      ]
+    },
+    {
+      "id": "cr2",
+      "title": "Repeated-fragment range hint",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-second.json",
+        "label": "cr2"
+      }
+    },
+    {
+      "id": "cr3",
+      "title": "Actual-target relocation prefetch",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-third.json",
+        "label": "cr3"
+      }
+    },
+    {
+      "id": "cr4",
+      "title": "Input-local final fragment offsets",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-fourth.json",
+        "label": "cr4"
+      }
+    },
+    {
+      "id": "cr5",
+      "title": "Copy jobs across output sections",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-fourth.json",
+        "label": "cr5"
+      }
+    },
+    {
+      "id": "s1",
+      "title": "Copy phase worker cap (8)",
+      "status": "Rejected as a general default; CPU/latency tradeoff",
+      "primary": {
+        "file": "screen-fifth.json",
+        "label": "s1-copy8",
+        "baseline": "s1-control",
+        "output_mode": "reused"
+      },
+      "confirmations": [
+        {
+          "file": "screen-fifth.json",
+          "label": "s1-copy16",
+          "baseline": "s1-control",
+          "title": "Copy cap 16; separate fixed policy",
+          "output_mode": "reused"
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "title": "Retain merge-worker locality",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-fourth.json",
+        "label": "s2"
+      }
+    },
+    {
+      "id": "p1",
+      "title": "Demand-sized symbol blocks",
+      "status": "Selected for combined candidate",
+      "primary": {
+        "file": "screen-fifth.json",
+        "label": "p1",
+        "output_mode": "reused"
+      },
+      "revisions": [
+        {
+          "file": "screen-p1.json",
+          "label": "p1",
+          "title": "Shard-major count scan, v1",
+          "status": "Superseded"
+        }
+      ],
+      "confirmations": [
+        {
+          "file": "screen-second.json",
+          "label": "p1",
+          "title": "Earlier screen"
+        },
+        {
+          "file": "screen-fresh.json",
+          "label": "p1",
+          "title": "Fresh output-file screen",
+          "output_mode": "fresh"
+        }
+      ]
+    },
+    {
+      "id": "g1",
+      "title": "Compact resolved GC targets",
+      "status": "Not selected",
+      "primary": {
+        "file": "screen-g1-h1.json",
+        "label": "g1"
+      },
+      "confirmations": [
+        {
+          "file": "confirm-g1-h1.json",
+          "label": "g1"
+        }
+      ]
+    },
+    {
+      "id": "h1",
+      "title": "Batch output mapping advice",
+      "status": "Conditional experimental candidate; state-dependent tradeoff",
+      "primary": {
+        "file": "screen-fifth.json",
+        "label": "h1-clean",
+        "output_mode": "reused"
+      },
+      "confirmations": [
+        {
+          "file": "screen-g1-h1.json",
+          "label": "h1",
+          "title": "Earlier screen"
+        },
+        {
+          "file": "confirm-g1-h1.json",
+          "label": "h1"
+        },
+        {
+          "file": "screen-fresh.json",
+          "label": "h1-clean",
+          "title": "Fresh output-file screen",
+          "output_mode": "fresh"
+        }
+      ]
+    },
+    {
+      "id": "h2",
+      "title": "Hash completed copy shards",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-second.json",
+        "label": "h2"
+      }
+    },
+    {
+      "id": "k1",
+      "title": "Prepare output write mappings",
+      "status": "Rejected",
+      "primary": {
+        "file": "screen-fifth.json",
+        "label": "k1"
+      },
+      "confirmations": [
+        {
+          "file": "screen-fresh.json",
+          "label": "k1",
+          "title": "Fresh output-file screen",
+          "output_mode": "fresh"
+        }
+      ]
+    }
+  ],
+  "final_control": {
+    "label": "latest-control",
+    "commit": "f1dec0f067198959a1339e761f27f27ccc4179d1",
+    "upstream_commit": "75200f107ee958227e87a96e67ad491567a4854a",
+    "branch": "codex/mold-next-latest-control"
+  },
+  "profiles": {
+    "file": "final-phases-latest.json",
+    "summary_file": "profile-report/phase-summary-latest.json",
+    "labels": [
+      "latest-control",
+      "latest-omnibus"
+    ],
+    "status": "Complete: 12 diagnostic runs per case and variant",
+    "stage": "Latest-source diagnostic profile \u00b7 upstream 75200f10",
+    "scope_note": "These recordings describe f1dec0f0 control / 8e522e52 combined source. Observed cost states differ by case: Clang has high system CPU in this collection, while lld remains much cheaper. Each profile has its own measured window; it is not substituted for either unprofiled campaign.",
+    "production_comparison": {
+      "file": "omnibus-latest.json",
+      "label": "latest-omnibus",
+      "baseline": "latest-control",
+      "title": "Latest-upstream P1 + H1 candidate",
+      "commit": "8e522e5217adea17329e8e2eeb753fc482de4b16",
+      "output_mode": "reused",
+      "chart_title": "The experimental combined branch, against its paired control"
+    },
+    "findings": "profile-report/findings-latest.md"
+  },
+  "omnibus_confirmations": [
+    {
+      "file": "omnibus-latest-fresh.json",
+      "label": "latest-omnibus",
+      "baseline": "latest-control",
+      "title": "Latest upstream 75200f10: fresh-output comparison",
+      "output_mode": "fresh",
+      "chart_title": "The experimental combined branch, against its paired control"
+    },
+    {
+      "file": "omnibus.json",
+      "label": "omnibus",
+      "baseline": "current",
+      "title": "Earlier upstream 1347ca95: reused-output confirmation",
+      "commit": "80f062238e88d941a6b16e175477dff42e2ace4c",
+      "output_mode": "reused"
+    },
+    {
+      "file": "omnibus-fresh.json",
+      "label": "omnibus",
+      "baseline": "current",
+      "title": "Earlier upstream 1347ca95: fresh-output confirmation",
+      "output_mode": "fresh"
+    }
+  ],
+  "output_mode_note": "H1 is a conditional mitigation with a measurable tradeoff, not a universal large-link speedup. The same control and candidate binaries entered substantially different cost states. Historical paired results and the latest 50-pair comparisons remain visible; cases, upstream revisions, output modes, and observed states are never pooled. Both output modes use warm inputs, not cold-input benchmarks.",
+  "review_head": {
+    "commit": "8e522e5217adea17329e8e2eeb753fc482de4b16",
+    "branch": "codex/mold-next-omnibus",
+    "change": "This latest-upstream candidate is the source of the current frozen performance binary. Earlier tested and measured revisions remain separate below."
+  },
+  "validation": {
+    "summary": "The latest source 8e522e52 passed 8,028 integration tests across 18 target configurations, with 1,026 skips and no failures, plus all 36 unit tests. Native integration, workspace checks, formatting, and ARMv7/i686/PowerPC host compile checks passed. Latest profiling validated all 192 interval samples and the 16 final case/variant output hashes.",
+    "limits": "Validation and performance use the recorded source/binary identities, not moving branch heads. The earlier upstream1347 stage and its infrastructure-failure rerun remain separately documented below. Hash checks cover the last measured output of each group.",
+    "links": [
+      {
+        "path": "validation/latest-omnibus/full-20261006T182934.log",
+        "label": "Latest full 18-target integration log"
+      },
+      {
+        "path": "validation/latest-omnibus/unit-20261006T182443.log",
+        "label": "Latest unit tests"
+      },
+      {
+        "path": "validation/latest-omnibus/native-20261006T182454.log",
+        "label": "Latest native integration"
+      },
+      {
+        "path": "validation/latest-omnibus/check-20261006T183315.log",
+        "label": "Workspace checks"
+      },
+      {
+        "path": "validation/latest-omnibus/hosts-20261006T183708.log",
+        "label": "Foreign-host compile checks"
+      },
+      {
+        "path": "validation/latest-omnibus/fmt-20261006T183724.log",
+        "label": "Formatting check"
+      },
+      {
+        "path": "patches/README.md",
+        "label": "Frozen source reproduction"
+      }
+    ]
+  },
+  "validation_history": [
+    {
+      "summary": "On wx-workstation, the full rerun passed 8,028 integration tests across 18 target configurations with 1,026 skips and no failures, including the new large mapped-output build-ID test in all 18 configurations. All 36 unit tests passed (34 linker, 2 test-runner). ARMv7, i686, and PowerPC host compile checks and final formatting verification passed. Output-oracle checks cover the final output of every measured case/label group. All 192 profile samples passed accounting/provenance checks; all 16 final profile outputs matched the eight case oracles.",
+      "limits": "The full suite tested 007ca03; final code revision 839f4e4b adds formatting only. An initial container run exhausted its process-ID limit and was discarded as an infrastructure failure; the complete rerun used an init process. Missing i686/PowerPC Rust standard-library targets were installed inside a disposable test container before their successful compile checks. Skips and target coverage remain visible in the full log.",
+      "links": [
+        {
+          "path": "topics/omnibus.md",
+          "label": "Combined-source and validation notes"
+        },
+        {
+          "path": "validation/omnibus/full-20261006T180839.log",
+          "label": "Complete unit and 18-target integration log"
+        },
+        {
+          "path": "validation/full-first-attempt-environment-failure.txt",
+          "label": "Initial infrastructure failure record"
+        },
+        {
+          "path": "patches/README.md",
+          "label": "Source reproduction and retained revisions"
+        },
+        {
+          "path": "validation/omnibus/shell-20261006T181314.log",
+          "label": "ARMv7 check and first target setup attempt"
+        },
+        {
+          "path": "validation/omnibus/shell-20261006T181551.log",
+          "label": "Completed i686/PowerPC compile checks"
+        },
+        {
+          "path": "report/stage-1347-config.json",
+          "label": "Earlier stage report selections"
+        }
+      ],
+      "title": "Earlier upstream 1347ca95 validation (source 007ca03 / code 839f4e4b)"
+    }
+  ],
+  "state_checks": [
+    {
+      "file": "omnibus-latest.json",
+      "label": "latest-omnibus",
+      "baseline": "latest-control",
+      "title": "Primary lower-cost state: combined vs control",
+      "output_mode": "reused",
+      "same_pair": true
+    },
+    {
+      "file": "confirm-clang-latest.json",
+      "label": "latest-omnibus",
+      "baseline": "latest-control",
+      "title": "Later higher-CPU state: combined vs control",
+      "output_mode": "reused",
+      "same_pair": true
+    },
+    {
+      "file": "confirm-clang-latest.json",
+      "label": "latest-p1",
+      "baseline": "latest-control",
+      "title": "Later state: P1 alone vs control",
+      "output_mode": "reused"
+    },
+    {
+      "file": "confirm-clang-latest.json",
+      "label": "latest-omnibus",
+      "baseline": "latest-p1",
+      "title": "Later state: combined vs P1 (H1 isolation)",
+      "output_mode": "reused"
+    }
+  ],
+  "profile_history": [
+    {
+      "file": "final-phases.json",
+      "summary_file": "profile-report/phase-summary.json",
+      "labels": [
+        "current",
+        "omnibus"
+      ],
+      "status": "Complete: 12 diagnostic runs per case and variant",
+      "stage": "Earlier-source diagnostic profile \u00b7 upstream 1347ca95",
+      "scope_note": "Historical recordings of d5f0369 / 80f0622 on upstream1347ca95. Their source and observed conditions differ from the latest profiles; they are retained as separate diagnostic evidence.",
+      "production_comparison": {
+        "file": "omnibus.json",
+        "label": "omnibus",
+        "baseline": "current",
+        "title": "Earlier upstream 1347ca95: reused-output confirmation",
+        "commit": "80f062238e88d941a6b16e175477dff42e2ace4c",
+        "output_mode": "reused"
+      },
+      "findings": "profile-report/findings.md"
+    }
+  ]
+}

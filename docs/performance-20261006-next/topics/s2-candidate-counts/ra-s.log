@@ -1,0 +1,29 @@
+      reloc_nonalloc=0
+      unique_comdats=1
+     num_unique_cies=2
+            num_dsos=4
+       output_chunks=47
+             comdats=3284
+            dso_syms=4912
+            num_objs=5672
+  removed_comdat_mem=6566
+         parsed_objs=6737
+      merged_strings=7728
+            num_cies=8691
+    string_fragments=32571
+            num_fdes=297663
+    regular_sections=557238
+        defined_syms=677315
+      undefined_syms=757735
+      input_sections=1007794
+            all_syms=1406253
+         reloc_alloc=1511706
+   total_input_bytes=2148820666
+.comment estimation=1627 actual=4
+.rodata.cst4 estimation=2388 actual=1250
+.rodata.str1.1 estimation=4152 actual=3514
+.rodata.cst8 estimation=2183 actual=963
+.rodata.cst16 estimation=2632 actual=1591
+.rodata.cst32 estimation=1773 actual=269
+.rodata.str1.2 estimation=1696 actual=136
+.rodata.str1.8 estimation=1626 actual=1

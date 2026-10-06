@@ -1,0 +1,12 @@
+2026-10-06T18:07:03-05:00
+2048
+max 585
+low 0
+high 0
+max 0
+oom 0
+oom_kill 0
+oom_group_kill 0
+[{"Type":"bind","Source":"/home/callen/work/mold-efficiency-20261006/cargo","Destination":"/home/ubuntu/.cargo/registry","Mode":"","RW":true,"Propagation":"rprivate"},{"Type":"bind","Source":"/home/callen/work/mold-next-20261006/cargo-git","Destination":"/home/ubuntu/.cargo/git","Mode":"","RW":true,"Propagation":"rprivate"},{"Type":"bind","Source":"/home/callen/work/mold-next-20261006/src/omnibus","Destination":"/work","Mode":"","RW":true,"Propagation":"rprivate"},{"Type":"bind","Source":"/home/callen/work/mold-next-20261006/targets/omnibus","Destination":"/target","Mode":"","RW":true,"Propagation":"rprivate"}]
+Flag --time has been deprecated, use --timeout instead
+9a06e4e655bebf89f71430e2c2fe43c067ae064edd4447eac5fb030609846084

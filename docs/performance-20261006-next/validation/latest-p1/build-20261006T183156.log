@@ -1,0 +1,11 @@
+source_commit=e41a4bd5ecfd23d318d4ce4a0a089f2e35a60e95
+cpu_set=8-15
+command=cargo clean --release -p libmold -p mold -p mold-arch-x86_64 && cargo build --release --locked -p mold --no-default-features --features x86_64
+e11293521c6cf5adbb4abf011f2f1fc03686687e44563fff60fd3ce295d12763  /home/callen/work/mold-next-20261006/src/latest-p1/Cargo.lock
+     Removed 36 files, 157.8MiB total
+   Compiling libmold v3.0.0 (/work)
+   Compiling mold-mimalloc-sys v0.1.49
+   Compiling mold v3.0.0 (/work/cli)
+   Compiling mold-mimalloc v0.1.52
+   Compiling mold-arch-x86_64 v3.0.0 (/work/arch/x86_64)
+    Finished `release` profile [optimized + debuginfo] target(s) in 24.26s
